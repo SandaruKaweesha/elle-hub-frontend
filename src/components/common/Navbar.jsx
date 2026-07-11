@@ -3,12 +3,12 @@ import { Link } from "react-router-dom";
 function Navbar() {
   return (
     <nav className="w-full h-17 border-b border-[#d6d8d4] bg-[#f8f7f4]">
-      <div className="w-full h-full px-[60px] flex items-center justify-between">
+      <div className="w-full h-full px-4 md:px-[60px] flex items-center justify-between">
 
         {/* Logo / Website Name */}
         <Link
           to="/"
-          className="text-3xl font-bold text-[#111111] cursor-pointer"
+          className="text-2xl md:text-3xl font-bold text-[#111111] cursor-pointer"
         >
           The Elle Hub
         </Link>
@@ -111,16 +111,16 @@ function Navbar() {
 </div>
 
         {/* Right Side Buttons */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           <Link
             to="/login"
             className="
               bg-[#003326]
               text-[#8eb7a7]
-              px-8
-              py-2.5
+              px-4 md:px-8
+              py-2 md:py-2.5
               rounded
-              text-base
+              text-sm md:text-base
               cursor-pointer
               hover:bg-[#08733e]
               hover:text-white
@@ -137,10 +137,10 @@ function Navbar() {
             className="
               bg-[#D6A900]
               text-[#111111]
-              px-8
-              py-2.5
+              px-4 md:px-8
+              py-2 md:py-2.5
               rounded
-              text-base
+              text-sm md:text-base
               font-semibold
               cursor-pointer
               hover:bg-[#F2C94C]

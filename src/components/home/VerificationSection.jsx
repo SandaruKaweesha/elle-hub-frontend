@@ -10,7 +10,7 @@ function VerificationSection() {
   }
 
   return (
-    <section className="bg-[#003326] px-[60px] py-[75px] font-['Poppins'] text-white">
+    <section className="bg-[#003326] px-4 md:px-[60px] py-10 md:py-[75px] font-['Poppins'] text-white">
       <div className="mx-auto max-w-[900px] text-center">
 
         {/* Icon */}
@@ -32,9 +32,9 @@ function VerificationSection() {
         {/* Verification Form  eka*/}
         <form
           onSubmit={handleSubmit}
-          className="mx-auto mt-8 flex max-w-[720px] overflow-hidden rounded-md bg-white"
+          className="mx-auto mt-8 flex flex-col sm:flex-row max-w-[720px] overflow-hidden rounded-md bg-white sm:bg-white bg-transparent gap-2 sm:gap-0"
         >
-          <div className="flex flex-1 items-center gap-3 px-5">
+          <div className="flex flex-1 items-center gap-3 px-5 bg-white rounded-md sm:rounded-none">
             <Search size={18} className="text-[#6b716e]" />
 
             <input
@@ -48,7 +48,9 @@ function VerificationSection() {
           <button
             type="submit"
             className="
-              min-w-[180px]
+              w-full sm:w-auto
+              sm:min-w-[180px]
+              h-[58px]
               bg-[#C9A227]
               px-7
               text-[15px]
@@ -59,6 +61,7 @@ function VerificationSection() {
               active:scale-[0.98]
               transition-all
               duration-200
+              rounded-md sm:rounded-none
             "
           >
             Verify Now

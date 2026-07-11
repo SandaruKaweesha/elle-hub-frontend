@@ -4,10 +4,10 @@ function Footer() {
   return (
     <footer className="bg-[#001E15] text-white min-h-[205px] flex items-center font-['Poppins']">
       
-      <div className="w-full max-w-[1500px] mx-auto px-12 flex items-center justify-between">
+      <div className="w-full max-w-[1500px] mx-auto px-4 md:px-12 py-10 md:py-0 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0">
 
         {/* LEFT */}
-        <div className="w-[340px]">
+        <div className="w-full md:w-[340px] text-center md:text-left">
           <h2 className="text-[26px] font-semibold mb-3">
             The Elle Hub
           </h2>
@@ -22,7 +22,7 @@ function Footer() {
         </div>
 
         {/* CENTER */}
-        <div className="flex items-center justify-center gap-9 text-[14px] text-[#58A98F]">
+        <div className="flex flex-wrap items-center justify-center gap-4 md:gap-9 text-[14px] text-[#58A98F]">
           <a href="#" className="hover:text-white transition-colors">
             Privacy Policy
           </a>
@@ -45,7 +45,7 @@ function Footer() {
         </div>
 
         {/* RIGHT */}
-        <div className="w-[300px] flex flex-col items-end justify-center">
+        <div className="w-full md:w-[300px] flex flex-col items-center md:items-end justify-center">
           
           <div className="flex gap-4 mb-4">
             <button
