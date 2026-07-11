@@ -154,7 +154,7 @@ function handleSubmit(e) {
 }
 
   return (
-    <section className="w-[720px] mx-auto border border-[#cfd6d2] rounded-md p-10 bg-[#f8f7f4]">
+    <section className="w-full max-w-[720px] mx-auto border border-[#cfd6d2] rounded-md p-6 md:p-10 bg-[#f8f7f4]">
       <h2 className="text-[26px] font-bold text-[#171917]">
         {selectedRole} Registration
       </h2>
@@ -167,7 +167,7 @@ function handleSubmit(e) {
 
       {/* Form Start here */}
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div>
           <label className="block mb-2 text-[14px] font-semibold text-[#222]">
             Selected Role
@@ -194,7 +194,7 @@ function handleSubmit(e) {
 
          {/*ur Terms Agreed*/}
 
-        <div className="col-span-2 flex items-center gap-3 mt-3">
+        <div className="col-span-1 sm:col-span-2 flex items-start sm:items-center gap-3 mt-3">
   <input
     id="terms"
     type="checkbox"
@@ -234,7 +234,7 @@ function handleSubmit(e) {
   type="submit"
   disabled={!agreed}
   className={`
-    col-span-2
+    col-span-1 sm:col-span-2
     mt-6
     h-[58px]
     rounded-md

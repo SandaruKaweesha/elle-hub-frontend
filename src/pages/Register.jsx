@@ -41,7 +41,7 @@ function handleRoleClick(role) {
       <main className="h-[calc(100vh-64px)] flex flex-col">
 
         <section className="text-center pt-[70px] px-4 font-['Poppins']">
-          <h1 className="text-[48px] font-extrabold tracking-[-1.5px] text-[#171917] leading-[1.1]">
+          <h1 className="text-4xl md:text-[48px] font-extrabold tracking-[-1.5px] text-[#171917] leading-[1.1]">
             Join the Elite.{" "}
             <span className="text-[#00783f]">
               Choose Your Role.
@@ -55,7 +55,7 @@ function handleRoleClick(role) {
           </p>
         </section>
 
-      <section className="flex justify-center px-6 mt-[95px] pb-[70px]">
+      <section className="flex justify-center px-6 mt-10 md:mt-[95px] pb-10 md:pb-[70px]">
          <div className="flex justify-center gap-[24px] flex-wrap">
 
     <RoleCard

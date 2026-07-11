@@ -34,9 +34,9 @@ function FeaturedTournaments() {
   ];
 
   return (
-    <section className="bg-white px-[60px] py-[70px] font-['Poppins']">
+    <section className="bg-white px-4 md:px-[60px] py-10 md:py-[70px] font-['Poppins']">
       <div className="mx-auto max-w-[1450px]">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <h2 className="text-[32px] font-bold text-[#111513]">
               Featured Tournaments
@@ -54,7 +54,7 @@ function FeaturedTournaments() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tournaments.map((tournament) => (
             <TournamentCard
               key={tournament.title}
