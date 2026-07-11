@@ -6,6 +6,9 @@ import Login from "./pages/Login";
 import Rankings from "./pages/Rankings";
 import OrganizerLayout from "./components/organizer/OrganizerLayout";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
+import OrganizerRequests from "./pages/organizer/OrganizerRequests";
+import CreateTournament from "./pages/organizer/CreateTournament";
+import ErrorBoundary from "./ErrorBoundary";
 import RefereeLayout from "./components/referee/RefereeLayout";
 import RefereeDashboard from "./pages/referee/RefereeDashboard";
 
@@ -22,6 +25,12 @@ function App() {
      <Route path="/organizer" element={<OrganizerLayout />}>
        <Route index element={<OrganizerDashboard />} />
        <Route path="dashboard" element={<OrganizerDashboard />} />
+       <Route path="requests" element={<OrganizerRequests />} />
+       <Route path="tournaments/create" element={
+         <ErrorBoundary>
+           <CreateTournament />
+         </ErrorBoundary>
+       } />
      </Route>
 
      {/* Referee Routes */}

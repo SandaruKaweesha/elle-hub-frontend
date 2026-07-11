@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { 
   PlusCircle, 
   Award, 
@@ -21,10 +22,13 @@ function OrganizerDashboard() {
           <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">Management Console</h1>
           <p className="text-[#666666] text-sm mt-1">Precision oversight for the elite sports circuit.</p>
         </div>
-        <button className="flex items-center gap-2 bg-[#00382D] text-white px-5 py-2.5 rounded-lg font-medium hover:bg-[#002a22] transition-colors shadow-sm">
+        <Link 
+          to="/organizer/tournaments/create"
+          className="flex items-center gap-2 bg-[#00382D] text-white px-5 py-2.5 rounded-lg font-medium hover:bg-[#002a22] transition-colors shadow-sm"
+        >
           <PlusCircle size={18} />
           New Tournament
-        </button>
+        </Link>
       </div>
 
       {/* Stats Cards */}

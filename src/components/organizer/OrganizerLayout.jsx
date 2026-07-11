@@ -37,7 +37,7 @@ function OrganizerLayout() {
     const userString = localStorage.getItem('user');
     if (userString) {
       const localUser = JSON.parse(userString);
-      const targetId = localUser.userId || localUser.id;
+      const targetId = localUser?.userId || localUser?.id;
       if (targetId) {
         api.get(`/user/${targetId}`)
           .then(res => {
@@ -118,6 +118,15 @@ function OrganizerLayout() {
 
         {/* Bottom Actions */}
         <div className="p-4 border-t border-[#e5e5e5] space-y-1">
+          <Link 
+            to="/organizer/tournaments/create"
+            onClick={() => setIsSidebarOpen(false)}
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-4"
+          >
+            <Trophy size={18} />
+            New Tournament
+          </Link>
+          
           <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:bg-[#eaeaeb]/50 hover:text-[#111111] rounded-lg transition-colors">
             <HelpCircle size={18} className="text-[#888888]" />
             Help Center

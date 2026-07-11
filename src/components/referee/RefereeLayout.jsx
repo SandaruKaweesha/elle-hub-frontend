@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
+import api from "../../services/api";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -23,6 +24,33 @@ const SIDEBAR_LINKS = [
 function RefereeLayout() {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [dbUser, setDbUser] = useState(null);
+
+  useEffect(() => {
+    const userString = localStorage.getItem('user');
+    if (userString) {
+      const localUser = JSON.parse(userString);
+      const targetId = localUser.userId || localUser.id;
+      if (targetId) {
+        api.get(`/user/${targetId}`)
+          .then(res => {
+            const userData = res.data.data || res.data;
+            if (userData && res.data.success !== false) {
+              setDbUser(userData);
+            }
+          })
+          .catch(err => console.error("Error fetching user data from DB:", err));
+      }
+    }
+  }, []);
+
+  const userString = localStorage.getItem('user');
+  const localUser = userString ? JSON.parse(userString) : null;
+  const displayUser = dbUser || localUser || {};
+
+  const userName = displayUser.fullName || displayUser.organizationName || 'Referee';
+  const userRole = displayUser.role || 'Referee';
+  const avatarSeed = userName.replace(/\s+/g, '');
 
   return (
     <div className="flex h-screen w-full bg-[#f4f7f5] font-['Poppins'] overflow-hidden">
@@ -96,7 +124,7 @@ function RefereeLayout() {
             </button>
             <div>
               <h2 className="text-2xl font-bold text-[#111111]">Referee Dashboard</h2>
-              <p className="text-xs text-[#888888] mt-0.5">Welcome back, Senior Official</p>
+              <p className="text-xs text-[#888888] mt-0.5">Welcome back, {userName}</p>
             </div>
           </div>
 
@@ -108,12 +136,12 @@ function RefereeLayout() {
             
             <div className="flex items-center gap-3 pl-6 border-l border-[#e5e5e5]">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-[#111111]">K. Wijesinghe</p>
-                <p className="text-[11px] text-[#00783f] font-semibold">Level 3 Referee</p>
+                <p className="text-sm font-bold text-[#111111]">{userName}</p>
+                <p className="text-[11px] text-[#00783f] font-semibold capitalize">{userRole.toLowerCase()}</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-[#e5e5e5] border-2 border-[#6af8a6] overflow-hidden">
                 <img 
-                  src="https://randomuser.me/api/portraits/men/32.jpg" 
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`} 
                   alt="Profile" 
                   className="w-full h-full object-cover"
                 />
