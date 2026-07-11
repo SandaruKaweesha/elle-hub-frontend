@@ -1,5 +1,7 @@
 import RegisterInput from "./RegisterInput";
 import { useState } from "react";
+import api from "../../services/api";
+import { useNavigate } from "react-router-dom";
 
 const roleFields ={
      Team: [
@@ -56,8 +58,10 @@ const roleFields ={
 
 function RegisterForm({selectedRole}){
     const [agreed, setAgreed] = useState(false);
- const fields = roleFields[selectedRole] || [];
-
+    const [successMessage, setSuccessMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
+    const navigate = useNavigate();
+    const fields = roleFields[selectedRole] || [];
 
     const [formData, setFormData] = useState({
   fullName: "",
@@ -139,18 +143,26 @@ function handleSubmit(e) {
   }
 
   const finalData = getRoleFormData();
+  // Backend expects role in uppercase (e.g. "ORGANIZER")
+  finalData.role = finalData.role.toUpperCase();
 
-  const submitData = new FormData();
-
-  Object.entries(finalData).forEach(([key, value]) => {
-    submitData.append(key, value);
+  console.log("Sending JSON to backend...", finalData);
+  
+  // Call the backend API
+  api.post('/user/register', finalData)
+  .then((response) => {
+    console.log("Registration Success:", response.data);
+    setSuccessMessage("Registration successful! Redirecting to login...");
+    setErrorMessage("");
+    setTimeout(() => {
+      navigate('/login');
+    }, 2000);
+  })
+  .catch((error) => {
+    console.error("Registration Error:", error);
+    setErrorMessage("Registration failed. Please try again.");
+    setSuccessMessage("");
   });
-
-  console.log("FormData ready for backend");
-
-  for (let pair of submitData.entries()) {
-    console.log(pair[0], pair[1]);
-  }
 }
 
   return (
@@ -164,6 +176,18 @@ function handleSubmit(e) {
       </p>
 
       <hr className="my-8 border-[#d6d8d4]" />
+
+      {successMessage && (
+        <div className="mb-6 bg-[#eaf1ec] border border-[#00783f] text-[#00783f] px-4 py-3 rounded-md text-[15px] font-bold text-center">
+          {successMessage}
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-[15px] font-bold text-center">
+          {errorMessage}
+        </div>
+      )}
 
       {/* Form Start here */}
 
