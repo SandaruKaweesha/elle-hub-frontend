@@ -9,7 +9,7 @@ function RoleCard({
     <div
       onClick={onClick}
       className={`
-        w-[250px]
+        w-full sm:w-[250px]
         h-[190px]
         border
         rounded-[7px]

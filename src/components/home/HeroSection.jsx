@@ -4,8 +4,8 @@ import { Users, Trophy } from "lucide-react";
 
 function HeroSection() {
   return (
-    <section className="bg-[#f8f7f4] px-[60px] pt-[70px] pb-[90px] font-['Poppins']">
-      <div className="max-w-[1450px] mx-auto grid grid-cols-2 items-center gap-[70px]">
+    <section className="bg-[#f8f7f4] px-4 md:px-[60px] pt-10 md:pt-[70px] pb-12 md:pb-[90px] font-['Poppins']">
+      <div className="max-w-[1450px] mx-auto grid grid-cols-1 lg:grid-cols-2 items-center gap-10 md:gap-[70px]">
 
         {/* Left Content */}
         <div>
@@ -13,7 +13,7 @@ function HeroSection() {
             Sri Lanka's Premier Elle Platform
           </p>
 
-          <h1 className="text-[58px] font-extrabold leading-[1.08] tracking-[-1.5px] text-[#111513]">
+          <h1 className="text-4xl md:text-[58px] font-extrabold leading-[1.08] tracking-[-1.5px] text-[#111513]">
             Elevating the Game.
             <br />
             <span className="text-[#08733e]">
@@ -28,7 +28,7 @@ function HeroSection() {
           </p>
 
           {/* Hero Buttons */}
-<div className="mt-9 flex items-center gap-5">
+<div className="mt-9 flex flex-col sm:flex-row items-center gap-5">
 
   {/* Join Elle Hub Button */}
   <Link
@@ -36,7 +36,7 @@ function HeroSection() {
     className="
       bg-[#003326]
       text-white
-      min-w-[250px]
+      w-full sm:min-w-[250px]
       px-8
       py-4
       rounded-[4px]
@@ -65,7 +65,7 @@ function HeroSection() {
     className="
       bg-[#D6A900]
       text-[#111513]
-      min-w-[250px]
+      w-full sm:min-w-[250px]
       px-8
       py-4
       rounded-[4px]
