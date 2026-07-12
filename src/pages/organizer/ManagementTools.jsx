@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, Edit, Radio, ChevronRight, FileText, Settings } from "lucide-react";
+import { Zap, Edit, Radio, ChevronRight, FileText, Settings, QrCode } from "lucide-react";
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 
 export default function ManagementTools() {
@@ -15,7 +15,7 @@ export default function ManagementTools() {
       </div>
 
       {/* Landscape Bar (Horizontal Row of Cards) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 shrink-0">
         {/* Card 1 */}
         <button 
           onClick={() => navigate('/organizer/management-tools/draw')}
@@ -75,6 +75,28 @@ export default function ManagementTools() {
               </div>
               <h3 className="text-white font-bold text-[18px] leading-tight">Live Broadcast Hub</h3>
               <p className="text-white/70 text-[13px] mt-1">Manage stream overlays</p>
+            </div>
+            <div className="mt-6 flex items-center gap-1 text-[#4ade80] text-sm font-semibold group-hover:translate-x-1 transition-transform">
+              Open Tool <ChevronRight size={16} />
+            </div>
+          </div>
+        </button>
+
+        {/* Card 4 */}
+        <button 
+          onClick={() => navigate('/organizer/management-tools/certificate-qr')}
+          className="bg-[#00382D] relative overflow-hidden rounded-2xl p-6 text-left group hover:-translate-y-1 transition-all duration-300 shadow-md hover:shadow-xl border border-transparent hover:border-[#4ade80]/30 flex flex-col h-full min-h-[160px]"
+        >
+          <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none translate-x-[15%] translate-y-[15%]">
+             <QrCode size={180} className="text-white" />
+          </div>
+          <div className="relative z-10 flex flex-col h-full justify-between">
+            <div>
+              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mb-4">
+                <QrCode size={20} className="text-[#4ade80]" />
+              </div>
+              <h3 className="text-white font-bold text-[18px] leading-tight">Certificate QR</h3>
+              <p className="text-white/70 text-[13px] mt-1">Generate verification QRs</p>
             </div>
             <div className="mt-6 flex items-center gap-1 text-[#4ade80] text-sm font-semibold group-hover:translate-x-1 transition-transform">
               Open Tool <ChevronRight size={16} />

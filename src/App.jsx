@@ -18,6 +18,7 @@ import ManagementTools from "./pages/organizer/ManagementTools";
 import MatchDraw from "./pages/organizer/MatchDraw";
 import UpdateResults from "./pages/organizer/UpdateResults";
 import LiveBroadcastHub from "./pages/organizer/LiveBroadcastHub";
+import CertificateQR from "./pages/organizer/CertificateQR";
 import ErrorBoundary from "./ErrorBoundary";
 import RefereeLayout from "./components/referee/RefereeLayout";
 import RefereeDashboard from "./pages/referee/RefereeDashboard";
@@ -51,6 +52,7 @@ function App() {
          <Route path="draw" element={<MatchDraw />} />
          <Route path="results" element={<UpdateResults />} />
          <Route path="broadcast" element={<LiveBroadcastHub />} />
+         <Route path="certificate-qr" element={<CertificateQR />} />
        </Route>
      </Route>
 

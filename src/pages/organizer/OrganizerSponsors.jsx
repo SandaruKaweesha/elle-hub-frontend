@@ -29,12 +29,6 @@ export default function OrganizerSponsors() {
           <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">Sponsors & Partners</h1>
           <p className="text-[#666666] text-sm mt-1">Manage tournament funding, partnership tiers, and review sponsor requests.</p>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 bg-[#00382D] text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-[#002a22] transition-colors shadow-sm">
-            <Briefcase size={16} /> Add Sponsor
-          </button>
-        </div>
       </div>
 
       {/* Controls & Search */}
