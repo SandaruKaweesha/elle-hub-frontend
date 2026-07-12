@@ -107,14 +107,15 @@ function CreateTournament() {
         <div className="absolute top-1/2 left-0 w-full h-[2px] bg-[#e5e5e5] -translate-y-1/2 z-0"></div>
         <div 
           className="absolute top-1/2 left-0 h-[2px] bg-[#00382D] -translate-y-1/2 z-0 transition-all duration-500"
-          style={{ width: `${((step - 1) / 2) * 100}%` }}
+          style={{ width: `${((step - 1) / 3) * 100}%` }}
         ></div>
 
         {/* Steps */}
         {[
           { num: 1, label: "Basic Info" },
           { num: 2, label: "Schedule" },
-          { num: 3, label: "Rewards" }
+          { num: 3, label: "Rewards" },
+          { num: 4, label: "Review" }
         ].map((s) => (
           <div key={s.num} className="relative z-10 flex flex-col items-center gap-3 bg-[#f8f7f4] px-4">
             <div className={`
@@ -130,7 +131,7 @@ function CreateTournament() {
         ))}
       </div>
 
-      <form onSubmit={step === 3 ? handleSubmit : (e) => { e.preventDefault(); handleNext(); }}>
+      <form onSubmit={step === 4 ? handleSubmit : (e) => { e.preventDefault(); handleNext(); }}>
         
         {error && (
           <div className="bg-red-50 text-red-700 p-4 rounded-xl text-sm mb-6 border border-red-200">
@@ -313,6 +314,52 @@ function CreateTournament() {
           </div>
         )}
 
+        {/* Step 4: Review */}
+        {step === 4 && (
+          <div className="bg-white rounded-2xl border border-[#e5e5e5] shadow-sm p-8 md:p-10 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="mb-8 border-b border-[#e5e5e5] pb-6">
+              <h2 className="text-2xl font-bold text-[#111111] mb-2">Review Details</h2>
+              <p className="text-[#666666] text-sm">Please verify the information before submitting.</p>
+            </div>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-xs font-bold text-[#888888] uppercase tracking-wider mb-1">Tournament Name</h3>
+                  <p className="font-semibold text-[#111111]">{formData.title || '-'}</p>
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-[#888888] uppercase tracking-wider mb-1">Location</h3>
+                  <p className="font-semibold text-[#111111]">{formData.location || '-'}</p>
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-[#888888] uppercase tracking-wider mb-1">Dates</h3>
+                  <p className="font-semibold text-[#111111]">{formData.start_date || '-'} to {formData.end_date || '-'}</p>
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-[#888888] uppercase tracking-wider mb-1">Max Teams</h3>
+                  <p className="font-semibold text-[#111111]">{formData.maximum_team_limit || '-'}</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-bold text-[#888888] uppercase tracking-wider mb-1">Description</h3>
+                <p className="text-sm text-[#333333] whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">{formData.description || '-'}</p>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-bold text-[#888888] uppercase tracking-wider mb-1">Prize Details</h3>
+                <p className="text-sm text-[#333333] whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">{formData.prize_details || '-'}</p>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-bold text-[#888888] uppercase tracking-wider mb-1">Rules</h3>
+                <p className="text-sm text-[#333333] whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">{formData.rules || '-'}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex items-center justify-between">
           {step > 1 ? (
@@ -337,8 +384,8 @@ function CreateTournament() {
           >
             {isSubmitting ? (
               "Processing..."
-            ) : step === 3 ? (
-              <>Submit Tournament <CheckCircle size={18} /></>
+            ) : step === 4 ? (
+              <>Confirm & Submit <CheckCircle size={18} /></>
             ) : (
               <>Next Step <ArrowRight size={18} /></>
             )}

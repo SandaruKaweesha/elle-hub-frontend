@@ -8,6 +8,8 @@ import OrganizerLayout from "./components/organizer/OrganizerLayout";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import OrganizerRequests from "./pages/organizer/OrganizerRequests";
 import CreateTournament from "./pages/organizer/CreateTournament";
+import OrganizerSettings from "./pages/organizer/OrganizerSettings";
+import OrganizerNotifications from "./pages/organizer/OrganizerNotifications";
 import ErrorBoundary from "./ErrorBoundary";
 import RefereeLayout from "./components/referee/RefereeLayout";
 import RefereeDashboard from "./pages/referee/RefereeDashboard";
@@ -31,6 +33,8 @@ function App() {
            <CreateTournament />
          </ErrorBoundary>
        } />
+       <Route path="settings" element={<OrganizerSettings />} />
+       <Route path="notifications" element={<OrganizerNotifications />} />
      </Route>
 
      {/* Referee Routes */}
