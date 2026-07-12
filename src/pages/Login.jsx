@@ -41,6 +41,8 @@ function Login() {
         navigate('/referee');
       } else if (userRole === 'organizer') {
         navigate('/organizer');
+      } else if (userRole === 'sponsor') {
+        navigate('/sponsor');
       } else {
         navigate('/'); // Fallback
       }
