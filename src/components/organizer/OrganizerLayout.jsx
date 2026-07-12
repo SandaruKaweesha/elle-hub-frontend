@@ -15,7 +15,12 @@ import {
   BadgeDollarSign,
   Menu,
   X,
-  User
+  User,
+  Zap,
+  Edit,
+  Radio,
+  ChevronRight,
+  FileText
 } from "lucide-react";
 
 const SIDEBAR_LINKS = [
@@ -124,10 +129,19 @@ function OrganizerLayout() {
           <Link 
             to="/organizer/tournaments/create"
             onClick={() => setIsSidebarOpen(false)}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-4"
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-2"
           >
             <Trophy size={18} />
             New Tournament
+          </Link>
+
+          <Link 
+            to="/organizer/management-tools"
+            onClick={() => setIsSidebarOpen(false)}
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-4"
+          >
+            <Settings size={18} />
+            Management Tools
           </Link>
           
           <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:bg-[#eaeaeb]/50 hover:text-[#111111] rounded-lg transition-colors">
