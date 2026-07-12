@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+import api from "../../services/api";
 import { 
   Calendar,
   Download,
@@ -16,6 +18,28 @@ import {
 } from "lucide-react";
 
 function AdminDashboard() {
+  const [stats, setStats] = useState({
+    TOTAL: 0,
+    TEAM: 0,
+    REFEREE: 0,
+    SPONSOR: 0,
+    PLAYGROUND: 0
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await api.get('/user/stats');
+        if (response.data && response.data.success) {
+          setStats(response.data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user stats", error);
+      }
+    };
+    fetchStats();
+  }, []);
+
   return (
     <div className="max-w-7xl mx-auto font-['Inter',sans-serif]">
       
@@ -42,62 +66,57 @@ function AdminDashboard() {
         
         {/* Total Users */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center mb-4">
             <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
               <Users size={20} />
             </div>
-            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-md">+12%</span>
           </div>
           <p className="text-sm text-gray-500 font-medium">Total Users</p>
-          <h3 className="text-2xl font-bold text-[#111111] mt-1">12,482</h3>
+          <h3 className="text-2xl font-bold text-[#111111] mt-1">{stats.TOTAL}</h3>
         </div>
 
-        {/* Active Events */}
+        {/* Teams */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
+          <div className="flex items-center mb-4">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
               <Activity size={20} />
             </div>
-            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-md">+5%</span>
           </div>
-          <p className="text-sm text-gray-500 font-medium">Active Events</p>
-          <h3 className="text-2xl font-bold text-[#111111] mt-1">48</h3>
-        </div>
-
-        {/* Pending */}
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
-              <ClipboardList size={20} />
-            </div>
-            <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-md">High</span>
-          </div>
-          <p className="text-sm text-gray-500 font-medium">Pending</p>
-          <h3 className="text-2xl font-bold text-[#111111] mt-1">156</h3>
+          <p className="text-sm text-gray-500 font-medium">Teams</p>
+          <h3 className="text-2xl font-bold text-[#111111] mt-1">{stats.TEAM}</h3>
         </div>
 
         {/* Referees */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center mb-4">
             <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
               <Shield size={20} />
             </div>
-            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-md">+8%</span>
           </div>
           <p className="text-sm text-gray-500 font-medium">Referees</p>
-          <h3 className="text-2xl font-bold text-[#111111] mt-1">824</h3>
+          <h3 className="text-2xl font-bold text-[#111111] mt-1">{stats.REFEREE}</h3>
         </div>
 
         {/* Sponsors */}
         <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600">
+          <div className="flex items-center mb-4">
+            <div className="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600">
               <BadgeDollarSign size={20} />
             </div>
-            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-md">Stable</span>
           </div>
           <p className="text-sm text-gray-500 font-medium">Sponsors</p>
-          <h3 className="text-2xl font-bold text-[#111111] mt-1">32</h3>
+          <h3 className="text-2xl font-bold text-[#111111] mt-1">{stats.SPONSOR}</h3>
+        </div>
+
+        {/* Playgrounds */}
+        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+          <div className="flex items-center mb-4">
+            <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
+              <ClipboardList size={20} />
+            </div>
+          </div>
+          <p className="text-sm text-gray-500 font-medium">Playgrounds</p>
+          <h3 className="text-2xl font-bold text-[#111111] mt-1">{stats.PLAYGROUND}</h3>
         </div>
 
       </div>
