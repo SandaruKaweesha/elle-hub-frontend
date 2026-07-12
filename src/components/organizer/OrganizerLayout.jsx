@@ -173,15 +173,73 @@ function OrganizerLayout() {
           <div className="flex items-center gap-4 sm:gap-6 shrink-0">
             <div className="flex items-center gap-3 sm:gap-4 relative">
               
-              {/* Notifications Link */}
+              {/* Notifications Dropdown */}
               <div className="relative">
                 <button 
-                  onClick={() => { navigate('/organizer/notifications'); setShowSettings(false); }}
-                  className="relative p-2 text-[#666666] hover:bg-gray-100 rounded-full transition-colors"
+                  onClick={() => { setShowNotifications(!showNotifications); setShowSettings(false); }}
+                  className={`relative p-2 text-[#666666] hover:bg-gray-100 rounded-full transition-colors ${showNotifications ? 'bg-gray-100' : ''}`}
                 >
                   <Bell size={20} />
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
                 </button>
+                
+                {showNotifications && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}></div>
+                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-[#e5e5e5] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                      <div className="p-4 border-b border-[#e5e5e5] flex items-center justify-between">
+                        <h3 className="font-bold text-[#111111]">Notifications</h3>
+                        <button className="text-xs text-[#08733e] font-medium hover:underline">Mark all read</button>
+                      </div>
+                      <div className="max-h-[300px] overflow-y-auto">
+                        <div 
+                           onClick={() => { setShowNotifications(false); navigate('/organizer/notifications'); }}
+                           className="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3"
+                        >
+                           <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                             <Trophy size={14} />
+                           </div>
+                           <div>
+                             <p className="text-sm text-[#333333] font-medium leading-tight">Your tournament <span className="font-bold">National Championship</span> was approved.</p>
+                             <p className="text-xs text-[#888888] mt-1">2 hours ago</p>
+                           </div>
+                        </div>
+                        <div 
+                           onClick={() => { setShowNotifications(false); navigate('/organizer/notifications'); }}
+                           className="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3"
+                        >
+                           <div className="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center shrink-0">
+                             <Users size={14} />
+                           </div>
+                           <div>
+                             <p className="text-sm text-[#333333] font-medium leading-tight">New team registration request from <span className="font-bold">Lions Club</span>.</p>
+                             <p className="text-xs text-[#888888] mt-1">5 hours ago</p>
+                           </div>
+                        </div>
+                        <div 
+                           onClick={() => { setShowNotifications(false); navigate('/organizer/notifications'); }}
+                           className="p-4 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3 opacity-60"
+                        >
+                           <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center shrink-0">
+                             <Shield size={14} />
+                           </div>
+                           <div>
+                             <p className="text-sm text-[#333333] font-medium leading-tight">System maintenance completed successfully.</p>
+                             <p className="text-xs text-[#888888] mt-1">1 day ago</p>
+                           </div>
+                        </div>
+                      </div>
+                      <div className="p-3 bg-gray-50 text-center border-t border-[#e5e5e5]">
+                        <button 
+                           onClick={() => { setShowNotifications(false); navigate('/organizer/notifications'); }}
+                           className="text-sm font-medium text-[#666666] hover:text-[#111111]"
+                        >
+                           View all notifications
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Settings Dropdown */}
