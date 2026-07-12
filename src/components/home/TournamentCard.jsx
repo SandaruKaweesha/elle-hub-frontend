@@ -1,7 +1,7 @@
 import { CalendarDays, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 
-function TournamentCard({image,imagePosition,title,date,prize,status,buttonText,}){
+function TournamentCard({id, image,imagePosition,title,date,prize,status,buttonText,}){
 
    return(
      <article className="overflow-hidden rounded-md border border-[#d8ddd9] bg-white">
@@ -51,7 +51,7 @@ function TournamentCard({image,imagePosition,title,date,prize,status,buttonText,
   </div>
 
   <Link
-    to="/tournaments"
+    to={`/tournaments/${id || 1}`}
     className="
       mt-5
       flex
