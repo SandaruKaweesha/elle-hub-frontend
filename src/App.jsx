@@ -22,6 +22,8 @@ import CertificateQR from "./pages/organizer/CertificateQR";
 import ErrorBoundary from "./ErrorBoundary";
 import RefereeLayout from "./components/referee/RefereeLayout";
 import RefereeDashboard from "./pages/referee/RefereeDashboard";
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 
 function App() {
   return (
@@ -54,6 +56,12 @@ function App() {
          <Route path="broadcast" element={<LiveBroadcastHub />} />
          <Route path="certificate-qr" element={<CertificateQR />} />
        </Route>
+     </Route>
+
+     {/* Admin Routes */}
+     <Route path="/admin" element={<AdminLayout />}>
+       <Route index element={<AdminDashboard />} />
+       <Route path="dashboard" element={<AdminDashboard />} />
      </Route>
 
      {/* Referee Routes */}

@@ -35,7 +35,9 @@ function Login() {
 
       // Role-based routing
       const userRole = (userData.role || '').toLowerCase();
-      if (userRole === 'referee') {
+      if (userRole === 'admin') {
+        navigate('/admin');
+      } else if (userRole === 'referee') {
         navigate('/referee');
       } else if (userRole === 'organizer') {
         navigate('/organizer');
