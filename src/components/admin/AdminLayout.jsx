@@ -87,8 +87,8 @@ function AdminLayout() {
       >
         {/* Logo Section */}
         <div className="flex flex-col pt-8 pb-10 px-6">
-          <h1 className="text-2xl font-extrabold tracking-tight">The Elle Hub</h1>
-          <p className="text-sm text-gray-500 mt-1">Admin Dashboard</p>
+          <h1 className="text-2xl font-extrabold tracking-tight">Elle Hub</h1>
+          <p className="text-[11px] font-bold text-gray-400 mt-1 uppercase tracking-widest">Admin Portal</p>
         </div>
 
         {/* Navigation */}
@@ -102,10 +102,10 @@ function AdminLayout() {
                 to={link.path}
                 onClick={() => setIsSidebarOpen(false)}
                 className={`
-                  flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition-all
+                  flex items-center gap-3 px-4 py-2.5 rounded-l-md rounded-r-none text-sm font-medium transition-all border-r-[4px]
                   ${isActive 
-                    ? "bg-[#4ade80] text-[#111111]" 
-                    : "text-gray-600 hover:bg-gray-100 hover:text-[#111111]"
+                    ? "bg-[#e5e7eb] border-[#111111] text-[#111111]" 
+                    : "border-transparent text-gray-500 hover:bg-gray-100 hover:text-[#111111]"
                   }
                 `}
               >
@@ -118,7 +118,7 @@ function AdminLayout() {
 
         {/* Bottom Actions */}
         <div className="p-4 border-t border-[#e5e7eb] space-y-4">
-          <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#111111] text-white rounded-md text-sm font-medium hover:bg-black/80 transition-colors">
+          <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#014731] text-white rounded-md text-sm font-medium hover:bg-[#023827] transition-colors shadow-sm">
             <Plus size={16} />
             Create Tournament
           </button>

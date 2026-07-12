@@ -14,7 +14,9 @@ import {
   Clock,
   ArrowRight,
   Sparkles,
-  Maximize2
+  Maximize2,
+  FileBarChart,
+  Settings
 } from "lucide-react";
 
 function AdminDashboard() {
@@ -46,15 +48,15 @@ function AdminDashboard() {
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">System Overview</h1>
-          <p className="text-gray-500 text-sm mt-1">Your hub for tournament management and growth metrics.</p>
+          <h1 className="text-[28px] font-extrabold text-[#111111] tracking-tight">Management Console</h1>
+          <p className="text-gray-500 text-sm mt-1">Precision oversight for the elite sports circuit.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
+          <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
             <Calendar size={16} className="text-gray-500" />
             Sept 15 - Oct 15
           </button>
-          <button className="flex items-center gap-2 bg-[#059669] text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-[#047857] transition-colors shadow-sm">
+          <button className="flex items-center gap-2 bg-[#014731] text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-[#023827] transition-colors shadow-sm">
             <Download size={16} />
             Export Data
           </button>
@@ -65,58 +67,78 @@ function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
         
         {/* Total Users */}
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center mb-4">
-            <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
-              <Users size={20} />
-            </div>
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm relative overflow-hidden h-[130px] flex flex-col justify-between">
+          <div className="relative z-10">
+            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total Users</p>
+            <h3 className="text-4xl font-extrabold text-[#111111] mt-1">{stats.TOTAL}</h3>
           </div>
-          <p className="text-sm text-gray-500 font-medium">Total Users</p>
-          <h3 className="text-2xl font-bold text-[#111111] mt-1">{stats.TOTAL}</h3>
+          <div className="relative z-10 flex items-center gap-1.5 text-gray-400 font-medium text-xs mt-2">
+            <Activity size={14} />
+            <span>Updated just now</span>
+          </div>
+          <div className="absolute -right-4 -bottom-4 text-gray-50 opacity-60 z-0 pointer-events-none">
+            <Users size={110} strokeWidth={1.5} />
+          </div>
         </div>
 
         {/* Teams */}
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center mb-4">
-            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-              <Activity size={20} />
-            </div>
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm relative overflow-hidden h-[130px] flex flex-col justify-between">
+          <div className="relative z-10">
+            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Teams</p>
+            <h3 className="text-4xl font-extrabold text-[#111111] mt-1">{stats.TEAM}</h3>
           </div>
-          <p className="text-sm text-gray-500 font-medium">Teams</p>
-          <h3 className="text-2xl font-bold text-[#111111] mt-1">{stats.TEAM}</h3>
+          <div className="relative z-10 flex items-center gap-1.5 text-[#014731] font-medium text-xs mt-2">
+            <Shield size={14} />
+            <span>Active records</span>
+          </div>
+          <div className="absolute -right-4 -bottom-4 text-gray-50 opacity-60 z-0 pointer-events-none">
+            <Activity size={110} strokeWidth={1.5} />
+          </div>
         </div>
 
         {/* Referees */}
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center mb-4">
-            <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
-              <Shield size={20} />
-            </div>
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm relative overflow-hidden h-[130px] flex flex-col justify-between">
+          <div className="relative z-10">
+            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Referees</p>
+            <h3 className="text-4xl font-extrabold text-[#111111] mt-1">{stats.REFEREE}</h3>
           </div>
-          <p className="text-sm text-gray-500 font-medium">Referees</p>
-          <h3 className="text-2xl font-bold text-[#111111] mt-1">{stats.REFEREE}</h3>
+          <div className="relative z-10 flex items-center gap-1.5 text-[#014731] font-medium text-xs mt-2">
+            <Users size={14} />
+            <span>Up to date</span>
+          </div>
+          <div className="absolute -right-4 -bottom-4 text-gray-50 opacity-60 z-0 pointer-events-none">
+            <Shield size={110} strokeWidth={1.5} />
+          </div>
         </div>
 
         {/* Sponsors */}
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center mb-4">
-            <div className="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600">
-              <BadgeDollarSign size={20} />
-            </div>
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm relative overflow-hidden h-[130px] flex flex-col justify-between">
+          <div className="relative z-10">
+            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Sponsors</p>
+            <h3 className="text-4xl font-extrabold text-[#111111] mt-1">{stats.SPONSOR}</h3>
           </div>
-          <p className="text-sm text-gray-500 font-medium">Sponsors</p>
-          <h3 className="text-2xl font-bold text-[#111111] mt-1">{stats.SPONSOR}</h3>
+          <div className="relative z-10 flex items-center gap-1.5 text-gray-400 font-medium text-xs mt-2">
+            <BadgeDollarSign size={14} />
+            <span>Stable growth</span>
+          </div>
+          <div className="absolute -right-4 -bottom-4 text-gray-50 opacity-60 z-0 pointer-events-none">
+            <BadgeDollarSign size={110} strokeWidth={1.5} />
+          </div>
         </div>
 
         {/* Playgrounds */}
-        <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center mb-4">
-            <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
-              <ClipboardList size={20} />
-            </div>
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm relative overflow-hidden h-[130px] flex flex-col justify-between">
+          <div className="relative z-10">
+            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Playgrounds</p>
+            <h3 className="text-4xl font-extrabold text-[#111111] mt-1">{stats.PLAYGROUND}</h3>
           </div>
-          <p className="text-sm text-gray-500 font-medium">Playgrounds</p>
-          <h3 className="text-2xl font-bold text-[#111111] mt-1">{stats.PLAYGROUND}</h3>
+          <div className="relative z-10 flex items-center gap-1.5 text-gray-400 font-medium text-xs mt-2">
+            <ClipboardList size={14} />
+            <span>Verified venues</span>
+          </div>
+          <div className="absolute -right-4 -bottom-4 text-gray-50 opacity-60 z-0 pointer-events-none">
+            <ClipboardList size={110} strokeWidth={1.5} />
+          </div>
         </div>
 
       </div>
@@ -321,19 +343,51 @@ function AdminDashboard() {
             </button>
           </div>
 
-          {/* Quick Insights */}
-          <div className="bg-[#052e16] rounded-xl p-6 shadow-md relative overflow-hidden">
-             {/* Background Pattern */}
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              <Sparkles size={100} />
-            </div>
-            <div className="relative z-10">
-              <h3 className="text-lg font-bold text-white mb-2">Quick Insights</h3>
-              <p className="text-sm text-green-100/70 mb-6 leading-relaxed">Generate a custom report for the upcoming board meeting.</p>
-              
-              <button className="w-full bg-[#059669] hover:bg-[#047857] text-white rounded-lg py-3 px-4 font-semibold text-sm flex items-center justify-center gap-2 transition-colors">
-                Generate Report
-                <Sparkles size={16} />
+          {/* Management Tools */}
+          <div className="bg-[#014731] rounded-xl p-6 shadow-md">
+            <h3 className="text-lg font-bold text-white mb-6">Management<br/>Tools</h3>
+            
+            <div className="space-y-3">
+              {/* Tool 1 */}
+              <button className="w-full bg-[#025c40] hover:bg-[#03704e] transition-colors rounded-lg p-4 flex items-center justify-between text-left group">
+                <div className="flex items-center gap-4">
+                  <div className="text-[#4ade80]">
+                    <FileBarChart size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-white text-sm font-semibold">Generate Reports</h4>
+                    <p className="text-green-100/60 text-xs mt-0.5">Automated system analytics</p>
+                  </div>
+                </div>
+                <ArrowRight size={16} className="text-green-100/60 group-hover:text-white transition-colors" />
+              </button>
+
+              {/* Tool 2 */}
+              <button className="w-full bg-[#025c40] hover:bg-[#03704e] transition-colors rounded-lg p-4 flex items-center justify-between text-left group">
+                <div className="flex items-center gap-4">
+                  <div className="text-[#4ade80]">
+                    <ClipboardList size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-white text-sm font-semibold">Review Approvals</h4>
+                    <p className="text-green-100/60 text-xs mt-0.5">Pending user requests</p>
+                  </div>
+                </div>
+                <ArrowRight size={16} className="text-green-100/60 group-hover:text-white transition-colors" />
+              </button>
+
+              {/* Tool 3 */}
+              <button className="w-full bg-[#025c40] hover:bg-[#03704e] transition-colors rounded-lg p-4 flex items-center justify-between text-left group">
+                <div className="flex items-center gap-4">
+                  <div className="text-[#4ade80]">
+                    <Settings size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-white text-sm font-semibold">System Settings</h4>
+                    <p className="text-green-100/60 text-xs mt-0.5">Manage platform config</p>
+                  </div>
+                </div>
+                <ArrowRight size={16} className="text-green-100/60 group-hover:text-white transition-colors" />
               </button>
             </div>
           </div>
