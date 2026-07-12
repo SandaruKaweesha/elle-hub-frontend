@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import {
   LayoutDashboard,
@@ -10,7 +10,9 @@ import {
   CalendarPlus,
   Bell,
   Menu,
-  X
+  X,
+  HelpCircle,
+  LogOut
 } from "lucide-react";
 
 const SIDEBAR_LINKS = [
@@ -23,8 +25,15 @@ const SIDEBAR_LINKS = [
 
 function RefereeLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [dbUser, setDbUser] = useState(null);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
 
   useEffect(() => {
     const userString = localStorage.getItem('user');
@@ -100,12 +109,30 @@ function RefereeLayout() {
           })}
         </nav>
 
-        {/* Bottom Button */}
-        <div className="p-6">
-          <button className="w-full flex items-center justify-center gap-2 bg-[#05140e] text-white px-4 py-3.5 rounded-xl text-sm font-medium hover:bg-[#003326] transition-colors shadow-md">
+        {/* Bottom Actions */}
+        <div className="p-4 border-t border-[#e5e5e5] space-y-2 mt-auto">
+          <button className="w-full flex items-center gap-3 bg-[#014731] text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-[#023827] transition-colors shadow-sm">
             <CalendarPlus size={18} />
             Set Availability
           </button>
+          <button className="w-full flex items-center gap-3 bg-[#014731] text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-[#023827] transition-colors shadow-sm">
+            <ClipboardList size={18} />
+            Match Reports
+          </button>
+          
+          <div className="pt-2 space-y-1">
+            <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-500 hover:text-[#111111] hover:bg-gray-100 rounded-lg transition-colors">
+              <HelpCircle size={18} />
+              Help Center
+            </button>
+            <button 
+              onClick={() => setShowLogoutConfirm(true)}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <LogOut size={18} />
+              Logout
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -158,6 +185,35 @@ function RefereeLayout() {
         </main>
 
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-[400px] p-8 text-center transform transition-all">
+            <div className="w-16 h-16 bg-[#fee2e2] rounded-full flex items-center justify-center mx-auto mb-5 text-[#ef4444]">
+              <LogOut size={28} strokeWidth={2.5} />
+            </div>
+            <h2 className="text-xl font-bold text-[#111111] mb-3">Logout Confirmation</h2>
+            <p className="text-[#555555] text-[13px] leading-relaxed mb-8 px-2">
+              Are you sure you want to log out from the Referee Portal? You will need to log in again to access your dashboard.
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 px-4 py-3 text-[#555555] font-semibold text-sm border border-[#e5e5e5] rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleLogout}
+                className="flex-1 px-4 py-3 bg-[#e60000] text-white font-semibold text-sm rounded-xl hover:bg-[#cc0000] transition-colors shadow-sm"
+              >
+                Yes, Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
