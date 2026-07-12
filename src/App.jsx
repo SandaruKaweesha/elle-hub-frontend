@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Rankings from "./pages/Rankings";
 import Tournaments from "./pages/Tournaments";
 import TournamentDetails from "./pages/TournamentDetails";
+import Matches from "./pages/Matches";
 import OrganizerLayout from "./components/organizer/OrganizerLayout";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import OrganizerRequests from "./pages/organizer/OrganizerRequests";
@@ -34,6 +35,7 @@ function App() {
      <Route path="/about" element={<About/>}/>
      <Route path="/tournaments" element={<Tournaments/>}/>
      <Route path="/tournaments/:id" element={<TournamentDetails/>}/>
+     <Route path="/matches" element={<Matches/>}/>
      <Route path="/rankings" element={<Rankings/>}/>
      <Route path="/register" element={<Register/>}/>
      <Route path="/login" element={<Login/>}/>
