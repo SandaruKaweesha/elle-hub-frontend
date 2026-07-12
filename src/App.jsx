@@ -4,6 +4,8 @@ import About from "./pages/About";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Rankings from "./pages/Rankings";
+import Tournaments from "./pages/Tournaments";
+import TournamentDetails from "./pages/TournamentDetails";
 import OrganizerLayout from "./components/organizer/OrganizerLayout";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import OrganizerRequests from "./pages/organizer/OrganizerRequests";
@@ -32,6 +34,8 @@ function App() {
     <Routes>
      <Route path="/" element={<Home/>}/>
      <Route path="/about" element={<About/>}/>
+     <Route path="/tournaments" element={<Tournaments/>}/>
+     <Route path="/tournaments/:id" element={<TournamentDetails/>}/>
      <Route path="/rankings" element={<Rankings/>}/>
      <Route path="/register" element={<Register/>}/>
      <Route path="/login" element={<Login/>}/>

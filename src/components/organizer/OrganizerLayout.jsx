@@ -256,61 +256,24 @@ function OrganizerLayout() {
                 )}
               </div>
 
-              {/* Settings Dropdown */}
+              {/* Settings Button */}
               <div className="relative hidden sm:block">
                 <button 
-                  onClick={() => { setShowSettings(!showSettings); setShowNotifications(false); }}
-                  className={`p-2 text-[#666666] hover:bg-gray-100 rounded-full transition-colors ${showSettings ? 'bg-gray-100' : ''}`}
+                  onClick={() => { navigate('/organizer/settings'); setShowNotifications(false); }}
+                  className="p-2 text-[#666666] hover:bg-gray-100 rounded-full transition-colors"
                 >
                   <Settings size={20} />
                 </button>
-
-                {showSettings && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowSettings(false)}></div>
-                    <div className="absolute right-0 mt-2 w-60 bg-white rounded-[12px] shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-[#e5e5e5] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                      <div className="px-5 py-4 border-b border-[#f0f0f0]">
-                        <p className="text-[13px] font-bold text-[#888888] uppercase tracking-wider">Account Settings</p>
-                      </div>
-                      <div className="py-2">
-                        <button 
-                          onClick={() => { setShowSettings(false); navigate('/organizer/settings?tab=profile'); }}
-                          className="w-full text-left px-5 py-3 text-[15px] text-[#333333] hover:bg-[#f8f7f4] transition-colors flex items-center gap-4"
-                        >
-                          <User size={20} strokeWidth={1.5} className="text-[#555555] shrink-0" /> Profile Details
-                        </button>
-                        <button 
-                          onClick={() => { setShowSettings(false); navigate('/organizer/settings?tab=security'); }}
-                          className="w-full text-left px-5 py-3 text-[15px] text-[#333333] hover:bg-[#f8f7f4] transition-colors flex items-center gap-4"
-                        >
-                          <Shield size={20} strokeWidth={1.5} className="text-[#555555] shrink-0" /> Security & Password
-                        </button>
-                        <button 
-                          onClick={() => { setShowSettings(false); navigate('/organizer/settings?tab=notifications'); }}
-                          className="w-full text-left px-5 py-3 text-[15px] text-[#333333] hover:bg-[#f8f7f4] transition-colors flex items-center gap-4"
-                        >
-                          <Bell size={20} strokeWidth={1.5} className="text-[#555555] shrink-0" /> 
-                          <span className="leading-tight">Notification<br/>Preferences</span>
-                        </button>
-                      </div>
-                      <div className="border-t border-[#f0f0f0] py-2">
-                        <button 
-                          onClick={() => { setShowSettings(false); setShowLogoutConfirm(true); }}
-                          className="w-full text-left px-5 py-3 text-[15px] text-red-600 hover:bg-red-50 transition-colors flex items-center gap-4"
-                        >
-                          <LogOut size={20} strokeWidth={1.5} className="shrink-0" /> Logout
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
               </div>
             </div>
             
             <div className="w-[1px] h-8 bg-[#e5e5e5] hidden sm:block"></div>
             
             {/* User Profile */}
-            <div className="flex items-center gap-3 cursor-pointer">
+            <div 
+              className="flex items-center gap-3 cursor-pointer select-none"
+              onClick={() => navigate('/organizer/settings?tab=profile')}
+            >
               <div className="hidden sm:flex flex-col items-end">
                 <span className="text-sm font-semibold text-[#111111]">{userName}</span>
                 <span className="text-xs text-[#666666] capitalize">{userRole.toLowerCase()}</span>
