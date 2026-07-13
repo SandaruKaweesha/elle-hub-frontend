@@ -13,7 +13,8 @@ import {
   Search,
   Bell,
   Menu,
-  X
+  X,
+  MessageSquare
 } from "lucide-react";
 
 const SIDEBAR_LINKS = [
@@ -21,6 +22,7 @@ const SIDEBAR_LINKS = [
   { id: "sponsorships", label: "Sponsorships", icon: BadgeDollarSign, path: "/sponsor/sponsorships" },
   { id: "tournaments", label: "Tournaments", icon: Trophy, path: "/sponsor/tournaments" },
   { id: "analytics", label: "Analytics", icon: LineChart, path: "/sponsor/analytics" },
+  { id: "messages", label: "Messages", icon: MessageSquare, path: "/sponsor/messages" },
 ];
 
 function SponsorLayout() {
@@ -62,7 +64,7 @@ function SponsorLayout() {
   const avatarSeed = userName.replace(/\s+/g, '');
 
   return (
-    <div className="flex h-screen w-full bg-[#f8f9fa] font-['Inter',sans-serif] text-[#111111]">
+    <div className="flex h-screen w-full bg-[#f8f7f4] font-['Poppins'] text-[#111111]">
       
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (

@@ -5,7 +5,7 @@ const api = axios.create({
   // Use the environment variable for the base URL.
   // Fallback to localhost if not defined.
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  timeout: 10000, // 10 seconds timeout
+  timeout: 30000, // 30 seconds timeout to handle Azure Serverless DB delays
   headers: {
     'Content-Type': 'application/json',
   },
