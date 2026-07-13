@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 const roleFields ={
      Team: [
-    { label: "Full Name", name: "fullName", type: "text", placeholder: "Enter full name" },
+    { label: "Team Name", name: "teamName", type: "text", placeholder: "Enter team name" },
     { label: "Email", name: "email", type: "email", placeholder: "example@gmail.com" },
     { label: "Password", name: "password", type: "password", placeholder: "Enter password" },
     { label: "Profile Picture", name: "profilePicture", type: "file" },
@@ -65,6 +65,7 @@ function RegisterForm({selectedRole}){
 
     const [formData, setFormData] = useState({
   fullName: "",
+  teamName: "",
   email: "",
   password: "",
   profilePicture: null,
