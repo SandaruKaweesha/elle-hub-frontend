@@ -62,7 +62,7 @@ function RefereeLayout() {
   const avatarSeed = userName.replace(/\s+/g, '');
 
   return (
-    <div className="flex h-screen w-full bg-[#f4f7f5] font-['Poppins'] overflow-hidden">
+    <div className="flex h-screen w-full bg-[#f8f7f4] font-['Poppins'] text-[#111111] overflow-hidden">
       
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
@@ -74,18 +74,21 @@ function RefereeLayout() {
 
       {/* Sidebar */}
       <aside 
-        className={`fixed lg:static top-0 left-0 h-full w-[260px] bg-[#f8f9f8] border-r border-[#e5e5e5] z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
+        className={`
+          fixed lg:static inset-y-0 left-0 z-50
+          w-[260px] bg-[#f8f7f4] border-r border-[#e5e5e5]
+          flex flex-col transition-transform duration-300 ease-in-out
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+        `}
       >
-        {/* Logo Area */}
-        <div className="h-[80px] flex flex-col justify-center px-8 border-b border-[#e5e5e5]">
-          <h1 className="text-xl font-extrabold text-[#111111] leading-tight">The Elle Hub</h1>
-          <p className="text-[11px] text-[#888888] font-medium tracking-wide">Official Management</p>
+        {/* Logo Section */}
+        <div className="flex flex-col items-center pt-8 pb-10">
+          <h1 className="text-2xl font-bold text-[#111111] tracking-tight">Elle Hub</h1>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[#666666] mt-1 font-semibold">Referee Portal</p>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 py-8 px-4 space-y-2">
+        {/* Navigation */}
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
           {SIDEBAR_LINKS.map((link) => {
             const isActive = location.pathname === link.path || 
                              (link.path !== "/referee" && location.pathname.startsWith(link.path));
@@ -96,13 +99,15 @@ function RefereeLayout() {
                 key={link.id}
                 to={link.path}
                 onClick={() => setIsSidebarOpen(false)}
-                className={`flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
-                  isActive 
-                    ? "bg-[#6af8a6] text-[#004a25] shadow-sm shadow-[#6af8a6]/30" 
-                    : "text-[#555555] hover:bg-[#eaf1ec] hover:text-[#111111]"
-                }`}
+                className={`
+                  flex items-center gap-3 px-4 py-3 rounded-l-lg rounded-r-none text-sm font-medium transition-colors
+                  ${isActive 
+                    ? "bg-[#eaeaeb] text-[#111111] border-r-[4px] border-[#111111]" 
+                    : "text-[#666666] border-transparent border-r-[4px] hover:bg-[#eaeaeb]/50 hover:text-[#111111]"
+                  }
+                `}
               >
-                <Icon size={20} className={isActive ? "text-[#004a25]" : "text-[#888888]"} />
+                <Icon size={18} className={isActive ? "text-[#111111]" : "text-[#888888]"} />
                 {link.label}
               </Link>
             );
@@ -110,26 +115,26 @@ function RefereeLayout() {
         </nav>
 
         {/* Bottom Actions */}
-        <div className="p-4 border-t border-[#e5e5e5] space-y-2 mt-auto">
-          <button className="w-full flex items-center gap-3 bg-[#014731] text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-[#023827] transition-colors shadow-sm">
+        <div className="p-4 border-t border-[#e5e5e5] space-y-1 mt-auto">
+          <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-2">
             <CalendarPlus size={18} />
             Set Availability
           </button>
-          <button className="w-full flex items-center gap-3 bg-[#014731] text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-[#023827] transition-colors shadow-sm">
+          <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-4">
             <ClipboardList size={18} />
             Match Reports
           </button>
           
           <div className="pt-2 space-y-1">
-            <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-500 hover:text-[#111111] hover:bg-gray-100 rounded-lg transition-colors">
-              <HelpCircle size={18} />
+            <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:text-[#111111] hover:bg-[#eaeaeb]/50 rounded-lg transition-colors">
+              <HelpCircle size={18} className="text-[#888888]" />
               Help Center
             </button>
             <button 
               onClick={() => setShowLogoutConfirm(true)}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
-              <LogOut size={18} />
+              <LogOut size={18} className="text-[#888888]" />
               Logout
             </button>
           </div>

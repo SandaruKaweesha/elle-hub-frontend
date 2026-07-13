@@ -66,7 +66,7 @@ function AdminLayout() {
   const avatarSeed = userName.replace(/\s+/g, '');
 
   return (
-    <div className="flex h-screen w-full bg-[#f8f9fa] font-['Inter',sans-serif] text-[#111111]">
+    <div className="flex h-screen w-full bg-[#f8f7f4] font-['Poppins'] text-[#111111]">
       
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
@@ -80,19 +80,19 @@ function AdminLayout() {
       <aside 
         className={`
           fixed lg:static inset-y-0 left-0 z-50
-          w-[260px] bg-[#f8f9fa] border-r border-[#e5e7eb]
+          w-[260px] bg-[#f8f7f4] border-r border-[#e5e5e5]
           flex flex-col transition-transform duration-300 ease-in-out
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
       >
         {/* Logo Section */}
-        <div className="flex flex-col pt-8 pb-10 px-6">
-          <h1 className="text-2xl font-extrabold tracking-tight">Elle Hub</h1>
-          <p className="text-[11px] font-bold text-gray-400 mt-1 uppercase tracking-widest">Admin Portal</p>
+        <div className="flex flex-col items-center pt-8 pb-10">
+          <h1 className="text-2xl font-bold text-[#111111] tracking-tight">Elle Hub</h1>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[#666666] mt-1 font-semibold">Admin Portal</p>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
           {SIDEBAR_LINKS.map((link) => {
             const isActive = location.pathname === link.path || (link.path === '/admin' && location.pathname === '/admin/dashboard');
             const Icon = link.icon;
@@ -102,14 +102,14 @@ function AdminLayout() {
                 to={link.path}
                 onClick={() => setIsSidebarOpen(false)}
                 className={`
-                  flex items-center gap-3 px-4 py-2.5 rounded-l-md rounded-r-none text-sm font-medium transition-all border-r-[4px]
+                  flex items-center gap-3 px-4 py-3 rounded-l-lg rounded-r-none text-sm font-medium transition-colors
                   ${isActive 
-                    ? "bg-[#e5e7eb] border-[#111111] text-[#111111]" 
-                    : "border-transparent text-gray-500 hover:bg-gray-100 hover:text-[#111111]"
+                    ? "bg-[#eaeaeb] text-[#111111] border-r-[4px] border-[#111111]" 
+                    : "text-[#666666] border-transparent border-r-[4px] hover:bg-[#eaeaeb]/50 hover:text-[#111111]"
                   }
                 `}
               >
-                <Icon size={18} className={isActive ? "text-[#111111]" : "text-gray-500"} />
+                <Icon size={18} className={isActive ? "text-[#111111]" : "text-[#888888]"} />
                 {link.label}
               </Link>
             );
@@ -117,22 +117,27 @@ function AdminLayout() {
         </nav>
 
         {/* Bottom Actions */}
-        <div className="p-4 border-t border-[#e5e7eb] space-y-4">
-          <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#014731] text-white rounded-md text-sm font-medium hover:bg-[#023827] transition-colors shadow-sm">
-            <Plus size={16} />
+        <div className="p-4 border-t border-[#e5e5e5] space-y-1 mt-auto">
+          <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-2">
+            <Plus size={18} />
             Create Tournament
           </button>
           
-          <div className="space-y-1">
-            <Link to="/admin/settings" className="w-full flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-[#111111] rounded-md transition-colors">
-              <Settings size={18} className="text-gray-500" />
+          <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-4">
+            <Settings size={18} />
+            Management Tools
+          </button>
+          
+          <div className="pt-2 space-y-1">
+            <Link to="/admin/settings" className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:text-[#111111] hover:bg-[#eaeaeb]/50 rounded-lg transition-colors">
+              <Settings size={18} className="text-[#888888]" />
               Settings
             </Link>
             <button 
               onClick={() => setShowLogoutConfirm(true)}
-              className="w-full flex items-center gap-3 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
-              <LogOut size={18} />
+              <LogOut size={18} className="text-[#888888]" />
               Logout
             </button>
           </div>

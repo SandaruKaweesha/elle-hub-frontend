@@ -61,7 +61,7 @@ export default function TeamLayout() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#f8f7f4] font-['Poppins']">
+    <div className="flex h-screen w-full bg-[#f8f7f4] font-['Poppins'] text-[#111111]">
       
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
@@ -82,57 +82,61 @@ export default function TeamLayout() {
       >
         {/* Logo Section */}
         <div className="flex flex-col items-center pt-8 pb-10">
-          <h1 className="text-2xl font-bold text-[#111111] tracking-tight">The Elle Hub</h1>
+          <h1 className="text-2xl font-bold text-[#111111] tracking-tight">Elle Hub</h1>
           <p className="text-[10px] uppercase tracking-[0.2em] text-[#666666] mt-1 font-semibold">Elite Performance</p>
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
           {SIDEBAR_LINKS.map((link) => {
             const isActive = location.pathname === link.path || 
                              (link.id !== "dashboard" && location.pathname.startsWith(link.path));
-            
+            const Icon = link.icon;
             return (
               <Link
                 key={link.id}
                 to={link.path}
                 onClick={() => setIsSidebarOpen(false)}
                 className={`
-                  flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200
+                  flex items-center gap-3 px-4 py-3 rounded-l-lg rounded-r-none text-sm font-medium transition-colors
                   ${isActive 
-                    ? "bg-[#98F5E1] text-[#002c21]" 
-                    : "text-[#666666] hover:bg-[#e5e5e5] hover:text-[#111111]"
+                    ? "bg-[#eaeaeb] text-[#111111] border-r-[4px] border-[#111111]" 
+                    : "text-[#666666] border-transparent border-r-[4px] hover:bg-[#eaeaeb]/50 hover:text-[#111111]"
                   }
                 `}
               >
-                <link.icon size={18} className={isActive ? "text-[#002c21]" : "text-[#666666]"} />
+                <Icon size={18} className={isActive ? "text-[#111111]" : "text-[#888888]"} />
                 {link.label}
               </Link>
             );
           })}
         </nav>
 
-        {/* Manage Team Button */}
-        <div className="px-4 mt-6">
-          <button className="w-full flex items-center justify-center gap-2 bg-[#002c21] text-[#98F5E1] px-4 py-3 rounded-lg text-sm font-semibold hover:bg-[#08733e] hover:text-white transition-colors duration-200">
-            <Users size={18} /> Manage Team
-          </button>
-        </div>
-
-        {/* Footer Actions */}
-        <div className="p-4 mt-4 border-t border-[#e5e5e5] space-y-1.5">
-          <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold text-[#666666] hover:bg-[#e5e5e5] hover:text-[#111111] transition-colors duration-200">
-            <HelpCircle size={18} />
-            Help Center
+        {/* Bottom Actions */}
+        <div className="p-4 border-t border-[#e5e5e5] space-y-1 mt-auto">
+          <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-2">
+            <Users size={18} />
+            Manage Team
           </button>
           
-          <button 
-            onClick={() => setShowLogoutConfirm(true)}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold text-[#666666] hover:bg-[#ffe5e5] hover:text-red-600 transition-colors duration-200"
-          >
-            <LogOut size={18} />
-            Logout
+          <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-4">
+            <Settings size={18} />
+            Management Tools
           </button>
+          
+          <div className="pt-2 space-y-1">
+            <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:text-[#111111] hover:bg-[#eaeaeb]/50 rounded-lg transition-colors">
+              <HelpCircle size={18} className="text-[#888888]" />
+              Help Center
+            </button>
+            <button 
+              onClick={() => setShowLogoutConfirm(true)}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <LogOut size={18} className="text-[#888888]" />
+              Logout
+            </button>
+          </div>
         </div>
       </aside>
 

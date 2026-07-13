@@ -20,7 +20,8 @@ import {
   Edit,
   Radio,
   ChevronRight,
-  FileText
+  FileText,
+  MessageSquare
 } from "lucide-react";
 
 const SIDEBAR_LINKS = [
@@ -30,6 +31,7 @@ const SIDEBAR_LINKS = [
   { id: "referees", label: "Referees", icon: Shield, path: "/organizer/referees" },
   { id: "playgrounds", label: "Playgrounds", icon: Map, path: "/organizer/playgrounds" },
   { id: "sponsors", label: "Sponsors", icon: BadgeDollarSign, path: "/organizer/sponsors" },
+  { id: "messages", label: "Messages", icon: MessageSquare, path: "/organizer/messages" },
 ];
 
 function OrganizerLayout() {
@@ -73,7 +75,7 @@ function OrganizerLayout() {
   const avatarSeed = userName.replace(/\s+/g, '');
 
   return (
-    <div className="flex h-screen w-full bg-[#f8f7f4] font-['Poppins']">
+    <div className="flex h-screen w-full bg-[#f8f7f4] font-['Poppins'] text-[#111111]">
       
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
@@ -110,10 +112,10 @@ function OrganizerLayout() {
                 to={link.path}
                 onClick={() => setIsSidebarOpen(false)}
                 className={`
-                  flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors
+                  flex items-center gap-3 px-4 py-3 rounded-l-lg rounded-r-none text-sm font-medium transition-colors
                   ${isActive 
-                    ? "bg-[#eaeaeb] text-[#111111] border-r-4 border-[#111111]" 
-                    : "text-[#666666] hover:bg-[#eaeaeb]/50 hover:text-[#111111]"
+                    ? "bg-[#eaeaeb] text-[#111111] border-r-[4px] border-[#111111]" 
+                    : "text-[#666666] border-transparent border-r-[4px] hover:bg-[#eaeaeb]/50 hover:text-[#111111]"
                   }
                 `}
               >
