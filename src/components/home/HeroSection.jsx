@@ -91,12 +91,55 @@ function HeroSection() {
 </div>
         </div>
 
-        {/* Right Image Placeholder */}
-        <div className="h-[470px] rounded-[18px] bg-[#e7e5de] flex items-center justify-center border border-[#d6d8d4]">
-          <p className="text-[#6b716e]">
-            Hero Image Here
-          </p>
-        </div>
+       
+       {/* Hero Image */}
+<div className="relative h-[500px] rounded-[22px] overflow-hidden shadow-2xl">
+
+  <img
+    src="/images/hero.jpeg"
+    alt="Elle Tournament"
+    className="
+      w-full
+      h-full
+      object-cover
+      transition-transform
+      duration-700
+      hover:scale-105
+    "
+  />
+
+  {/* Dark Overlay */}
+  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent"></div>
+
+  {/* Live Badge */}
+  <div className="absolute top-5 left-5">
+    <span className="bg-[#D6A900] text-[#111] px-4 py-2 rounded-full text-xs font-bold">
+      LIVE MATCH
+    </span>
+  </div>
+
+  {/* Bottom Card */}
+  <div className="absolute bottom-5 left-5 right-5">
+
+    <div className="bg-white/95 backdrop-blur-md rounded-xl px-5 py-4 shadow-lg">
+
+      <p className="text-xs text-[#777] uppercase tracking-wide">
+        Featured Tournament
+      </p>
+
+      <h3 className="text-lg font-bold text-[#111] mt-1">
+        Sri Lanka National Elle Championship
+      </h3>
+
+      <p className="text-sm text-[#666] mt-1">
+        Colombo • Live Now
+      </p>
+
+    </div>
+
+  </div>
+
+</div>
 
       </div>
     </section>
