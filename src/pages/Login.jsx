@@ -43,6 +43,8 @@ function Login() {
         navigate('/organizer');
       } else if (userRole === 'team') {
         navigate('/team');
+      } else if (userRole === 'sponsor') {
+        navigate('/sponsor');
       } else {
         navigate('/'); // Fallback
       }

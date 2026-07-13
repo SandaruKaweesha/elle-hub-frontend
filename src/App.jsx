@@ -32,6 +32,8 @@ import RefereeLayout from "./components/referee/RefereeLayout";
 import RefereeDashboard from "./pages/referee/RefereeDashboard";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import SponsorLayout from "./components/sponsor/SponsorLayout";
+import SponsorDashboard from "./pages/sponsor/SponsorDashboard";
 
 function App() {
   return (
@@ -88,6 +90,12 @@ function App() {
      <Route path="/referee" element={<RefereeLayout />}>
        <Route index element={<RefereeDashboard />} />
        <Route path="dashboard" element={<RefereeDashboard />} />
+     </Route>
+
+     {/* Sponsor Routes */}
+     <Route path="/sponsor" element={<SponsorLayout />}>
+       <Route index element={<SponsorDashboard />} />
+       <Route path="dashboard" element={<SponsorDashboard />} />
      </Route>
     </Routes>
   );
