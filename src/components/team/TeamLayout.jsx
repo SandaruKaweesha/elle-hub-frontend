@@ -31,6 +31,7 @@ export default function TeamLayout() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [recentTournaments, setRecentTournaments] = useState([]);
+  const [selectedNotification, setSelectedNotification] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -184,7 +185,7 @@ export default function TeamLayout() {
                         recentTournaments.map((t, idx) => (
                           <div 
                              key={t.tournament_id || idx}
-                             onClick={() => { setShowNotifications(false); navigate(`/tournaments/${t.tournament_id}`); }}
+                             onClick={() => { setShowNotifications(false); setSelectedNotification(t); }}
                              className="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3"
                           >
                              <div className="w-8 h-8 rounded-full bg-[#eaf1ec] text-[#08733e] flex items-center justify-center shrink-0">
@@ -268,6 +269,54 @@ export default function TeamLayout() {
                 className="flex-1 py-3 px-4 bg-[#e60000] hover:bg-[#cc0000] text-white rounded-xl text-sm font-bold transition-colors shadow-sm"
               >
                 Yes, Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Details Modal */}
+      {selectedNotification && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-[500px] p-6 transform transition-all animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-[#eaf1ec] rounded-full flex items-center justify-center text-[#08733e] shrink-0 border border-[#c4e3d7]">
+                  <Trophy size={24} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-[#111111] leading-tight">Tournament Alert</h3>
+                  <p className="text-xs font-semibold text-[#08733e] mt-1 bg-[#eaf1ec] inline-block px-2 py-0.5 rounded-md">Recently Added</p>
+                </div>
+              </div>
+              <button onClick={() => setSelectedNotification(null)} className="text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-200 p-2 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="bg-[#f8f7f4] rounded-xl p-5 mb-8 border border-[#e5e5e5]">
+              <p className="text-[#333333] leading-relaxed text-[15px]">
+                New tournament <span className="font-black text-[#111111]">{selectedNotification.title}</span> was added to the portal. 
+                Registration is now open. Assemble your team and don't miss the chance to participate and win amazing prizes!
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setSelectedNotification(null)}
+                className="flex-1 py-3 px-4 bg-white border border-[#e5e5e5] rounded-xl text-sm font-bold text-[#333333] hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+              <button 
+                onClick={() => {
+                  const id = selectedNotification.tournament_id;
+                  setSelectedNotification(null);
+                  navigate(`/tournaments/${id}`);
+                }}
+                className="flex-1 py-3 px-4 bg-[#08733e] hover:bg-[#065b31] text-white rounded-xl text-sm font-bold transition-colors shadow-sm flex items-center justify-center gap-2"
+              >
+                <Trophy size={16} /> View Tournament
               </button>
             </div>
           </div>
