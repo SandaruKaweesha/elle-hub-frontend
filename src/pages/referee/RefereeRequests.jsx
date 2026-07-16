@@ -48,3 +48,63 @@ const INITIAL_REQUESTS = [
     priority: "Normal",
   },
 ];
+
+const STATUS_STYLES = {
+  Pending: "bg-[#fff3cd] text-[#876700]",
+  Accepted: "bg-[#d9f8e5] text-[#006b38]",
+  Declined: "bg-[#fee2e2] text-[#b42318]",
+};
+
+function RefereeRequests() {
+  const [requests, setRequests] = useState(INITIAL_REQUESTS);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+
+  const filteredRequests = useMemo(() => {
+    return requests.filter((request) => {
+      const searchValue = searchTerm.toLowerCase();
+
+      const matchesSearch =
+        request.tournament.toLowerCase().includes(searchValue) ||
+        request.match.toLowerCase().includes(searchValue) ||
+        request.organizer.toLowerCase().includes(searchValue) ||
+        request.venue.toLowerCase().includes(searchValue);
+
+      const matchesStatus =
+        statusFilter === "All" || request.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [requests, searchTerm, statusFilter]);
+
+  function updateRequestStatus(requestId, newStatus) {
+    setRequests((previousRequests) =>
+      previousRequests.map((request) =>
+        request.id === requestId
+          ? { ...request, status: newStatus }
+          : request
+      )
+    );
+
+    console.log("Request updated:", {
+      requestId,
+      status: newStatus,
+    });
+  }
+
+  const pendingCount = requests.filter(
+    (request) => request.status === "Pending"
+  ).length;
+
+  const acceptedCount = requests.filter(
+    (request) => request.status === "Accepted"
+  ).length;
+
+  const declinedCount = requests.filter(
+    (request) => request.status === "Declined"
+  ).length;
+
+    return (
+        
+    );
+}
