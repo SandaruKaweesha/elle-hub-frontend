@@ -111,10 +111,14 @@ function RefereeLayout() {
 
         {/* Bottom Actions */}
         <div className="p-4 border-t border-[#e5e5e5] space-y-2 mt-auto">
-          <button className="w-full flex items-center gap-3 bg-[#014731] text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-[#023827] transition-colors shadow-sm">
-            <CalendarPlus size={18} />
-            Set Availability
-          </button>
+         <Link
+  to="/referee/availability"
+  onClick={() => setIsSidebarOpen(false)}
+  className="flex w-full items-center gap-3 rounded-lg bg-[#014731] px-4 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#023827]"
+>
+  <CalendarPlus size={18} />
+  Set Availability
+</Link>
           <button className="w-full flex items-center gap-3 bg-[#014731] text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-[#023827] transition-colors shadow-sm">
             <ClipboardList size={18} />
             Match Reports
