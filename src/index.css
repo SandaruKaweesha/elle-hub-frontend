@@ -26,3 +26,20 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+.availability-day {
+  background: #d9f8e5;
+  color: #005c31;
+  font-weight: 700;
+}
+
+.availability-day::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #00884a;
+  transform: translateX(-50%);
+}

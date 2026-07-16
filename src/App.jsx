@@ -37,6 +37,7 @@ import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SponsorLayout from "./components/sponsor/SponsorLayout";
 import SponsorDashboard from "./pages/sponsor/SponsorDashboard";
+import RefereeAvailability from "./pages/referee/RefereeAvailability";
 
 function App() {
   return (
@@ -96,6 +97,7 @@ function App() {
      <Route path="/referee" element={<RefereeLayout />}>
        <Route index element={<RefereeDashboard />} />
        <Route path="dashboard" element={<RefereeDashboard />} />
+       <Route path="availability" element={<RefereeAvailability />} />
      </Route>
 
      {/* Sponsor Routes */}
