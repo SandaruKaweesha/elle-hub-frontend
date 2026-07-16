@@ -59,7 +59,36 @@ const STATUS_STYLES = {
 };
 
 function RefereeSchedule() {
-  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+
+  const filteredSchedule = useMemo(() => {
+    return SCHEDULE_ITEMS.filter((item) => {
+      const searchValue = searchTerm.toLowerCase();
+
+      const matchesSearch =
+        item.tournament.toLowerCase().includes(searchValue) ||
+        item.match.toLowerCase().includes(searchValue) ||
+        item.venue.toLowerCase().includes(searchValue);
+
+      const matchesStatus =
+        statusFilter === "All" || item.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [searchTerm, statusFilter]);
+
+  const upcomingCount = SCHEDULE_ITEMS.filter(
+    (item) => item.status === "Confirmed"
+  ).length;
+
+  const pendingCount = SCHEDULE_ITEMS.filter(
+    (item) => item.status === "Pending"
+  ).length;
+
+  const completedCount = SCHEDULE_ITEMS.filter(
+    (item) => item.status === "Completed"
+  ).length;
 
   return (
     <div className="space-y-6 pb-10">
