@@ -288,7 +288,20 @@ function RefereeSchedule() {
             );
           })
         ) : (
-         
+          <div className="rounded-xl border border-dashed border-[#cfd6d2] bg-white px-6 py-14 text-center">
+            <CalendarDays
+              size={36}
+              className="mx-auto text-[#9aa49f]"
+            />
+
+            <h2 className="mt-4 text-lg font-bold text-[#222222]">
+              No matches found
+            </h2>
+
+            <p className="mt-1 text-sm text-[#777777]">
+              Try changing your search text or status filter.
+            </p>
+          </div>
         )}
       </div>
     </div>
