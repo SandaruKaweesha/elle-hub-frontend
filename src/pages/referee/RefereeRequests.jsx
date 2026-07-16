@@ -104,7 +104,7 @@ function RefereeRequests() {
     (request) => request.status === "Declined"
   ).length;
 
-    return (
+  return (
     <div className="space-y-6 pb-10">
       {/* Heading */}
       <div>
@@ -357,5 +357,7 @@ function RefereeRequests() {
         )}
       </div>
     </div>
-    );
+  );
 }
+
+export default RefereeRequests;
