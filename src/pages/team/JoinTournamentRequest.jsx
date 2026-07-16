@@ -227,10 +227,17 @@ function JoinTournamentRequest() {
               ></textarea>
             </div>
             
-            <div className="pt-4">
+            <div className="pt-4 flex gap-4">
+              <button 
+                type="button"
+                onClick={() => navigate(-1)}
+                className="flex-1 px-4 py-3.5 border border-[#e5e5e5] text-gray-700 hover:bg-gray-50 font-bold rounded-xl text-[15px] transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
               <button 
                 type="submit"
-                className="w-full bg-[#08733e] text-white py-3.5 rounded-xl text-[15px] font-bold hover:bg-[#065b31] transition-colors shadow-sm flex justify-center items-center gap-2"
+                className="flex-1 bg-[#08733e] text-white py-3.5 rounded-xl text-[15px] font-bold hover:bg-[#065b31] transition-colors shadow-sm flex justify-center items-center gap-2 cursor-pointer"
               >
                 Submit Join Request
               </button>

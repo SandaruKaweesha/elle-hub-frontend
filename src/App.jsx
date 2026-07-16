@@ -13,6 +13,8 @@ import JoinTournamentRequest from "./pages/team/JoinTournamentRequest";
 import TeamSettings from "./pages/team/TeamSettings";
 import TeamNotifications from "./pages/team/TeamNotifications";
 import TeamProfile from "./pages/team/TeamProfile";
+import TeamTournaments from "./pages/team/TeamTournaments";
+import TeamRequests from "./pages/team/TeamRequests";
 import OrganizerLayout from "./components/organizer/OrganizerLayout";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import OrganizerRequests from "./pages/organizer/OrganizerRequests";
@@ -79,14 +81,16 @@ function App() {
      </Route>
 
      {/* Team Routes */}
-     <Route path="/team" element={<TeamLayout />}>
-       <Route index element={<TeamDashboard />} />
-       <Route path="dashboard" element={<TeamDashboard />} />
-       <Route path="join-tournament/:id" element={<JoinTournamentRequest />} />
-       <Route path="settings" element={<TeamSettings />} />
-       <Route path="notifications" element={<TeamNotifications />} />
-       <Route path="profile" element={<TeamProfile />} />
-     </Route>
+      <Route path="/team" element={<TeamLayout />}>
+        <Route index element={<TeamDashboard />} />
+        <Route path="dashboard" element={<TeamDashboard />} />
+        <Route path="tournaments" element={<TeamTournaments />} />
+        <Route path="requests" element={<TeamRequests />} />
+        <Route path="join-tournament/:id" element={<JoinTournamentRequest />} />
+        <Route path="settings" element={<TeamSettings />} />
+        <Route path="notifications" element={<TeamNotifications />} />
+        <Route path="profile" element={<TeamProfile />} />
+      </Route>
 
      {/* Referee Routes */}
      <Route path="/referee" element={<RefereeLayout />}>

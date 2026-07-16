@@ -24,7 +24,7 @@ function CreateTournament() {
     title: "",
     description: "",
     location: "",
-    start_date: "",
+    tournament_held_date: "",
     end_date: "",
     maximum_team_limit: "",
     rules: "",
@@ -66,8 +66,9 @@ function CreateTournament() {
         title: formData.title,
         description: formData.description,
         location: formData.location,
-        startDate: formData.start_date,
+        startDate: null,
         endDate: formData.end_date,
+        tournamentHeldDate: formData.tournament_held_date,
         maximumTeamLimit: parseInt(formData.maximum_team_limit, 10),
         rules: formData.rules,
         prizeDetails: formData.prize_details
@@ -212,7 +213,7 @@ function CreateTournament() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-[13px] font-bold text-[#111111] mb-2">
-                    Start Date <span className="text-red-500">*</span>
+                    Tournament Date <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -220,9 +221,9 @@ function CreateTournament() {
                     </div>
                     <input
                       type="date"
-                      name="start_date"
+                      name="tournament_held_date"
                       required
-                      value={formData.start_date}
+                      value={formData.tournament_held_date}
                       onChange={handleChange}
                       className="w-full h-12 pl-11 pr-4 bg-white border border-[#d6d8d4] rounded-lg text-sm text-[#111111] focus:ring-2 focus:ring-[#00382D]/20 focus:border-[#00382D] outline-none transition-all"
                     />
@@ -231,7 +232,7 @@ function CreateTournament() {
 
                 <div>
                   <label className="block text-[13px] font-bold text-[#111111] mb-2">
-                    End Date <span className="text-red-500">*</span>
+                    Registration Deadline Date <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
