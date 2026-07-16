@@ -9,3 +9,42 @@ import {
   UserRoundCheck,
   X,
 } from "lucide-react";
+
+const INITIAL_REQUESTS = [
+  {
+    id: 1,
+    tournament: "National Elle Championship",
+    match: "Colombo Lions vs Kandy Kings",
+    date: "2026-07-28",
+    time: "09:00 AM - 11:00 AM",
+    venue: "Sugathadasa Stadium, Colombo",
+    role: "Main Referee",
+    organizer: "Sri Lanka Elle Federation",
+    status: "Pending",
+    priority: "Urgent",
+  },
+  {
+    id: 2,
+    tournament: "Inter-School Elle Cup",
+    match: "Royal College vs Ananda College",
+    date: "2026-08-02",
+    time: "02:30 PM - 04:30 PM",
+    venue: "Municipal Grounds, Colombo",
+    role: "Assistant Referee",
+    organizer: "Western Schools Sports Association",
+    status: "Pending",
+    priority: "Normal",
+  },
+  {
+    id: 3,
+    tournament: "Southern Province Open",
+    match: "Galle Warriors vs Matara Eagles",
+    date: "2026-08-06",
+    time: "04:00 PM - 06:00 PM",
+    venue: "Galle Sports Complex",
+    role: "Main Referee",
+    organizer: "Southern Province Elle Council",
+    status: "Accepted",
+    priority: "Normal",
+  },
+];
