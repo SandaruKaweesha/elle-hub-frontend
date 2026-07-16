@@ -292,5 +292,70 @@ function RefereeRequests() {
                     </div>
                   </div>
 
-                    );
+                  {/* Actions */}
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:min-w-[210px] lg:flex-col lg:items-stretch">
+                    <span
+                      className={`inline-flex w-fit rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide ${
+                        STATUS_STYLES[request.status]
+                      }`}
+                    >
+                      {request.status}
+                    </span>
+
+                    {request.status === "Pending" ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateRequestStatus(request.id, "Accepted")
+                          }
+                          className="flex items-center justify-center gap-2 rounded-lg bg-[#00783f] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#005f32] active:scale-95"
+                        >
+                          <Check size={15} />
+                          Accept
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateRequestStatus(request.id, "Declined")
+                          }
+                          className="flex items-center justify-center gap-2 rounded-lg border border-red-300 px-4 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-50 active:scale-95"
+                        >
+                          <X size={15} />
+                          Decline
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="rounded-lg border border-[#00783f] px-5 py-2.5 text-xs font-bold text-[#00783f] transition hover:bg-[#eaf6ef]"
+                      >
+                        View Details
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </article>
+            );
+          })
+        ) : (
+          <div className="rounded-xl border border-dashed border-[#cfd6d2] bg-white px-6 py-14 text-center">
+            <CalendarDays
+              size={36}
+              className="mx-auto text-[#9aa49f]"
+            />
+
+            <h2 className="mt-4 text-lg font-bold text-[#222222]">
+              No requests found
+            </h2>
+
+            <p className="mt-1 text-sm text-[#777777]">
+              Try changing your search text or status filter.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+    );
 }
