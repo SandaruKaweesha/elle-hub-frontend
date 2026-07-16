@@ -22,6 +22,8 @@ export default function TeamProfile() {
   const [profileData, setProfileData] = useState({
     teamName: "",
     address: "",
+    district: "",
+    contactNumber: "",
     description: "",
   });
   const [originalProfileData, setOriginalProfileData] = useState({});
@@ -30,6 +32,21 @@ export default function TeamProfile() {
   // Section 2: Player Details State
   const [players, setPlayers] = useState([]);
   const [playerAlert, setPlayerAlert] = useState(false);
+
+  // Modals state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Form states
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [playerFormData, setPlayerFormData] = useState({
+    playerName: "",
+    age: "",
+    position: "Striker",
+    contactNumber: "",
+  });
+  const [isSavingPlayer, setIsSavingPlayer] = useState(false);
 
   // Section 3: Security State
   const [securityEditMode, setSecurityEditMode] = useState(false);
@@ -40,36 +57,38 @@ export default function TeamProfile() {
   const [isSavingPassword, setIsSavingPassword] = useState(false);
 
   // Load team profile and players
+  const fetchProfile = async () => {
+    try {
+      const response = await api.get(`/user/${userId}`);
+      if (response.data.success) {
+        const data = response.data.data;
+        const mappedData = {
+          teamName: data.teamName || data.team_name || "",
+          address: data.address || "",
+          district: data.district || "",
+          contactNumber: data.contactNumber || data.contact_number || "",
+          description: data.description || "",
+        };
+        setProfileData(mappedData);
+        setOriginalProfileData(mappedData);
+        setPlayers(data.players || []);
+      } else {
+        setError(response.data.message || "Failed to load team profile.");
+      }
+    } catch (err) {
+      console.error("Fetch profile error:", err);
+      setError("Unable to connect to the server to load profile details.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!userId) {
       setError("User session not found. Please log in again.");
       setLoading(false);
       return;
     }
-
-    const fetchProfile = async () => {
-      try {
-        const response = await api.get(`/user/${userId}`);
-        if (response.data.success) {
-          const data = response.data.data;
-          const mappedData = {
-            teamName: data.teamName || data.team_name || "",
-            address: data.address || "",
-            description: data.description || "",
-          };
-          setProfileData(mappedData);
-          setOriginalProfileData(mappedData);
-          setPlayers(data.players || []);
-        } else {
-          setError(response.data.message || "Failed to load team profile.");
-        }
-      } catch (err) {
-        console.error("Fetch profile error:", err);
-        setError("Unable to connect to the server to load profile details.");
-      } finally {
-        setLoading(false);
-      }
-    };
 
     fetchProfile();
   }, [userId]);
@@ -157,6 +176,100 @@ export default function TeamProfile() {
   const triggerPlayerAlert = () => {
     setPlayerAlert(true);
     setTimeout(() => setPlayerAlert(false), 4000);
+  };
+
+  const handleOpenAddModal = () => {
+    setPlayerFormData({
+      playerName: "",
+      age: "",
+      position: "Striker",
+      contactNumber: "",
+    });
+    setShowAddModal(true);
+  };
+
+  const handleOpenEditModal = (player) => {
+    setSelectedPlayer(player);
+    setPlayerFormData({
+      playerName: player.player_name || "",
+      age: player.age || "",
+      position: player.position || "Striker",
+      contactNumber: player.contact_number || "",
+    });
+    setShowEditModal(true);
+  };
+
+  const handleOpenDeleteConfirm = (player) => {
+    setSelectedPlayer(player);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleAddPlayer = async (e) => {
+    e.preventDefault();
+    setIsSavingPlayer(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      const response = await api.post("/player", playerFormData);
+      if (response.data.success) {
+        setShowAddModal(false);
+        showFeedback("Player added to squad successfully!", "success");
+        fetchProfile();
+      } else {
+        showFeedback(response.data.message || "Failed to add player.", "error");
+      }
+    } catch (err) {
+      console.error("Add player error:", err);
+      showFeedback(err.response?.data?.message || "An error occurred while adding the player.", "error");
+    } finally {
+      setIsSavingPlayer(false);
+    }
+  };
+
+  const handleEditPlayer = async (e) => {
+    e.preventDefault();
+    setIsSavingPlayer(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      const response = await api.put(`/player/${selectedPlayer.player_id}`, playerFormData);
+      if (response.data.success) {
+        setShowEditModal(false);
+        showFeedback("Player updated successfully!", "success");
+        fetchProfile();
+      } else {
+        showFeedback(response.data.message || "Failed to update player.", "error");
+      }
+    } catch (err) {
+      console.error("Update player error:", err);
+      showFeedback(err.response?.data?.message || "An error occurred while updating the player.", "error");
+    } finally {
+      setIsSavingPlayer(false);
+    }
+  };
+
+  const handleDeletePlayer = async () => {
+    setIsSavingPlayer(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      const response = await api.delete(`/player/${selectedPlayer.player_id}`);
+      if (response.data.success) {
+        setShowDeleteConfirm(false);
+        showFeedback("Player removed from squad successfully!", "success");
+        fetchProfile();
+      } else {
+        showFeedback(response.data.message || "Failed to delete player.", "error");
+      }
+    } catch (err) {
+      console.error("Delete player error:", err);
+      showFeedback(err.response?.data?.message || "An error occurred while deleting the player.", "error");
+    } finally {
+      setIsSavingPlayer(false);
+    }
   };
 
   if (loading) {
@@ -284,7 +397,41 @@ export default function TeamProfile() {
                   />
                 </div>
 
-                {/* Address (district) */}
+                {/* District */}
+                <div>
+                  <label className="block text-xs font-bold text-[#333333] mb-2 uppercase tracking-wider">District</label>
+                  <input
+                    type="text"
+                    value={profileData.district}
+                    disabled={!profileEditMode}
+                    onChange={(e) => setProfileData({ ...profileData, district: e.target.value })}
+                    placeholder="e.g. Colombo"
+                    className={`w-full h-11 px-4 border rounded-xl text-sm font-medium outline-none transition-all ${
+                      profileEditMode
+                        ? "bg-white border-[#08733e] focus:ring-1 focus:ring-[#08733e]"
+                        : "bg-[#f8f7f4] border-[#e5e5e5] text-gray-500 cursor-not-allowed"
+                    }`}
+                  />
+                </div>
+
+                {/* Contact Number */}
+                <div>
+                  <label className="block text-xs font-bold text-[#333333] mb-2 uppercase tracking-wider">Contact Number</label>
+                  <input
+                    type="text"
+                    value={profileData.contactNumber}
+                    disabled={!profileEditMode}
+                    onChange={(e) => setProfileData({ ...profileData, contactNumber: e.target.value })}
+                    placeholder="e.g. +94 77 123 4567"
+                    className={`w-full h-11 px-4 border rounded-xl text-sm font-medium outline-none transition-all ${
+                      profileEditMode
+                        ? "bg-white border-[#08733e] focus:ring-1 focus:ring-[#08733e]"
+                        : "bg-[#f8f7f4] border-[#e5e5e5] text-gray-500 cursor-not-allowed"
+                    }`}
+                  />
+                </div>
+
+                {/* Address */}
                 <div>
                   <label className="block text-xs font-bold text-[#333333] mb-2 uppercase tracking-wider">Address</label>
                   <input
@@ -365,12 +512,14 @@ export default function TeamProfile() {
                   <p className="text-xs text-gray-500">Manage registered team athletes squad list</p>
                 </div>
               </div>
-              <span className="text-xs font-bold bg-[#eaf1ec] text-[#08733e] px-3 py-1.5 rounded-full border border-[#08733e]/10">
-                Total Squad: {players.length}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold bg-[#eaf1ec] text-[#08733e] px-3 py-1.5 rounded-full border border-[#08733e]/10">
+                  Total Squad: {players.length}
+                </span>
+              </div>
             </div>
 
-            {/* View-Only Players Table */}
+            {/* Editable Players Table */}
             <div className="border border-[#e5e5e5] rounded-xl overflow-hidden mb-6 bg-[#f8f7f4]">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -379,7 +528,9 @@ export default function TeamProfile() {
                       <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">#</th>
                       <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Player Name</th>
                       <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Position</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Age</th>
                       <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Phone Number</th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
@@ -393,12 +544,29 @@ export default function TeamProfile() {
                               {player.position || "N/A"}
                             </span>
                           </td>
+                          <td className="px-6 py-4 text-sm font-medium text-gray-600">{player.age || "N/A"}</td>
                           <td className="px-6 py-4 text-sm font-medium text-gray-600">{player.contact_number || "N/A"}</td>
+                          <td className="px-6 py-4 text-sm font-medium text-gray-600 text-right space-x-2">
+                            <button
+                              onClick={() => handleOpenEditModal(player)}
+                              className="text-[#00382D] hover:text-[#065b31] p-1.5 rounded-lg hover:bg-gray-100 transition-all cursor-pointer inline-flex"
+                              title="Edit Player"
+                            >
+                              <Edit2 size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleOpenDeleteConfirm(player)}
+                              className="text-red-600 hover:text-red-700 p-1.5 rounded-lg hover:bg-gray-100 transition-all cursor-pointer inline-flex"
+                              title="Delete Player"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="4" className="px-6 py-8 text-center text-sm font-medium text-gray-500">
+                        <td colSpan="6" className="px-6 py-8 text-center text-sm font-medium text-gray-500">
                           No players currently registered. Add players to showcase your squad.
                         </td>
                       </tr>
@@ -408,23 +576,11 @@ export default function TeamProfile() {
               </div>
             </div>
 
-            {/* Player Actions Placement */}
-            <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-3 justify-end">
+            {/* Bottom Add Action */}
+            <div className="pt-4 border-t border-gray-100 flex justify-end">
               <button
-                onClick={triggerPlayerAlert}
-                className="flex items-center gap-2 px-5 py-2.5 border border-[#e5e5e5] rounded-xl text-sm font-bold text-red-600 hover:bg-red-50 hover:border-red-200 transition-all shadow-sm"
-              >
-                <Trash2 size={15} /> Remove Player
-              </button>
-              <button
-                onClick={triggerPlayerAlert}
-                className="flex items-center gap-2 px-5 py-2.5 border border-[#e5e5e5] rounded-xl text-sm font-bold text-[#00382D] hover:bg-[#eaf1ec] hover:border-[#00382D]/20 transition-all shadow-sm"
-              >
-                <Edit2 size={15} /> Update Player
-              </button>
-              <button
-                onClick={triggerPlayerAlert}
-                className="flex items-center gap-2 bg-[#00382D] hover:bg-[#002a22] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
+                onClick={handleOpenAddModal}
+                className="flex items-center gap-2 bg-[#00382D] hover:bg-[#002a22] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer"
               >
                 <Plus size={15} /> Add Player
               </button>
@@ -521,6 +677,208 @@ export default function TeamProfile() {
         )}
 
       </div>
+
+      {/* ADD PLAYER MODAL */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative animate-in fade-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setShowAddModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+            <h2 className="text-xl font-bold text-[#111111] mb-4 flex items-center gap-2">
+              <Plus size={20} className="text-[#08733e]" />
+              Add New Player
+            </h2>
+            <form onSubmit={handleAddPlayer} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#333333] mb-1.5 uppercase tracking-wider">Player Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Sunil Perera"
+                  value={playerFormData.playerName}
+                  onChange={(e) => setPlayerFormData({ ...playerFormData, playerName: e.target.value })}
+                  className="w-full h-11 px-4 border border-[#e5e5e5] rounded-xl text-sm font-medium outline-none focus:border-[#08733e] focus:ring-1 focus:ring-[#08733e] bg-[#f8f7f4] focus:bg-white transition-all"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-[#333333] mb-1.5 uppercase tracking-wider">Age</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="120"
+                    required
+                    placeholder="24"
+                    value={playerFormData.age}
+                    onChange={(e) => setPlayerFormData({ ...playerFormData, age: e.target.value })}
+                    className="w-full h-11 px-4 border border-[#e5e5e5] rounded-xl text-sm font-medium outline-none focus:border-[#08733e] focus:ring-1 focus:ring-[#08733e] bg-[#f8f7f4] focus:bg-white transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#333333] mb-1.5 uppercase tracking-wider">Position</label>
+                  <select
+                    value={playerFormData.position}
+                    onChange={(e) => setPlayerFormData({ ...playerFormData, position: e.target.value })}
+                    className="w-full h-11 px-3 border border-[#e5e5e5] rounded-xl text-sm font-medium outline-none focus:border-[#08733e] focus:ring-1 focus:ring-[#08733e] bg-[#f8f7f4] focus:bg-white transition-all"
+                  >
+                    <option value="Striker">Striker</option>
+                    <option value="Fielder">Fielder</option>
+                    <option value="All-Rounder">All-Rounder</option>
+                    <option value="Captain">Captain</option>
+                    <option value="Vice Captain">Vice Captain</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#333333] mb-1.5 uppercase tracking-wider">Contact Number</label>
+                <input
+                  type="text"
+                  placeholder="+94 77 123 4567"
+                  value={playerFormData.contactNumber}
+                  onChange={(e) => setPlayerFormData({ ...playerFormData, contactNumber: e.target.value })}
+                  className="w-full h-11 px-4 border border-[#e5e5e5] rounded-xl text-sm font-medium outline-none focus:border-[#08733e] focus:ring-1 focus:ring-[#08733e] bg-[#f8f7f4] focus:bg-white transition-all"
+                />
+              </div>
+              <div className="pt-4 border-t border-gray-100 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-4 py-2.5 border border-[#e5e5e5] rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingPlayer}
+                  className="flex-1 bg-[#08733e] hover:bg-[#065b31] text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-75 cursor-pointer"
+                >
+                  {isSavingPlayer ? "Saving..." : "Add Player"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT PLAYER MODAL */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative animate-in fade-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setShowEditModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+            <h2 className="text-xl font-bold text-[#111111] mb-4 flex items-center gap-2">
+              <Edit2 size={20} className="text-[#08733e]" />
+              Update Player Details
+            </h2>
+            <form onSubmit={handleEditPlayer} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#333333] mb-1.5 uppercase tracking-wider">Player Name</label>
+                <input
+                  type="text"
+                  required
+                  value={playerFormData.playerName}
+                  onChange={(e) => setPlayerFormData({ ...playerFormData, playerName: e.target.value })}
+                  className="w-full h-11 px-4 border border-[#e5e5e5] rounded-xl text-sm font-medium outline-none focus:border-[#08733e] focus:ring-1 focus:ring-[#08733e] bg-[#f8f7f4] focus:bg-white transition-all"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-[#333333] mb-1.5 uppercase tracking-wider">Age</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="120"
+                    required
+                    value={playerFormData.age}
+                    onChange={(e) => setPlayerFormData({ ...playerFormData, age: e.target.value })}
+                    className="w-full h-11 px-4 border border-[#e5e5e5] rounded-xl text-sm font-medium outline-none focus:border-[#08733e] focus:ring-1 focus:ring-[#08733e] bg-[#f8f7f4] focus:bg-white transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#333333] mb-1.5 uppercase tracking-wider">Position</label>
+                  <select
+                    value={playerFormData.position}
+                    onChange={(e) => setPlayerFormData({ ...playerFormData, position: e.target.value })}
+                    className="w-full h-11 px-3 border border-[#e5e5e5] rounded-xl text-sm font-medium outline-none focus:border-[#08733e] focus:ring-1 focus:ring-[#08733e] bg-[#f8f7f4] focus:bg-white transition-all"
+                  >
+                    <option value="Striker">Striker</option>
+                    <option value="Fielder">Fielder</option>
+                    <option value="All-Rounder">All-Rounder</option>
+                    <option value="Captain">Captain</option>
+                    <option value="Vice Captain">Vice Captain</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#333333] mb-1.5 uppercase tracking-wider">Contact Number</label>
+                <input
+                  type="text"
+                  value={playerFormData.contactNumber}
+                  onChange={(e) => setPlayerFormData({ ...playerFormData, contactNumber: e.target.value })}
+                  className="w-full h-11 px-4 border border-[#e5e5e5] rounded-xl text-sm font-medium outline-none focus:border-[#08733e] focus:ring-1 focus:ring-[#08733e] bg-[#f8f7f4] focus:bg-white transition-all"
+                />
+              </div>
+              <div className="pt-4 border-t border-gray-100 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 px-4 py-2.5 border border-[#e5e5e5] rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingPlayer}
+                  className="flex-1 bg-[#08733e] hover:bg-[#065b31] text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-75 cursor-pointer"
+                >
+                  {isSavingPlayer ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 size={28} />
+            </div>
+            <h3 className="text-lg font-bold text-[#111111] mb-2">Remove Player</h3>
+            <p className="text-gray-500 text-sm mb-6">
+              Are you sure you want to remove <span className="font-bold text-[#111111]">{selectedPlayer?.player_name}</span> from the squad? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2.5 border border-[#e5e5e5] rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeletePlayer}
+                disabled={isSavingPlayer}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-75 cursor-pointer"
+              >
+                {isSavingPlayer ? "Deleting..." : "Yes, Remove"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
