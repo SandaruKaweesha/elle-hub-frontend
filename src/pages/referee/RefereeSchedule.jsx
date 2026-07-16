@@ -52,3 +52,15 @@ const SCHEDULE_ITEMS = [
   },
 ];
 
+const STATUS_STYLES = {
+  Confirmed: "bg-[#d9f8e5] text-[#006b38]",
+  Pending: "bg-[#fff3cd] text-[#876700]",
+  Completed: "bg-[#e9eceb] text-[#59625e]",
+};
+
+const STATUS_STYLES = {
+  Confirmed: "bg-[#d9f8e5] text-[#006b38]",
+  Pending: "bg-[#fff3cd] text-[#876700]",
+  Completed: "bg-[#e9eceb] text-[#59625e]",
+};
+
