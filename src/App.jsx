@@ -38,6 +38,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import SponsorLayout from "./components/sponsor/SponsorLayout";
 import SponsorDashboard from "./pages/sponsor/SponsorDashboard";
 import RefereeAvailability from "./pages/referee/RefereeAvailability";
+import RefereeSchedule from "./pages/referee/RefereeSchedule";
 
 function App() {
   return (
@@ -98,6 +99,7 @@ function App() {
        <Route index element={<RefereeDashboard />} />
        <Route path="dashboard" element={<RefereeDashboard />} />
        <Route path="availability" element={<RefereeAvailability />} />
+       <Route path="schedule" element={<RefereeSchedule />} />
      </Route>
 
      {/* Sponsor Routes */}
