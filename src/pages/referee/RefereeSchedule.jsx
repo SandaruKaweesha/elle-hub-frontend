@@ -180,7 +180,16 @@ function RefereeSchedule() {
         <div className="flex items-center gap-2">
           <SlidersHorizontal size={18} className="text-[#666666]" />
 
-          
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="h-11 rounded-lg border border-[#d6dcd8] bg-white px-4 text-sm font-medium text-[#333333] outline-none focus:border-[#00783f]"
+          >
+            <option value="All">All Statuses</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Pending">Pending</option>
+            <option value="Completed">Completed</option>
+          </select>
         </div>
       </div>
 
