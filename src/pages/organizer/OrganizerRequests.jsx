@@ -1,13 +1,18 @@
-import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
-import api from "../../services/api";
-import { Clock, AlertCircle, CalendarDays, MapPin, Search, CheckCircle2 } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Search, Users, Shield, MapPin, BadgeDollarSign, FileText, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import api from '../../services/api';
 
 function OrganizerRequests() {
-  const [allRequests, setAllRequests] = useState([]);
+  const [activeFilter, setActiveFilter] = useState('TEAMS'); // 'TEAMS', 'SPONSORS', 'REFEREES', 'PLAYGROUNDS'
+  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('ALL');
+  const [successMsg, setSuccessMsg] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Modal details state
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   useEffect(() => {
     fetchRequests();
@@ -16,6 +21,7 @@ function OrganizerRequests() {
   const fetchRequests = async () => {
     try {
       setLoading(true);
+      setError(null);
       const userString = localStorage.getItem('user');
       const user = userString ? JSON.parse(userString) : null;
       const organizerId = user?.userId || user?.id;
@@ -24,162 +30,310 @@ function OrganizerRequests() {
         throw new Error("Organizer ID not found. Please log in again.");
       }
 
-      const response = await api.get(`/organizer/${organizerId}/tournaments`);
-      
+      const response = await api.get(`/organizer/${organizerId}/team-requests`);
       if (response.data && response.data.success !== false) {
-        const allTournaments = response.data.data || [];
-        setAllRequests(allTournaments);
+        setRequests(response.data.data || []);
       } else {
-        throw new Error(response.data.message || "Failed to fetch requests.");
+        throw new Error(response.data.message || "Failed to load requests.");
       }
     } catch (err) {
-      console.error("Error fetching requests:", err);
-      setError(err.response?.data?.message || err.message || "An error occurred");
+      console.error("Error loading organizer requests:", err);
+      setError(err.message || "An error occurred");
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredRequests = useMemo(() => {
-    if (activeTab === 'ALL') return allRequests;
-    return allRequests.filter(r => (r.approval_status || 'PENDING').toUpperCase() === activeTab);
-  }, [allRequests, activeTab]);
+  const handleApproveRequest = async (tournamentId, teamUserId) => {
+    try {
+      setActionLoading(true);
+      setError(null);
+      setSuccessMsg(null);
+      const response = await api.post('/tournament/request/approve', { tournamentId, teamUserId });
+      if (response.data && response.data.success !== false) {
+        setSuccessMsg(response.data.message || "Team request approved successfully.");
+        setShowDetailsModal(false);
+        setSelectedRequest(null);
+        fetchRequests();
+      } else {
+        throw new Error(response.data.message || "Failed to approve request.");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "An error occurred");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectRequest = async (tournamentId, teamUserId) => {
+    try {
+      setActionLoading(true);
+      setError(null);
+      setSuccessMsg(null);
+      const response = await api.post('/tournament/request/reject', { tournamentId, teamUserId });
+      if (response.data && response.data.success !== false) {
+        setSuccessMsg(response.data.message || "Team request rejected successfully.");
+        setShowDetailsModal(false);
+        setSelectedRequest(null);
+        fetchRequests();
+      } else {
+        throw new Error(response.data.message || "Failed to reject request.");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "An error occurred");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const filters = [
+    { key: 'TEAMS', label: 'Team Requests', icon: Users },
+    { key: 'SPONSORS', label: 'Sponsor Requests', icon: BadgeDollarSign },
+    { key: 'REFEREES', label: 'Referee Requests', icon: Shield },
+    { key: 'PLAYGROUNDS', label: 'Playground Requests', icon: MapPin },
+  ];
+
+  const getPlaceholderContent = () => {
+    switch (activeFilter) {
+      case 'SPONSORS':
+        return {
+          title: "No Sponsor Requests Found",
+          description: "Incoming sponsorship proposals and branding applications from tournament partners will appear here.",
+          icon: BadgeDollarSign
+        };
+      case 'REFEREES':
+        return {
+          title: "No Referee Requests Found",
+          description: "Applications from certified match officials and referees wishing to judge your tournaments will appear here.",
+          icon: Shield
+        };
+      case 'PLAYGROUNDS':
+        return {
+          title: "No Playground Requests Found",
+          description: "Requests for ground allocations, venue bookings, and host playground confirmations will appear here.",
+          icon: MapPin
+        };
+      default:
+        return {
+          title: "No Team Requests Found",
+          description: "Once teams submit applications to participate in your tournaments, their join requests will appear here for your review.",
+          icon: Users
+        };
+    }
+  };
+
+  const getStatusStyle = (status) => {
+    const s = (status || '').toUpperCase();
+    if (s === 'APPROVED') return 'bg-[#f0fdf4] text-[#166534] border-[#bbf7d0]';
+    if (s === 'REJECTED') return 'bg-[#fef2f2] text-[#991b1b] border-[#fecaca]';
+    return 'bg-[#fffbeb] text-[#d97706] border-[#fde68a]'; // Pending
+  };
+
+  const getStatusIcon = (status) => {
+    const s = (status || '').toUpperCase();
+    if (s === 'APPROVED') return <CheckCircle2 size={13} className="text-[#166534]" />;
+    if (s === 'REJECTED') return <XCircle size={13} className="text-[#991b1b]" />;
+    return <Clock size={13} className="text-[#d97706]" />;
+  };
+
+  const placeholder = getPlaceholderContent();
+  const IconComponent = placeholder.icon;
 
   return (
     <div className="max-w-6xl mx-auto font-['Poppins']">
+      
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">Tournament Requests</h1>
-        <p className="text-[#666666] text-sm mt-1">Track the approval status of all your submitted tournaments.</p>
+        <h1 className="text-[28px] font-black text-[#111111] tracking-tight">Tournament Requests</h1>
+        <p className="text-[#666666] text-sm mt-1">Manage incoming participation, referee, playground, and sponsor requests for your tournaments.</p>
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-700 p-4 rounded-xl text-sm mb-6 border border-red-200 flex items-center gap-2">
+        <div className="bg-red-50 text-red-700 p-4 rounded-xl text-sm mb-6 border border-red-200 flex items-center gap-2 font-semibold">
           <AlertCircle size={16} />
           {error}
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex overflow-x-auto gap-3 mb-6 pb-2 scrollbar-hide">
-        <button 
-          onClick={() => setActiveTab('ALL')} 
-          className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${activeTab === 'ALL' ? 'bg-[#00382D] text-white shadow-md' : 'bg-white text-[#666666] hover:bg-gray-50 border border-[#e5e5e5]'}`}
-        >
-          All Requests
-        </button>
-        <button 
-          onClick={() => setActiveTab('PENDING')} 
-          className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${activeTab === 'PENDING' ? 'bg-[#00382D] text-white shadow-md' : 'bg-white text-[#666666] hover:bg-gray-50 border border-[#e5e5e5]'}`}
-        >
-          Pending
-        </button>
-        <button 
-          onClick={() => setActiveTab('APPROVED')} 
-          className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${activeTab === 'APPROVED' ? 'bg-[#00382D] text-white shadow-md' : 'bg-white text-[#666666] hover:bg-gray-50 border border-[#e5e5e5]'}`}
-        >
-          Approved
-        </button>
-        <button 
-          onClick={() => setActiveTab('REJECTED')} 
-          className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${activeTab === 'REJECTED' ? 'bg-[#00382D] text-white shadow-md' : 'bg-white text-[#666666] hover:bg-gray-50 border border-[#e5e5e5]'}`}
-        >
-          Rejected
-        </button>
+      {successMsg && (
+        <div className="bg-green-50 text-green-700 p-4 rounded-xl text-sm mb-6 border border-green-200 flex items-center gap-2 font-semibold animate-in fade-in duration-200">
+          <CheckCircle2 size={16} />
+          {successMsg}
+        </div>
+      )}
+
+      {/* Filter Tabs */}
+      <div className="flex flex-wrap gap-2.5 mb-8">
+        {filters.map((filter) => {
+          const Icon = filter.icon;
+          const isActive = activeFilter === filter.key;
+          return (
+            <button
+              key={filter.key}
+              onClick={() => setActiveFilter(filter.key)}
+              className={`px-5 py-3 text-xs font-bold rounded-xl border flex items-center gap-2 transition-all cursor-pointer shadow-sm ${
+                isActive
+                  ? 'bg-[#00382D] text-white border-[#00382D]'
+                  : 'bg-white text-gray-600 border-[#e5e5e5] hover:bg-gray-50'
+              }`}
+            >
+              <Icon size={14} className={isActive ? 'text-white' : 'text-gray-400'} />
+              {filter.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Content */}
-      <div className="bg-white rounded-2xl shadow-sm border border-[#e5e5e5] overflow-hidden">
+      {/* Content Area */}
+      <div className="bg-white rounded-2xl border border-[#e5e5e5] shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-16 text-center text-[#888888] font-medium flex flex-col items-center justify-center">
-            <div className="w-10 h-10 border-4 border-[#00382D]/20 border-t-[#00382D] rounded-full animate-spin mb-4"></div>
-            Loading your requests...
+          <div className="p-16 text-center text-gray-400 font-semibold flex flex-col items-center justify-center">
+            <div className="w-8 h-8 border-4 border-[#08733e]/20 border-t-[#08733e] rounded-full animate-spin mb-4"></div>
+            Loading requests...
           </div>
-        ) : filteredRequests.length === 0 ? (
-          <div className="p-20 text-center flex flex-col items-center">
-            <div className="w-20 h-20 bg-[#f8f7f4] rounded-full flex items-center justify-center mb-6 text-[#888888] border border-[#e5e5e5]">
-              <Search size={36} />
-            </div>
-            <h3 className="text-xl font-bold text-[#111111] mb-2">No {activeTab !== 'ALL' ? activeTab.toLowerCase() : ''} requests found</h3>
-            <p className="text-[#666666] text-sm max-w-md mx-auto leading-relaxed">
-              {activeTab === 'ALL' 
-                ? "You haven't submitted any tournaments yet. Click the button below to get started." 
-                : `You don't have any ${activeTab.toLowerCase()} tournaments at the moment.`}
-            </p>
-            {activeTab === 'ALL' && (
-              <Link 
-                to="/organizer/tournaments/create"
-                className="mt-8 inline-flex bg-[#00382D] text-white px-6 py-3 rounded-lg font-bold hover:bg-[#002a22] hover:-translate-y-0.5 transition-all shadow-sm"
+        ) : activeFilter === 'TEAMS' && requests.length > 0 ? (
+          <div className="divide-y divide-gray-100">
+            {requests.map((r) => (
+              <div 
+                key={`${r.tournament_id}-${r.team_user_id}`}
+                onClick={() => {
+                  setSelectedRequest(r);
+                  setShowDetailsModal(true);
+                }}
+                className="p-6 hover:bg-[#f8f7f4]/40 transition-colors cursor-pointer flex items-center justify-between group"
               >
-                Create New Tournament
-              </Link>
-            )}
-          </div>
-        ) : (
-          <div className="divide-y divide-[#e5e5e5]">
-            {filteredRequests.map((tournament) => {
-              const status = (tournament.approval_status || 'PENDING').toUpperCase();
-              let StatusIcon = Clock;
-              let statusClasses = 'bg-[#fffbeb] text-[#d97706] border-[#fde68a]';
-              
-              if (status === 'APPROVED') {
-                StatusIcon = CheckCircle2;
-                statusClasses = 'bg-[#f0fdf4] text-[#166534] border-[#bbf7d0]';
-              } else if (status === 'REJECTED') {
-                StatusIcon = AlertCircle;
-                statusClasses = 'bg-[#fef2f2] text-[#991b1b] border-[#fecaca]';
-              }
-
-              return (
-                <div key={tournament.tournament_id || tournament.id} className="p-6 hover:bg-[#f8f7f4]/80 transition-colors group">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    
-                    {/* Left Side: Info */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-lg font-bold text-[#111111] leading-tight group-hover:text-[#00382D] transition-colors">
-                          {tournament.title}
-                        </h3>
-                        <span className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide rounded-md border flex items-center gap-1.5 ${statusClasses}`}>
-                          <StatusIcon size={12} strokeWidth={2.5} />
-                          {status}
-                        </span>
-                      </div>
-                      
-                      <div className="flex flex-wrap items-center gap-5 text-sm font-medium text-[#666666]">
-                        <div className="flex items-center gap-1.5">
-                          <MapPin size={16} className="text-[#888888]" />
-                          {tournament.location}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <CalendarDays size={16} className="text-[#888888]" />
-                          {tournament.start_date} to {tournament.end_date}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right Side: Action/Status details */}
-                    <div className="md:text-right bg-[#f8f7f4] md:bg-transparent p-3 md:p-0 rounded-lg">
-                      <p className="text-xs text-[#888888] font-semibold uppercase tracking-wider mb-1">Submitted on</p>
-                      <p className="text-sm font-bold text-[#333333]">
-                        {new Date(tournament.created_at || new Date()).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </p>
-                      {status === 'REJECTED' && (
-                        <p className="text-xs text-red-600 mt-2 font-semibold">Please contact admin for details.</p>
-                      )}
-                    </div>
-                    
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-200 bg-white flex items-center justify-center shadow-sm shrink-0">
+                    <img 
+                      src={`https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(r.team_name)}`} 
+                      alt={r.team_name} 
+                      className="w-full h-full object-cover" 
+                    />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-[#111111] group-hover:text-[#08733e] transition-colors">{r.team_name}</h4>
+                    <p className="text-xs text-gray-500 font-medium mt-0.5">Applied for: <span className="font-semibold text-gray-700">{r.tournament_title}</span></p>
                   </div>
                 </div>
-              );
-            })}
+                
+                <div className="flex items-center gap-4">
+                  <span className={`px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-lg border flex items-center gap-1.5 shadow-sm ${getStatusStyle(r.status)}`}>
+                    {getStatusIcon(r.status)}
+                    {r.status}
+                  </span>
+                  <span className="text-gray-300 group-hover:text-gray-500 transition-colors font-bold text-sm">➔</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-16 md:p-24 text-center flex flex-col items-center">
+            <div className="w-20 h-20 bg-[#f8f7f4] rounded-full flex items-center justify-center mb-6 text-gray-400 border border-[#e5e5e5] shadow-inner">
+              <IconComponent size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-[#111111] mb-2">{placeholder.title}</h3>
+            <p className="text-gray-500 text-sm max-w-md mx-auto leading-relaxed">{placeholder.description}</p>
           </div>
         )}
       </div>
+
+      {/* Details Card Modal */}
+      {showDetailsModal && selectedRequest && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-lg border border-[#e5e5e5] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            
+            {/* Modal Header */}
+            <div className="bg-[#002c21] p-6 text-white text-center relative">
+              <button 
+                onClick={() => { setShowDetailsModal(false); setSelectedRequest(null); }}
+                className="absolute top-4 right-4 text-white/75 hover:text-white cursor-pointer text-sm font-bold w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+              >
+                ✕
+              </button>
+              <div className="w-20 h-20 rounded-full border-2 border-white overflow-hidden bg-white mx-auto mb-3 shadow-md">
+                <img 
+                  src={`https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(selectedRequest.team_name)}`} 
+                  alt={selectedRequest.team_name} 
+                  className="w-full h-full object-cover" 
+                />
+              </div>
+              <h3 className="text-xl font-bold">{selectedRequest.team_name}</h3>
+              <p className="text-xs text-[#8eb7a7] mt-1 font-semibold uppercase tracking-wider">Tournament Entry Request</p>
+            </div>
+            
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <div>
+                <span className="block text-[10px] text-gray-400 font-black uppercase tracking-wider">Tournament</span>
+                <span className="text-sm font-bold text-[#111111]">{selectedRequest.tournament_title}</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="block text-[10px] text-gray-400 font-black uppercase tracking-wider">Contact Number</span>
+                  <span className="text-sm font-bold text-[#111111]">{selectedRequest.contact_number || 'N/A'}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-gray-400 font-black uppercase tracking-wider">Rating</span>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span className="text-sm font-black text-[#111111]">
+                      {selectedRequest.rating ? parseFloat(selectedRequest.rating).toFixed(1) : 'N/A'}
+                    </span>
+                    {selectedRequest.rating && (
+                      <span className="text-yellow-400 text-xs">★</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <span className="block text-[10px] text-gray-400 font-black uppercase tracking-wider">District</span>
+                <span className="text-sm font-semibold text-gray-600">{selectedRequest.district || 'N/A'}</span>
+              </div>
+
+              <div>
+                <span className="block text-[10px] text-gray-400 font-black uppercase tracking-wider">Applied On</span>
+                <span className="text-xs font-semibold text-gray-600">
+                  {new Date(selectedRequest.request_date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex gap-4">
+              {selectedRequest.status.toUpperCase() === 'PENDING' ? (
+                <>
+                  <button
+                    disabled={actionLoading}
+                    onClick={() => handleRejectRequest(selectedRequest.tournament_id, selectedRequest.team_user_id)}
+                    className="flex-1 py-3 border border-red-200 hover:bg-red-50 text-red-600 font-bold rounded-xl text-xs uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    Reject
+                  </button>
+                  <button
+                    disabled={actionLoading}
+                    onClick={() => handleApproveRequest(selectedRequest.tournament_id, selectedRequest.team_user_id)}
+                    className="flex-1 py-3 bg-[#08733e] hover:bg-[#065b31] text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+                  >
+                    Accept
+                  </button>
+                </>
+              ) : (
+                <div className="w-full text-center py-2 text-xs font-black uppercase tracking-wider text-gray-400">
+                  Request {selectedRequest.status.toLowerCase()}ed
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

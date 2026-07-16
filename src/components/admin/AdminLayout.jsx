@@ -15,11 +15,13 @@ import {
   Settings,
   Plus,
   Menu,
-  X
+  X,
+  ClipboardList
 } from "lucide-react";
 
 const SIDEBAR_LINKS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
+  { id: "requests", label: "Requests", icon: ClipboardList, path: "/admin/requests" },
   { id: "users", label: "Users", icon: Users, path: "/admin/users" },
   { id: "tournaments", label: "Tournaments", icon: Trophy, path: "/admin/tournaments" },
   { id: "reports", label: "Reports", icon: FileBarChart, path: "/admin/reports" },
