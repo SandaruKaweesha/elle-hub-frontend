@@ -330,7 +330,7 @@ const unavailableSlots = TIME_SLOTS.filter(
         </section>
 
         {/* Time slot panel */}
-        <aside className="overflow-hidden rounded-xl border border-[#dfe4e1] bg-white shadow-sm">
+        <aside className="self-start overflow-hidden rounded-xl border border-[#dfe4e1] bg-white shadow-sm xl:sticky xl:top-6">
           <div className="border-b border-[#e5e5e5] p-5">
             <h2 className="text-2xl font-bold text-[#102019]">
               {format(selectedDate, "EEEE")}
