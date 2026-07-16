@@ -37,6 +37,7 @@ import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminRequests from "./pages/admin/AdminRequests";
 import AdminTournaments from "./pages/admin/AdminTournaments";
+import AdminUsers from "./pages/admin/AdminUsers";
 import SponsorLayout from "./components/sponsor/SponsorLayout";
 import SponsorDashboard from "./pages/sponsor/SponsorDashboard";
 
@@ -82,6 +83,7 @@ function App() {
        <Route path="dashboard" element={<AdminDashboard />} />
        <Route path="requests" element={<AdminRequests />} />
        <Route path="tournaments" element={<AdminTournaments />} />
+       <Route path="users" element={<AdminUsers />} />
      </Route>
 
      {/* Team Routes */}
