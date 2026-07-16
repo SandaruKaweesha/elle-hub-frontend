@@ -275,18 +275,58 @@ const unavailableSlots = TIME_SLOTS.filter(
           </div>
 
           <div className="mt-5 rounded-xl bg-[#eef8f2] p-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#00783f]">
-              Selected date
-            </p>
+  <p className="text-xs font-semibold uppercase tracking-wide text-[#00783f]">
+    Selected date
+  </p>
 
-            <h3 className="mt-2 text-xl font-bold text-[#102019]">
-              {formattedDate}
-            </h3>
+  <h3 className="mt-2 text-xl font-bold text-[#102019]">
+    {formattedDate}
+  </h3>
 
-            <p className="mt-2 text-sm text-[#66706b]">
-              Turn on the time slots you are available for this date.
+  <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+    {/* Available slots */}
+    <div>
+      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#00783f]">
+        Available slots
+      </p>
+
+      {selectedSlots.length > 0 ? (
+        <div className="space-y-2">
+          {selectedSlots.map((slot) => (
+            <p
+              key={slot.id}
+              className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-[#234b39]"
+            >
+              ✓ {slot.label}
             </p>
-          </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-[#6b746f]">
+          No time slots selected.
+        </p>
+      )}
+    </div>
+
+    {/* Unavailable slots */}
+    <div>
+      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#777777]">
+        Not available
+      </p>
+
+      <div className="space-y-2">
+        {unavailableSlots.map((slot) => (
+          <p
+            key={slot.id}
+            className="rounded-lg bg-white/70 px-3 py-2 text-xs text-[#777777]"
+          >
+            {slot.label}
+          </p>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
         </section>
 
         {/* Time slot panel */}
