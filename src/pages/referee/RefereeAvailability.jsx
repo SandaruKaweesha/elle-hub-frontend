@@ -12,6 +12,8 @@ import {
 
 import "react-day-picker/style.css";
 
+const [savedMessage, setSavedMessage] = useState("");
+
 const TIME_SLOTS = [
   {
     id: "08-10",
@@ -83,11 +85,13 @@ const unavailableSlots = TIME_SLOTS.filter(
   }, [selectedDate]);
 
   function updateSelectedDateSlots(updatedSlots) {
-    setAvailabilityByDate((previous) => ({
-      ...previous,
-      [selectedDateKey]: updatedSlots,
-    }));
-  }
+    setSavedMessage("");
+
+  setAvailabilityByDate((previous) => ({
+    ...previous,
+    [selectedDateKey]: updatedSlots,
+  }));
+}
 
   function toggleSlot(slotId) {
     updateSelectedDateSlots({
@@ -139,7 +143,9 @@ const unavailableSlots = TIME_SLOTS.filter(
       startTime: slot.startTime,
       endTime: slot.endTime,
       status: "AVAILABLE",
+      
     }));
+    setSavedMessage("Availability saved for this date.");
 
     const availabilityData = {
       date: selectedDateKey,
@@ -398,11 +404,11 @@ const unavailableSlots = TIME_SLOTS.filter(
                       type="button"
                       key={slot.id}
                       onClick={() => toggleSlot(slot.id)}
-                      className={`flex w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition-all ${
-                        isAvailable
-                          ? "border-[#66f49a] bg-[#66f49a] text-[#063b2b]"
-                          : "border-[#d5dbd7] bg-white text-[#333333] hover:bg-[#f7f9f8]"
-                      }`}
+                     className={`flex min-h-[64px] w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition-all ${
+  isAvailable
+    ? "border-[#66f49a] bg-[#66f49a] text-[#063b2b]"
+    : "border-[#d5dbd7] bg-white text-[#333333] hover:bg-[#f7f9f8]"
+}`}
                     >
                       <span className="flex min-w-0 items-center gap-3">
                         <Icon size={20} className="shrink-0" />
