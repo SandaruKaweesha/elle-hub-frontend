@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import {
   Search,
@@ -22,8 +22,6 @@ const SIDEBAR_LINKS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/team" },
   { id: "matches", label: "Matches", icon: Calendar, path: "/team/matches" },
   { id: "results", label: "Results", icon: Trophy, path: "/team/results" },
-  { id: "statistics", label: "Statistics", icon: BarChart2, path: "/team/statistics" },
-  { id: "settings", label: "Settings", icon: Settings, path: "/team/settings" },
 ];
 
 export default function TeamLayout() {
@@ -34,6 +32,7 @@ export default function TeamLayout() {
   const [selectedNotification, setSelectedNotification] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const user = JSON.parse(localStorage.getItem('user')) || {};
   const userName = user.teamName || user.team_name || user.fullName || user.full_name || user.name || user.email?.split('@')[0] || 'Team Member';
@@ -57,6 +56,7 @@ export default function TeamLayout() {
 
   const handleLogout = () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
     navigate('/login');
   };
 
@@ -114,21 +114,19 @@ export default function TeamLayout() {
 
         {/* Bottom Actions */}
         <div className="p-4 border-t border-[#e5e5e5] space-y-1 mt-auto">
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-2">
+          <button 
+            onClick={() => navigate('/team/profile?tab=profile')}
+            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors mb-4 cursor-pointer ${
+              location.pathname.startsWith('/team/profile') 
+                ? 'bg-[#00382D] text-white hover:bg-[#002a22]' 
+                : 'text-[#666666] hover:bg-[#eaeaeb]/50 hover:text-[#111111]'
+            }`}
+          >
             <Users size={18} />
             Manage Team
           </button>
           
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-4">
-            <Settings size={18} />
-            Management Tools
-          </button>
-          
           <div className="pt-2 space-y-1">
-            <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:text-[#111111] hover:bg-[#eaeaeb]/50 rounded-lg transition-colors">
-              <HelpCircle size={18} className="text-[#888888]" />
-              Help Center
-            </button>
             <button 
               onClick={() => setShowLogoutConfirm(true)}
               className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -229,7 +227,7 @@ export default function TeamLayout() {
             {/* User Profile */}
             <div 
               className="flex items-center gap-3 cursor-pointer select-none pl-3 lg:pl-5 border-l border-gray-200"
-              onClick={() => navigate('/team/settings?tab=profile')}
+              onClick={() => navigate('/team/profile?tab=profile')}
             >
               <div className="hidden sm:flex flex-col items-end">
                 <span className="text-sm font-semibold text-[#111111]">{userName}</span>

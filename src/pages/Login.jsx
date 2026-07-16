@@ -32,6 +32,9 @@ function Login() {
       console.log("Login success:", response.data);
       const userData = response.data.user || response.data;
       localStorage.setItem('user', JSON.stringify(userData));
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
 
       // Role-based routing
       const userRole = (userData.role || '').toLowerCase();

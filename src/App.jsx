@@ -12,6 +12,7 @@ import TeamDashboard from "./pages/team/TeamDashboard";
 import JoinTournamentRequest from "./pages/team/JoinTournamentRequest";
 import TeamSettings from "./pages/team/TeamSettings";
 import TeamNotifications from "./pages/team/TeamNotifications";
+import TeamProfile from "./pages/team/TeamProfile";
 import OrganizerLayout from "./components/organizer/OrganizerLayout";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import OrganizerRequests from "./pages/organizer/OrganizerRequests";
@@ -84,6 +85,7 @@ function App() {
        <Route path="join-tournament/:id" element={<JoinTournamentRequest />} />
        <Route path="settings" element={<TeamSettings />} />
        <Route path="notifications" element={<TeamNotifications />} />
+       <Route path="profile" element={<TeamProfile />} />
      </Route>
 
      {/* Referee Routes */}
