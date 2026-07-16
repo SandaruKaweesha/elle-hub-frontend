@@ -14,7 +14,7 @@ function RefereeDashboard() {
     <div className="space-y-6 pb-10">
       
       {/* Top Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Card 1 */}
         <div className="bg-white rounded-xl p-5 border border-[#e5e5e5] shadow-sm flex flex-col justify-between">
@@ -80,10 +80,10 @@ function RefereeDashboard() {
       </div>
 
       {/* Main Grid: Assignments and Pending/Performance */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Left Column: Confirmed Assignments */}
-        <div className="xl:col-span-2 bg-white rounded-xl border border-[#e5e5e5] shadow-sm p-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-[#e5e5e5] shadow-sm p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-bold text-[#111111]">Confirmed Assignments</h2>
             <div className="flex gap-2">
@@ -98,14 +98,14 @@ function RefereeDashboard() {
 
           <div className="space-y-4">
             {/* Match 1 */}
-            <div className="bg-[#f8f9f8] rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+            <div className="bg-[#f8f9f8] rounded-xl p-5 flex items-center gap-6">
               <div className="w-[60px] h-[65px] bg-[#111111] text-white rounded-lg flex flex-col items-center justify-center shrink-0">
                 <span className="text-xl font-bold leading-none">24</span>
                 <span className="text-[10px] tracking-wider mt-1 text-[#aaaaaa]">OCT</span>
               </div>
               <div className="flex-1">
                 <h4 className="text-[15px] font-medium text-[#333333] mb-2">Colombo Lions vs. Kandy Kings</h4>
-                <div className="flex flex-wrap gap-2 sm:gap-4 text-xs text-[#666666] font-medium mb-3">
+                <div className="flex items-center gap-4 text-xs text-[#666666] font-medium mb-3">
                   <span className="flex items-center gap-1.5"><Clock size={14} /> 14:30 PM</span>
                   <span className="flex items-center gap-1.5"><MapPin size={14} /> Sugathadasa Stadium</span>
                 </div>
@@ -114,21 +114,21 @@ function RefereeDashboard() {
                 </span>
               </div>
               <div>
-                <button className="w-full sm:w-auto min-w-[92px] px-5 py-2 border border-[#00783f] text-[#00783f] text-xs font-bold rounded-lg hover:bg-[#eaf1ec] transition-colors">
+                <button className="px-5 py-2 border border-[#00783f] text-[#00783f] text-xs font-bold rounded-lg hover:bg-[#eaf1ec] transition-colors">
                   Detail
                 </button>
               </div>
             </div>
 
             {/* Match 2 */}
-            <div className="bg-[#f8f9f8] rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+            <div className="bg-[#f8f9f8] rounded-xl p-5 flex items-center gap-6">
               <div className="w-[60px] h-[65px] bg-[#e0e0e0] text-[#333333] rounded-lg flex flex-col items-center justify-center shrink-0">
                 <span className="text-xl font-bold leading-none">26</span>
                 <span className="text-[10px] tracking-wider mt-1 text-[#666666]">OCT</span>
               </div>
               <div className="flex-1">
                 <h4 className="text-[15px] font-medium text-[#333333] mb-2">Galle Gladiators vs. Jaffna Stars</h4>
-                <div className="flex flex-wrap gap-2 sm:gap-4 text-xs text-[#666666] font-medium mb-3">
+                <div className="flex items-center gap-4 text-xs text-[#666666] font-medium mb-3">
                   <span className="flex items-center gap-1.5"><Clock size={14} /> 09:00 AM</span>
                   <span className="flex items-center gap-1.5"><MapPin size={14} /> Galle Int. Stadium</span>
                 </div>
@@ -137,7 +137,7 @@ function RefereeDashboard() {
                 </span>
               </div>
               <div>
-                <button className="w-full sm:w-auto min-w-[92px] px-5 py-2 border border-[#00783f] text-[#00783f] text-xs font-bold rounded-lg hover:bg-[#eaf1ec] transition-colors">
+                <button className="px-5 py-2 border border-[#00783f] text-[#00783f] text-xs font-bold rounded-lg hover:bg-[#eaf1ec] transition-colors">
                   Detail
                 </button>
               </div>
@@ -149,7 +149,7 @@ function RefereeDashboard() {
         <div className="space-y-6">
           
           {/* Pending Requests Dark Card */}
-          <div className="bg-[#05140e] rounded-xl p-4 sm:p-6 text-white shadow-md">
+          <div className="bg-[#05140e] rounded-xl p-6 text-white shadow-md">
             <h2 className="text-lg font-bold mb-5">Pending Requests</h2>
             
             <div className="space-y-4">
@@ -191,82 +191,48 @@ function RefereeDashboard() {
             </div>
           </div>
 
-          {/* Today's Schedule Card */}
-          <div className="bg-white rounded-xl border border-[#e5e5e5] shadow-sm p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-5">
+          {/* Official Performance Card */}
+          <div className="bg-white rounded-xl border border-[#e5e5e5] shadow-sm p-6">
+            <h2 className="text-lg font-bold text-[#111111] mb-6">Official<br/>Performance</h2>
+            
+            <div className="space-y-5">
               <div>
-                <h2 className="text-lg font-bold text-[#111111]">
-                  Today&apos;s Schedule
-                </h2>
-                <p className="mt-1 text-[11px] text-[#888888]">
-                  Your confirmed assignments for today
-                </p>
-              </div>
-
-              <CalendarDays size={22} className="text-[#00783f]" />
-            </div>
-
-            <div className="space-y-4">
-              {/* Schedule Item 1 */}
-              <div className="flex items-start gap-4 rounded-xl bg-[#f8f9f8] p-4">
-                <div className="w-[58px] shrink-0 rounded-lg bg-[#05140e] py-3 text-center text-white">
-                  <p className="text-[13px] font-bold">09:00</p>
-                  <p className="mt-1 text-[9px] tracking-wide text-[#b7c1bc]">AM</p>
+                <div className="flex justify-between text-xs font-bold text-[#333333] mb-2">
+                  <span>Fair Play Score</span>
+                  <span className="text-[#00783f]">98%</span>
                 </div>
-
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-[13px] font-bold text-[#111111]">
-                    Western Province Cup
-                  </h4>
-
-                  <p className="mt-1 flex items-center gap-1.5 text-[11px] text-[#666666]">
-                    <MapPin size={13} />
-                    Municipal Grounds
-                  </p>
-
-                  <span className="mt-2 inline-block rounded-full bg-[#d9f8e5] px-2.5 py-1 text-[9px] font-bold text-[#006b38]">
-                    Main Referee
-                  </span>
+                <div className="h-1.5 w-full bg-[#f0f0f0] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#00783f] w-[98%] rounded-full"></div>
                 </div>
               </div>
 
-              {/* Schedule Item 2 */}
-              <div className="flex items-start gap-4 rounded-xl bg-[#f8f9f8] p-4">
-                <div className="w-[58px] shrink-0 rounded-lg bg-[#e8ece9] py-3 text-center text-[#222222]">
-                  <p className="text-[13px] font-bold">02:30</p>
-                  <p className="mt-1 text-[9px] tracking-wide text-[#777777]">PM</p>
+              <div>
+                <div className="flex justify-between text-xs font-bold text-[#333333] mb-2">
+                  <span>Decision Accuracy</span>
+                  <span className="text-[#00783f]">94%</span>
                 </div>
+                <div className="h-1.5 w-full bg-[#f0f0f0] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#00783f] w-[94%] rounded-full"></div>
+                </div>
+              </div>
 
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-[13px] font-bold text-[#111111]">
-                    Inter-School Championship
-                  </h4>
-
-                  <p className="mt-1 flex items-center gap-1.5 text-[11px] text-[#666666]">
-                    <MapPin size={13} />
-                    Negombo Sports Complex
-                  </p>
-
-                  <span className="mt-2 inline-block rounded-full bg-[#edf2ef] px-2.5 py-1 text-[9px] font-bold text-[#476056]">
-                    Assistant Referee
-                  </span>
+              <div>
+                <div className="flex justify-between text-xs font-bold text-[#333333] mb-2">
+                  <span>Fitness Index</span>
+                  <span className="text-[#00783f]">87%</span>
+                </div>
+                <div className="h-1.5 w-full bg-[#f0f0f0] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#00783f] w-[87%] rounded-full"></div>
                 </div>
               </div>
             </div>
-
-            <button
-              type="button"
-              className="mt-5 w-full rounded-lg border border-[#00783f] py-2.5 text-xs font-bold text-[#00783f] transition-colors hover:bg-[#eaf1ec]"
-            >
-              View Full Schedule
-            </button>
           </div>
 
         </div>
       </div>
 
       {/* Recent Tournament History */}
-      <div className="bg-white rounded-xl border border-[#e5e5e5] shadow-sm p-4 sm:p-6">
+      <div className="bg-white rounded-xl border border-[#e5e5e5] shadow-sm p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-bold text-[#111111]">Recent Tournament History</h2>
           <button className="text-xs font-bold text-[#00783f] hover:underline">
