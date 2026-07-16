@@ -190,8 +190,8 @@ function SponsorLayout() {
                 <span className="text-sm font-semibold text-[#111111]">{userName}</span>
                 <span className="text-[11px] text-[#014731] font-semibold">{userRole}</span>
               </div>
-              <div className="w-9 h-9 rounded-full bg-[#111111] overflow-hidden shadow-sm flex items-center justify-center shrink-0 border border-gray-200">
-                 <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}&backgroundColor=0f172a`} alt="Avatar" className="w-full h-full object-cover" />
+              <div className="w-9 h-9 rounded-full bg-white overflow-hidden shadow-sm flex items-center justify-center shrink-0 border border-gray-200">
+                 <img src={displayUser.profilePicture || displayUser.profile_picture || displayUser.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}&backgroundColor=eaf1ec`} alt="Avatar" className="w-full h-full object-cover" />
               </div>
             </div>
           </div>

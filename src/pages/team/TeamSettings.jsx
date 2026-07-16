@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { User, Shield, Bell, Save, CheckCircle } from "lucide-react";
+import { User, Shield, Bell, Save, CheckCircle, Camera } from "lucide-react";
 
 function TeamSettings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -8,17 +8,74 @@ function TeamSettings() {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false);
 
   useEffect(() => {
     const tab = searchParams.get("tab");
     if (tab) {
       setActiveTab(tab);
     }
+    
+    // Load initial profile picture from localStorage
+    const user = JSON.parse(localStorage.getItem('user')) || {};
+    const imgUrl = user.profilePicture || user.profile_picture || user.image_url;
+    if (imgUrl) {
+      setPhotoPreview(imgUrl);
+    }
   }, [searchParams]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setSearchParams({ tab });
+  };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.type !== "image/png") {
+        alert("Please select a valid PNG image.");
+        return;
+      }
+      setProfilePhoto(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePhotoSave = async () => {
+    if (!profilePhoto) return;
+    setIsSavingPhoto(true);
+    
+    try {
+      // Create FormData to send to backend if backend expects file
+      const formData = new FormData();
+      formData.append('profilePicture', profilePhoto);
+      
+      // Attempt API call (assuming /user/update supports profile picture)
+      // await api.put("/user/update", formData, { headers: { 'Content-Type': 'multipart/form-data' }});
+      
+      // For immediate effect in UI, update local storage with preview
+      const user = JSON.parse(localStorage.getItem('user')) || {};
+      user.profilePicture = photoPreview; // Store base64 preview for now to reflect immediately
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        window.location.reload(); // Reload to update the header
+      }, 1500);
+      
+    } catch (error) {
+      console.error("Failed to save profile photo:", error);
+      alert("Failed to update profile photo.");
+    } finally {
+      setIsSavingPhoto(false);
+    }
   };
 
   const handleSave = (e) => {
@@ -90,6 +147,43 @@ function TeamSettings() {
           {activeTab === 'profile' && (
             <div className="animate-in fade-in duration-300">
               <h2 className="text-xl font-bold text-[#111111] mb-6">Profile Details</h2>
+              
+              {/* Profile Photo Upload Section */}
+              <div className="mb-8 flex items-center gap-6">
+                <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-sm overflow-hidden shrink-0 relative group flex items-center justify-center text-gray-400">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Profile Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <User size={40} />
+                  )}
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <label className="cursor-pointer p-2 bg-white rounded-full text-[#111111] hover:bg-gray-100 transition-colors shadow-sm">
+                      <Camera size={16} />
+                      <input type="file" accept="image/png" className="hidden" onChange={handlePhotoChange} />
+                    </label>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-[#111111] text-[15px]">Profile Photo</h3>
+                  <p className="text-[13px] text-[#666666] mb-3">PNG files only, max 2MB</p>
+                  <div className="flex gap-3">
+                    <label className="cursor-pointer inline-block bg-white border border-[#e5e5e5] px-4 py-2 rounded-lg text-sm font-semibold text-[#333333] hover:bg-gray-50 transition-colors shadow-sm">
+                      Upload New Photo
+                      <input type="file" accept="image/png" className="hidden" onChange={handlePhotoChange} />
+                    </label>
+                    {profilePhoto && (
+                      <button 
+                        onClick={handlePhotoSave}
+                        disabled={isSavingPhoto}
+                        className="bg-[#08733e] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#065b31] transition-colors shadow-sm disabled:opacity-70"
+                      >
+                        {isSavingPhoto ? "Saving..." : "Save Photo"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <form onSubmit={handleSave} className="space-y-6">
                 <div className="grid grid-cols-1 gap-6">
                   <div>

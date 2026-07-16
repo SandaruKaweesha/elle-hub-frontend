@@ -280,8 +280,8 @@ function OrganizerLayout() {
                 <span className="text-sm font-semibold text-[#111111]">{userName}</span>
                 <span className="text-xs text-[#666666] capitalize">{userRole.toLowerCase()}</span>
               </div>
-              <div className="w-10 h-10 rounded-full bg-[#00382D] overflow-hidden border-2 border-white shadow-sm flex items-center justify-center shrink-0">
-                 <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`} alt="Avatar" className="w-full h-full object-cover" />
+              <div className="w-10 h-10 rounded-full bg-white overflow-hidden border-2 border-[#00382D] shadow-sm flex items-center justify-center shrink-0">
+                 <img src={displayUser.profilePicture || displayUser.profile_picture || displayUser.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}&backgroundColor=eaf1ec`} alt="Avatar" className="w-full h-full object-cover" />
               </div>
             </div>
           </div>
