@@ -204,34 +204,57 @@ function RefereeAvailability() {
                 available: "availability-day",
               }}
               classNames={{
-                months: "flex justify-center",
-                month: "w-full",
-                month_caption:
-                  "relative mb-5 flex items-center justify-center",
-                caption_label:
-                  "text-xl sm:text-2xl font-bold text-[#102019]",
-                nav: "absolute inset-x-0 top-0 flex justify-between",
-                button_previous:
-                  "flex h-9 w-9 items-center justify-center rounded-lg border border-[#d9dedb] hover:bg-[#f5f7f6]",
-                button_next:
-                  "flex h-9 w-9 items-center justify-center rounded-lg border border-[#d9dedb] hover:bg-[#f5f7f6]",
-                weekdays:
-                  "grid grid-cols-7 border-b border-[#dfe4e1] bg-[#f8f9f8]",
-                weekday:
-                  "py-3 text-center text-xs font-bold uppercase text-[#777777]",
-                week: "grid grid-cols-7",
-                day: "relative aspect-square border-b border-r border-[#e5e9e6]",
-                day_button:
-                  "h-full w-full text-sm text-[#333333] hover:bg-[#eef8f2]",
-                selected:
-                  "bg-[#d9f8e5] text-[#005c31] ring-2 ring-inset ring-[#00884a]",
-                today:
-                  "font-extrabold text-[#00884a]",
-                outside:
-                  "text-[#c2c8c4]",
-                disabled:
-                  "cursor-not-allowed text-[#d1d5d3]",
-              }}
+  root: "w-full",
+  months: "flex w-full justify-center",
+  month: "w-full",
+
+  month_caption:
+    "relative mb-6 flex items-center justify-center",
+
+  caption_label:
+    "text-xl sm:text-2xl font-bold text-[#102019]",
+
+  nav:
+    "absolute inset-x-0 top-0 flex justify-between",
+
+  button_previous:
+    "flex h-10 w-10 items-center justify-center rounded-full border border-[#d9dedb] bg-white text-[#333333] shadow-sm transition hover:bg-[#eef8f2]",
+
+  button_next:
+    "flex h-10 w-10 items-center justify-center rounded-full border border-[#d9dedb] bg-white text-[#333333] shadow-sm transition hover:bg-[#eef8f2]",
+
+  month_grid:
+    "w-full border-collapse",
+
+  weekdays:
+    "grid grid-cols-7 border-b border-[#dfe4e1] bg-[#f8f9f8]",
+
+  weekday:
+    "py-3 text-center text-xs font-bold uppercase tracking-wide text-[#777777]",
+
+  weeks: "block",
+
+  week:
+    "grid grid-cols-7",
+
+  day:
+    "relative min-h-[70px] border-b border-r border-[#e5e9e6] sm:min-h-[88px]",
+
+  day_button:
+    "h-full min-h-[70px] w-full rounded-none text-base font-medium text-[#333333] transition hover:bg-[#eef8f2] sm:min-h-[88px]",
+
+  selected:
+    "bg-[#d9f8e5] text-[#005c31] ring-2 ring-inset ring-[#00884a]",
+
+  today:
+    "font-extrabold text-[#00884a] underline decoration-2 underline-offset-4",
+
+  outside:
+    "text-[#c2c8c4]",
+
+  disabled:
+    "cursor-not-allowed text-[#d1d5d3]",
+}}
               components={{
                 Chevron: ({ orientation }) =>
                   orientation === "left" ? (
