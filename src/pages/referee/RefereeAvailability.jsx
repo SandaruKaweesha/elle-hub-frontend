@@ -1,18 +1,12 @@
 import { useMemo, useState } from "react";
-import { DayPicker } from "react-day-picker";
 import { format } from "date-fns";
 import {
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   Moon,
   Save,
   Sun,
 } from "lucide-react";
 
-import "react-day-picker/style.css";
-
-const [savedMessage, setSavedMessage] = useState("");
+import AvailabilityCalendar from "../../components/referee/AvailabilityCalendar";
 
 const TIME_SLOTS = [
   {
@@ -63,7 +57,16 @@ const EMPTY_SLOTS = {
 function RefereeAvailability() {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
+  const [currentMonth, setCurrentMonth] = useState(
+    new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      1
+    )
+  );
+
   const [availabilityByDate, setAvailabilityByDate] = useState({});
+  const [savedMessage, setSavedMessage] = useState("");
 
   const selectedDateKey = useMemo(() => {
     return format(selectedDate, "yyyy-MM-dd");
@@ -136,6 +139,39 @@ const unavailableSlots = TIME_SLOTS.filter(
     }
   }
 
+  function handlePreviousMonth() {
+    setCurrentMonth((previousMonth) => {
+      return new Date(
+        previousMonth.getFullYear(),
+        previousMonth.getMonth() - 1,
+        1
+      );
+    });
+  }
+
+  function handleNextMonth() {
+    setCurrentMonth((previousMonth) => {
+      return new Date(
+        previousMonth.getFullYear(),
+        previousMonth.getMonth() + 1,
+        1
+      );
+    });
+  }
+
+  function handleSelectDate(date) {
+    setSelectedDate(date);
+    setSavedMessage("");
+
+    setCurrentMonth(
+      new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        1
+      )
+    );
+  }
+
   function handleSave() {
     const selectedSlots = TIME_SLOTS.filter(
       (slot) => selectedDateAvailability[slot.id]
@@ -155,9 +191,9 @@ const unavailableSlots = TIME_SLOTS.filter(
     console.log("Availability data:", availabilityData);
   }
 
-  const availableDays = Object.entries(availabilityByDate)
+  const availableDateKeys = Object.entries(availabilityByDate)
     .filter(([, slots]) => Object.values(slots).some(Boolean))
-    .map(([date]) => new Date(`${date}T00:00:00`));
+    .map(([dateKey]) => dateKey);
 
   return (
     <div className="space-y-6 pb-10">
@@ -171,7 +207,7 @@ const unavailableSlots = TIME_SLOTS.filter(
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         {/* Calendar */}
         <section className="rounded-xl border border-[#dfe4e1] bg-white p-4 shadow-sm sm:p-6">
           <div className="mb-5">
@@ -201,84 +237,15 @@ const unavailableSlots = TIME_SLOTS.filter(
             </span>
           </div>
 
-          <div className="calendar-wrapper overflow-x-auto rounded-xl border border-[#dfe4e1] p-3 sm:p-5">
-            <DayPicker
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => {
-                if (date) {
-                  setSelectedDate(date);
-                }
-              }}
-              showOutsideDays
-              modifiers={{
-                available: availableDays,
-              }}
-              modifiersClassNames={{
-                available: "availability-day",
-              }}
-              classNames={{
-  root: "w-full",
-  months: "flex w-full justify-center",
-  month: "w-full",
-
-  month_caption:
-    "relative mb-6 flex items-center justify-center",
-
-  caption_label:
-    "text-xl sm:text-2xl font-bold text-[#102019]",
-
-  nav:
-    "absolute inset-x-0 top-0 flex justify-between",
-
-  button_previous:
-    "flex h-10 w-10 items-center justify-center rounded-full border border-[#d9dedb] bg-white text-[#333333] shadow-sm transition hover:bg-[#eef8f2]",
-
-  button_next:
-    "flex h-10 w-10 items-center justify-center rounded-full border border-[#d9dedb] bg-white text-[#333333] shadow-sm transition hover:bg-[#eef8f2]",
-
-  month_grid:
-    "w-full border-collapse",
-
-  weekdays:
-    "grid grid-cols-7 border-b border-[#dfe4e1] bg-[#f8f9f8]",
-
-  weekday:
-    "py-3 text-center text-xs font-bold uppercase tracking-wide text-[#777777]",
-
-  weeks: "block",
-
-  week:
-    "grid grid-cols-7",
-
-  day:
-    "relative min-h-[70px] border-b border-r border-[#e5e9e6] sm:min-h-[88px]",
-
-  day_button:
-    "h-full min-h-[70px] w-full rounded-none text-base font-medium text-[#333333] transition hover:bg-[#eef8f2] sm:min-h-[88px]",
-
-  selected:
-    "bg-[#d9f8e5] text-[#005c31] ring-2 ring-inset ring-[#00884a]",
-
-  today:
-    "font-extrabold text-[#00884a] underline decoration-2 underline-offset-4",
-
-  outside:
-    "text-[#c2c8c4]",
-
-  disabled:
-    "cursor-not-allowed text-[#d1d5d3]",
-}}
-              components={{
-                Chevron: ({ orientation }) =>
-                  orientation === "left" ? (
-                    <ChevronLeft size={18} />
-                  ) : (
-                    <ChevronRight size={18} />
-                  ),
-              }}
-            />
-          </div>
+          {/* Custom calendar */}
+          <AvailabilityCalendar
+            currentMonth={currentMonth}
+            selectedDate={selectedDate}
+            availableDateKeys={availableDateKeys}
+            onSelectDate={handleSelectDate}
+            onPreviousMonth={handlePreviousMonth}
+            onNextMonth={handleNextMonth}
+          />
 
           <div className="mt-5 rounded-xl bg-[#eef8f2] p-5">
   <p className="text-xs font-semibold uppercase tracking-wide text-[#00783f]">
@@ -447,6 +414,16 @@ const unavailableSlots = TIME_SLOTS.filter(
               <Save size={19} />
               Save Availability
             </button>
+
+            {savedMessage && (
+              <p className="mt-3 text-center text-xs font-semibold text-[#00783f]">
+                {savedMessage}
+              </p>
+            )}
+
+            <p className="mt-3 text-center text-[10px] text-[#777777]">
+              Organizers will see these slots when assigning matches.
+            </p>
           </div>
         </aside>
       </div>
