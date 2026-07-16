@@ -15,13 +15,17 @@ import {
   Trophy,
   BarChart2,
   Users,
-  Shield
+  Shield,
+  Medal,
+  FileText
 } from "lucide-react";
 
 const SIDEBAR_LINKS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/team" },
+  { id: "tournaments", label: "Tournaments", icon: Trophy, path: "/team/tournaments" },
+  { id: "requests", label: "Requests", icon: FileText, path: "/team/requests" },
   { id: "matches", label: "Matches", icon: Calendar, path: "/team/matches" },
-  { id: "results", label: "Results", icon: Trophy, path: "/team/results" },
+  { id: "results", label: "Results", icon: Medal, path: "/team/results" },
 ];
 
 export default function TeamLayout() {

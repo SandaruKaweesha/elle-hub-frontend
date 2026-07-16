@@ -97,7 +97,7 @@ function Tournaments() {
                 image={mockImages[index % 3]}
                 imagePosition={mockPositions[index % 3]}
                 title={tournament.title}
-                date={formatDate(tournament.start_date)}
+                date={formatDate(tournament.tournament_held_date)}
                 prize={tournament.prize_details || "TBD"}
                 status={tournament.status || tournament.approval_status || "Upcoming"}
                 buttonText="View Details"
