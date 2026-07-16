@@ -70,6 +70,14 @@ function RefereeAvailability() {
   const selectedDateAvailability =
     availabilityByDate[selectedDateKey] || EMPTY_SLOTS;
 
+    const selectedSlots = TIME_SLOTS.filter(
+  (slot) => selectedDateAvailability[slot.id]
+);
+
+const unavailableSlots = TIME_SLOTS.filter(
+  (slot) => !selectedDateAvailability[slot.id]
+);
+
   const formattedDate = useMemo(() => {
     return format(selectedDate, "EEEE, MMMM d, yyyy");
   }, [selectedDate]);
