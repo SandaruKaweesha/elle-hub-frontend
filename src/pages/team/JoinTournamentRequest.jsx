@@ -1,18 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Trophy, Mail, Phone, Users, ShieldCheck, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Trophy, Mail, Phone, Users, ShieldCheck, ArrowLeft, CheckCircle2, Lock } from 'lucide-react';
+import api from '../../services/api';
 
 function JoinTournamentRequest() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     teamName: '',
     contactNumber: '',
-    email: '',
-    message: ''
+    email: ''
   });
+
+  const currentUser = JSON.parse(localStorage.getItem("user")) || {};
+  const userId = currentUser.userId || currentUser.user_id;
+
+  useEffect(() => {
+    if (userId) {
+      fetchTeamProfile();
+    }
+  }, [userId]);
+
+  const fetchTeamProfile = async () => {
+    try {
+      const response = await api.get(`/user/${userId}`);
+      if (response.data.success) {
+        const data = response.data.data;
+        setFormData({
+          teamName: data.teamName || data.team_name || '',
+          contactNumber: data.contactNumber || data.contact_number || '',
+          email: currentUser.email || data.email || ''
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching team profile for request:", err);
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -26,17 +53,28 @@ function JoinTournamentRequest() {
     setShowConfirm(true);
   };
 
-  const confirmSubmit = () => {
+  const confirmSubmit = async () => {
     setShowConfirm(false);
-    // Here it would typically send API request to backend
-    // api.post('/tournament/request', { ...formData, tournamentId: id })
-    console.log("Submitting join request", formData);
-    setIsSubmitted(true);
-    
-    // Redirect back to dashboard after 3 seconds
-    setTimeout(() => {
-      navigate('/team');
-    }, 3000);
+    setSubmitting(true);
+    setError(null);
+    try {
+      const response = await api.post('/tournament/request', {
+        tournamentId: parseInt(id, 10)
+      });
+      if (response.data && response.data.success !== false) {
+        setIsSubmitted(true);
+        setTimeout(() => {
+          navigate('/team/requests');
+        }, 3000);
+      } else {
+        throw new Error(response.data.message || "Failed to submit request.");
+      }
+    } catch (err) {
+      console.error("Error submitting join request:", err);
+      setError(err.response?.data?.message || err.message || "An error occurred while submitting request");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Mock tournament data based on ID
@@ -150,6 +188,12 @@ function JoinTournamentRequest() {
         <div className="w-full md:w-[60%] p-8 md:p-10 bg-white">
           <h3 className="text-xl font-bold text-[#111111] mb-6 tracking-tight">Application Form</h3>
           
+          {error && (
+            <div className="bg-red-50 text-red-700 p-4 rounded-xl text-xs mb-5 border border-red-200 font-semibold leading-relaxed">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-xs font-bold text-[#333333] mb-2 uppercase tracking-wide">
@@ -163,11 +207,14 @@ function JoinTournamentRequest() {
                   type="text" 
                   name="teamName"
                   value={formData.teamName}
-                  onChange={handleChange}
+                  readOnly
                   required
-                  placeholder="Enter your team name"
-                  className="w-full pl-10 pr-4 py-3 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#08733e] focus:ring-1 focus:ring-[#08733e] transition-all font-medium"
+                  placeholder="Loading team name..."
+                  className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-500 cursor-not-allowed outline-none"
                 />
+                <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                  <Lock size={14} />
+                </div>
               </div>
             </div>
 
@@ -184,11 +231,14 @@ function JoinTournamentRequest() {
                     type="tel" 
                     name="contactNumber"
                     value={formData.contactNumber}
-                    onChange={handleChange}
+                    readOnly
                     required
-                    placeholder="+94 7X XXX XXXX"
-                    className="w-full pl-10 pr-4 py-3 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#08733e] focus:ring-1 focus:ring-[#08733e] transition-all font-medium"
+                    placeholder="Loading phone..."
+                    className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-500 cursor-not-allowed outline-none"
                   />
+                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                    <Lock size={14} />
+                  </div>
                 </div>
               </div>
 
@@ -204,28 +254,19 @@ function JoinTournamentRequest() {
                     type="email" 
                     name="email"
                     value={formData.email}
-                    onChange={handleChange}
+                    readOnly
                     required
-                    placeholder="example@gmail.com"
-                    className="w-full pl-10 pr-4 py-3 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#08733e] focus:ring-1 focus:ring-[#08733e] transition-all font-medium"
+                    placeholder="Loading email..."
+                    className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-500 cursor-not-allowed outline-none"
                   />
+                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                    <Lock size={14} />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-[#333333] mb-2 uppercase tracking-wide">
-                Message to Organizer (Optional)
-              </label>
-              <textarea 
-                name="message"
-                value={formData.message}
-                onChange={handleChange}
-                placeholder="Any special notes or requests regarding your participation..."
-                rows="4"
-                className="w-full p-4 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#08733e] focus:ring-1 focus:ring-[#08733e] transition-all font-medium resize-none"
-              ></textarea>
-            </div>
+
             
             <div className="pt-4 flex gap-4">
               <button 
