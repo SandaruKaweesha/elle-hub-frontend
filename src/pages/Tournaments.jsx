@@ -99,7 +99,7 @@ function Tournaments() {
                 title={tournament.title}
                 date={formatDate(tournament.tournament_held_date)}
                 prize={tournament.prize_details || "TBD"}
-                status={tournament.status || tournament.approval_status || "Upcoming"}
+                status={tournament.status || tournament.approval_status || "Active"}
                 buttonText="View Details"
               />
             ))}
