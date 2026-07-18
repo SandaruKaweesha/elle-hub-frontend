@@ -43,6 +43,7 @@ import SponsorDashboard from "./pages/sponsor/SponsorDashboard";
 import RefereeAvailability from "./pages/referee/RefereeAvailability";
 import RefereeSchedule from "./pages/referee/RefereeSchedule";
 import RefereeRequests from "./pages/referee/RefereeRequests";
+import VerifyCertificate from "./pages/public/VerifyCertificate";
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
      <Route path="/rankings" element={<Rankings/>}/>
      <Route path="/register" element={<Register/>}/>
      <Route path="/login" element={<Login/>}/>
+     <Route path="/verify/:id" element={<VerifyCertificate/>}/>
      
      {/* Organizer Routes */}
      <Route path="/organizer" element={<OrganizerLayout />}>
