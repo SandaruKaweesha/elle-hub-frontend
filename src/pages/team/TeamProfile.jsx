@@ -28,6 +28,8 @@ export default function TeamProfile() {
   });
   const [originalProfileData, setOriginalProfileData] = useState({});
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [accountStatus, setAccountStatus] = useState("");
+  const [showDeletionConfirmModal, setShowDeletionConfirmModal] = useState(false);
 
   // Section 2: Player Details State
   const [players, setPlayers] = useState([]);
@@ -72,6 +74,7 @@ export default function TeamProfile() {
         setProfileData(mappedData);
         setOriginalProfileData(mappedData);
         setPlayers(data.players || []);
+        setAccountStatus(data.status || "");
       } else {
         setError(response.data.message || "Failed to load team profile.");
       }
@@ -92,6 +95,30 @@ export default function TeamProfile() {
 
     fetchProfile();
   }, [userId]);
+
+  const handleDeletionRequestSubmit = async () => {
+    try {
+      setIsSavingProfile(true);
+      setError(null);
+      setSuccessMsg(null);
+      const response = await api.post('/user/request-deletion');
+      if (response.data && response.data.success !== false) {
+        setSuccessMsg("Your account deletion request has been submitted successfully to the administrator.");
+        setAccountStatus("DELETION_PENDING");
+        setShowDeletionConfirmModal(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        throw new Error(response.data.message || "Failed to submit deletion request.");
+      }
+    } catch (err) {
+      console.error("Deletion request error:", err);
+      setError(err.response?.data?.message || err.message || "Failed to submit deletion request.");
+      setShowDeletionConfirmModal(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   // Handle Section 1 Save
   const handleProfileSave = async (e) => {
@@ -377,6 +404,13 @@ export default function TeamProfile() {
               </div>
             </div>
 
+            {accountStatus === 'DELETION_PENDING' && (
+              <div className="bg-red-50 text-red-700 p-4 rounded-xl text-sm mb-6 border border-red-200 flex items-center gap-2 font-semibold font-medium animate-in fade-in duration-200">
+                <AlertCircle size={16} />
+                Your account deletion request is pending administrator review.
+              </div>
+            )}
+
             <form onSubmit={handleProfileSave} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Team Name */}
@@ -467,15 +501,30 @@ export default function TeamProfile() {
               </div>
 
               {/* Profile Action Buttons */}
-              <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
+              <div className="pt-4 border-t border-gray-100 flex justify-between items-center gap-3">
                 {!profileEditMode ? (
-                  <button
-                    type="button"
-                    onClick={() => setProfileEditMode(true)}
-                    className="flex items-center gap-2 bg-[#00382D] hover:bg-[#002a22] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
-                  >
-                    <Edit2 size={15} /> Edit Details
-                  </button>
+                  <>
+                    {accountStatus === 'DELETION_PENDING' ? (
+                      <span className="text-xs font-bold text-red-500 uppercase bg-red-50 border border-red-200 px-4 py-2.5 rounded-xl font-semibold">
+                        Deletion Pending
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowDeletionConfirmModal(true)}
+                        className="flex items-center gap-2 border border-red-200 hover:bg-red-50 text-red-600 px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer"
+                      >
+                        <Trash2 size={15} /> Delete Account
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setProfileEditMode(true)}
+                      className="flex items-center gap-2 bg-[#00382D] hover:bg-[#002a22] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer"
+                    >
+                      <Edit2 size={15} /> Edit Details
+                    </button>
+                  </>
                 ) : (
                   <>
                     <button
@@ -873,6 +922,36 @@ export default function TeamProfile() {
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-75 cursor-pointer"
               >
                 {isSavingPlayer ? "Deleting..." : "Yes, Remove"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deletion Request Confirmation Modal */}
+      {showDeletionConfirmModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 md:p-8 max-w-md w-full shadow-lg border border-[#e5e5e5] text-center animate-in fade-in zoom-in-95 duration-200 font-medium">
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
+              <Trash2 size={28} />
+            </div>
+            <h3 className="text-xl font-bold text-[#111111] mb-2 font-['Poppins']">Request Account Deletion</h3>
+            <p className="text-gray-500 text-sm leading-relaxed mb-8">
+              Are you sure you want to request account deletion? This request will be sent to the administrator. 
+              If approved, your team profile, roster, and credentials will be permanently removed from the system.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowDeletionConfirmModal(false)}
+                className="flex-1 px-4 py-3 border border-[#e5e5e5] text-gray-600 hover:bg-gray-50 font-bold rounded-xl text-xs transition-all cursor-pointer font-['Poppins']"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeletionRequestSubmit}
+                className="flex-1 px-4 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 text-xs transition-all shadow-sm cursor-pointer font-['Poppins']"
+              >
+                Request Deletion
               </button>
             </div>
           </div>

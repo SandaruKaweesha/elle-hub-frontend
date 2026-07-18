@@ -190,8 +190,8 @@ export default function TeamRequests() {
           <div className="divide-y divide-gray-100">
             {filteredRequests.map((r) => {
               const status = r.status.toUpperCase();
-              const tournamentStatus = (r.tournament_status || 'UPCOMING').toUpperCase();
-              const isFinalized = tournamentStatus !== 'UPCOMING';
+              const tournamentStatus = (r.tournament_status || 'ACTIVE').toUpperCase();
+              const isFinalized = tournamentStatus !== 'ACTIVE';
 
               return (
                 <div key={r.tournament_id} className="p-6 hover:bg-[#f8f7f4]/40 transition-colors group">

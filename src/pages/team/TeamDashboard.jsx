@@ -28,7 +28,7 @@ function TeamDashboard() {
     const s = (status || "").toUpperCase();
     if (s === "COMPLETED") return "COMPLETED";
     if (s === "ONGOING") return "ONGOING";
-    if (s === "UPCOMING") {
+    if (s === "ACTIVE") {
       const now = new Date();
       if (startDate && new Date(startDate) > now) return "UPCOMING";
       return "REGISTRATION OPEN";

@@ -120,11 +120,6 @@ function AdminLayout() {
 
         {/* Bottom Actions */}
         <div className="p-4 border-t border-[#e5e5e5] space-y-1 mt-auto">
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-2">
-            <Plus size={18} />
-            Create Tournament
-          </button>
-          
           <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-4">
             <Settings size={18} />
             Management Tools

@@ -7,7 +7,7 @@ export default function AdminTournaments() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL', 'UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'
+  const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL', 'ACTIVE', 'ONGOING', 'COMPLETED', 'CANCELLED'
   const [approvalFilter, setApprovalFilter] = useState('ALL'); // 'ALL', 'PENDING', 'APPROVED', 'REJECTED'
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function AdminTournaments() {
 
   const getStatusStyle = (status) => {
     const s = (status || '').toUpperCase();
-    if (s === 'UPCOMING') return 'bg-blue-50 text-blue-700 border-blue-200';
+    if (s === 'ACTIVE') return 'bg-blue-50 text-blue-700 border-blue-200';
     if (s === 'ONGOING') return 'bg-green-50 text-green-700 border-green-200';
     if (s === 'COMPLETED') return 'bg-gray-100 text-gray-700 border-gray-200';
     return 'bg-red-50 text-red-700 border-red-200'; // CANCELLED
@@ -115,7 +115,7 @@ export default function AdminTournaments() {
               className="w-full h-11 px-4 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-xs font-bold text-gray-600 outline-none cursor-pointer focus:border-[#00382D] transition-all"
             >
               <option value="ALL">Status: All</option>
-              <option value="UPCOMING">Upcoming</option>
+              <option value="ACTIVE">Active</option>
               <option value="ONGOING">Ongoing</option>
               <option value="COMPLETED">Completed</option>
               <option value="CANCELLED">Cancelled</option>
