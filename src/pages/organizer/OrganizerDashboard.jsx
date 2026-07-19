@@ -5,234 +5,275 @@ import {
   PlusCircle, 
   Award, 
   Hourglass, 
-  Activity,
-  Zap,
-  Edit,
-  Radio,
-  ChevronRight,
-  TrendingUp,
-  AlertCircle
+  MapPin, 
+  Calendar, 
+  Search, 
+  ShieldCheck, 
+  Clock, 
+  XCircle,
+  Trophy,
+  SlidersHorizontal,
+  ChevronRight
 } from "lucide-react";
 
 function OrganizerDashboard() {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL', 'PENDING', 'APPROVED', 'REJECTED'
+
+  const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+  const organizerId = currentUser.userId || currentUser.user_id;
 
   useEffect(() => {
-    const fetchTournaments = async () => {
-      try {
-        const userString = localStorage.getItem('user');
-        const user = userString ? JSON.parse(userString) : null;
-        const organizerId = user?.userId || user?.id;
+    if (organizerId) {
+      fetchTournaments();
+    } else {
+      setError("Organizer session not found. Please log in again.");
+      setLoading(false);
+    }
+  }, [organizerId]);
 
-        if (organizerId) {
-          const response = await api.get(`/organizer/${organizerId}/tournaments`);
-          if (response.data && response.data.success !== false) {
-            setTournaments(response.data.data || []);
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching tournaments:", err);
-      } finally {
-        setLoading(false);
+  const fetchTournaments = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.get(`/organizer/${organizerId}/tournaments`);
+      if (response.data && response.data.success !== false) {
+        setTournaments(response.data.data || []);
+      } else {
+        throw new Error(response.data.message || "Failed to fetch tournaments.");
       }
-    };
+    } catch (err) {
+      console.error("Error fetching tournaments:", err);
+      setError("Failed to retrieve your tournament list.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchTournaments();
-  }, []);
+  const getStatusBadge = (approvalStatus) => {
+    const status = (approvalStatus || 'PENDING').toUpperCase();
+    if (status === 'APPROVED') {
+      return (
+        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+          <ShieldCheck size={12} /> Approved
+        </span>
+      );
+    } else if (status === 'REJECTED') {
+      return (
+        <span className="bg-red-50 text-red-700 border border-red-200 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+          <XCircle size={12} /> Rejected
+        </span>
+      );
+    }
+    return (
+      <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+        <Clock size={12} /> Pending Admin
+      </span>
+    );
+  };
 
-  const upcomingTournaments = tournaments.filter(t => t.approval_status !== 'PENDING' && t.approval_status !== 'REJECTED');
-  const pendingRequests = tournaments.filter(t => t.approval_status === 'PENDING' || t.approval_status === 'REJECTED');
+  // Filter tournaments
+  const filteredTournaments = tournaments.filter(t => {
+    const matchesSearch = 
+      (t.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (t.location || '').toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = 
+      statusFilter === 'ALL' || 
+      t.approval_status.toUpperCase() === statusFilter.toUpperCase();
+
+    return matchesSearch && matchesStatus;
+  });
+
+  // Calculate statistics
+  const totalCount = tournaments.length;
+  const approvedCount = tournaments.filter(t => t.approval_status.toUpperCase() === 'APPROVED').length;
+  const pendingCount = tournaments.filter(t => t.approval_status.toUpperCase() === 'PENDING').length;
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
 
   return (
-    <div className="max-w-6xl mx-auto font-['Poppins']">
+    <div className="max-w-6xl mx-auto font-['Poppins'] animate-in fade-in duration-300 font-medium">
       
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">Management Console</h1>
-          <p className="text-[#666666] text-sm mt-1">Precision oversight for the elite sports circuit.</p>
+          <h1 className="text-[28px] font-black text-[#111111] tracking-tight">Organizer Console</h1>
+          <p className="text-[#666666] text-sm mt-1">Manage and track approval stages for all tournaments you have created.</p>
         </div>
         <Link 
           to="/organizer/tournaments/create"
-          className="flex items-center gap-2 bg-[#00382D] text-white px-5 py-2.5 rounded-lg font-medium hover:bg-[#002a22] transition-colors shadow-sm"
+          className="flex items-center gap-2 bg-[#00382D] text-white px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-[#002a22] transition-colors shadow-sm cursor-pointer"
         >
-          <PlusCircle size={18} />
-          New Tournament
+          <PlusCircle size={16} />
+          Create Tournament
         </Link>
       </div>
 
+      {error && (
+        <div className="bg-red-50 text-red-700 p-4 rounded-xl text-sm mb-6 border border-red-200 flex items-center gap-2">
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        
         {/* Stat 1 */}
-        <div className="bg-white rounded-[16px] p-6 border border-[#e5e5e5] shadow-sm relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 text-gray-50 opacity-50">
-            <Award size={120} strokeWidth={1} />
+        <div className="bg-white rounded-2xl p-6 border border-[#e5e5e5] shadow-sm flex items-center justify-between overflow-hidden relative">
+          <div>
+            <h3 className="text-xs font-bold text-[#888888] uppercase tracking-wider mb-1">Total Created</h3>
+            <div className="text-3xl font-black text-[#111111]">{loading ? '...' : totalCount}</div>
           </div>
-          <div className="relative z-10">
-            <h3 className="text-xs font-bold text-[#888888] uppercase tracking-wider mb-2">Total Tournaments</h3>
-            <div className="text-[40px] font-extrabold text-[#111111] leading-none mb-4">{loading ? '...' : tournaments.length}</div>
-            <div className="flex items-center gap-1.5 text-sm font-medium text-[#888888]">
-              <TrendingUp size={16} />
-              <span>{loading ? 'Loading...' : 'Total created'}</span>
-            </div>
+          <div className="p-3 bg-[#f8f7f4] rounded-xl border border-gray-100 text-[#00382D]">
+            <Trophy size={20} />
           </div>
         </div>
 
         {/* Stat 2 */}
-        <div className="bg-white rounded-[16px] p-6 border border-[#e5e5e5] shadow-sm relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 text-gray-50 opacity-50">
-            <Hourglass size={120} strokeWidth={1} />
+        <div className="bg-white rounded-2xl p-6 border border-[#e5e5e5] shadow-sm flex items-center justify-between overflow-hidden relative">
+          <div>
+            <h3 className="text-xs font-bold text-[#888888] uppercase tracking-wider mb-1">Approved Tournaments</h3>
+            <div className="text-3xl font-black text-[#111111]">{loading ? '...' : approvedCount}</div>
           </div>
-          <div className="relative z-10">
-            <h3 className="text-xs font-bold text-[#888888] uppercase tracking-wider mb-2">Pending Requests</h3>
-            <div className="text-[40px] font-extrabold text-[#111111] leading-none mb-4">{loading ? '...' : pendingRequests.length}</div>
-            <div className="flex items-center gap-1.5 text-sm font-medium text-[#08733e]">
-              <AlertCircle size={16} />
-              <span>{pendingRequests.length === 0 ? 'Up to date' : 'Needs attention'}</span>
-            </div>
+          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
+            <ShieldCheck size={20} />
           </div>
         </div>
 
         {/* Stat 3 */}
-        <div className="bg-white rounded-[16px] p-6 border border-[#e5e5e5] shadow-sm relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 text-gray-50 opacity-50">
-            <Activity size={120} strokeWidth={1} />
+        <div className="bg-white rounded-2xl p-6 border border-[#e5e5e5] shadow-sm flex items-center justify-between overflow-hidden relative">
+          <div>
+            <h3 className="text-xs font-bold text-[#888888] uppercase tracking-wider mb-1">Pending Approval</h3>
+            <div className="text-3xl font-black text-[#111111]">{loading ? '...' : pendingCount}</div>
           </div>
-          <div className="relative z-10">
-            <h3 className="text-xs font-bold text-[#888888] uppercase tracking-wider mb-2">Active Matches</h3>
-            <div className="text-[40px] font-extrabold text-[#111111] leading-none mb-4">0</div>
-            <div className="flex items-center gap-1.5 text-sm font-medium text-[#888888]">
-              <Zap size={16} />
-              <span>No active matches</span>
-            </div>
+          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl border border-amber-100">
+            <Clock size={20} />
           </div>
         </div>
-
       </div>
 
-      {/* Main Content Layout */}
-      <div className="flex flex-col gap-6">
+      {/* Filter and Search Bar */}
+      <div className="bg-white p-4 rounded-2xl border border-[#e5e5e5] shadow-sm mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="relative w-full md:max-w-md">
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#888888]" />
+          <input 
+            type="text" 
+            placeholder="Search tournaments by title or location..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all font-medium"
+          />
+        </div>
         
-        {/* Upcoming Tournaments */}
-          <div className="bg-white rounded-[16px] border border-[#e5e5e5] shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-[#e5e5e5]">
-              <h2 className="text-xl font-bold text-[#111111]">Upcoming Tournaments</h2>
-              <button className="text-sm font-medium text-[#666666] hover:text-[#111111]">View All</button>
-            </div>
-            
-            <div className="divide-y divide-[#e5e5e5]">
-              {loading ? (
-                <div className="p-8 text-center text-[#888888]">Loading...</div>
-              ) : upcomingTournaments.length === 0 ? (
-                <div className="p-8 text-center flex flex-col items-center justify-center text-[#888888]">
-                  <p className="text-sm font-medium">No upcoming tournaments</p>
-                  <p className="text-xs mt-1">Create a new tournament to get started.</p>
-                </div>
-              ) : (
-                upcomingTournaments.map(t => (
-                  <div key={t.tournament_id || t.id} className="p-6 flex justify-between items-center hover:bg-gray-50 transition-colors">
-                    <div>
-                      <h4 className="font-bold text-[#111111]">{t.title}</h4>
-                      <p className="text-sm text-[#666666] mt-1">{t.start_date} to {t.end_date} • {t.location}</p>
-                    </div>
-                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                      Approved
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Pending Requests Table */}
-          <div className="bg-white rounded-[16px] border border-[#e5e5e5] shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-[#e5e5e5]">
-              <h2 className="text-xl font-bold text-[#111111]">Pending Requests</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-[#f8f7f4] text-xs font-semibold text-[#888888] uppercase border-b border-[#e5e5e5]">
-                  <tr>
-                    <th className="px-6 py-4">Applicant</th>
-                    <th className="px-6 py-4">Type</th>
-                    <th className="px-6 py-4">Target Event</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#e5e5e5] text-sm">
-                  {loading ? (
-                    <tr>
-                      <td colSpan="4" className="px-6 py-8 text-center text-sm font-medium text-[#888888]">Loading...</td>
-                    </tr>
-                  ) : pendingRequests.length === 0 ? (
-                    <tr>
-                      <td colSpan="4" className="px-6 py-8 text-center text-sm font-medium text-[#888888]">
-                        No pending requests at the moment.
-                      </td>
-                    </tr>
-                  ) : (
-                    pendingRequests.map(t => (
-                      <tr key={t.tournament_id || t.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 font-medium text-[#111111]">{t.title}</td>
-                        <td className="px-6 py-4">Tournament</td>
-                        <td className="px-6 py-4 text-[#666666]">{t.start_date}</td>
-                        <td className="px-6 py-4 text-right">
-                          <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
-                            t.approval_status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
-                          }`}>
-                            {t.approval_status || 'PENDING'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-        {/* System Integrity - Landscape */}
-        <div className="bg-white rounded-[16px] p-6 lg:p-8 border border-[#e5e5e5] shadow-sm">
-          <h2 className="text-[15px] font-bold text-[#111111] mb-6">System Integrity</h2>
+        <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-11 px-4 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-xs font-bold text-gray-600 outline-none cursor-pointer focus:border-[#00382D] transition-all"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="PENDING">Pending Approval</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
           
-          <div className="flex flex-col gap-6">
-            <div>
-              <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-2">
-                <span>Server Load</span>
-                <span>Normal</span>
-              </div>
-              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-[#00382D] w-[35%] rounded-full"></div>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[#111111] mb-2">
-                <span>Payment Processing</span>
-                <span>Active</span>
-              </div>
-              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-[#4ade80] w-[95%] rounded-full"></div>
-              </div>
-            </div>
+          <div className="text-sm font-medium text-[#666666] font-semibold shrink-0">
+            Tournaments: <span className="text-[#111111] font-bold">{filteredTournaments.length}</span>
           </div>
         </div>
-
-        {/* Recent Activity - Landscape */}
-        <div className="bg-white rounded-[16px] p-6 lg:p-8 border border-[#e5e5e5] shadow-sm">
-          <h2 className="text-[15px] font-bold text-[#111111] mb-6">Recent Activity</h2>
-          
-          <div className="flex flex-col gap-4 text-sm">
-            {/* Empty State */}
-            <div className="text-center text-[#888888] py-12 bg-[#f8f7f4] rounded-xl border border-dashed border-[#d6d8d4]">
-              <p className="text-sm font-medium">No recent activity</p>
-            </div>
-          </div>
-        </div>
-
       </div>
+
+      {/* Cards List */}
+      {loading ? (
+        <div className="p-16 text-center text-gray-400 font-semibold flex flex-col items-center justify-center bg-white rounded-2xl border border-[#e5e5e5] shadow-sm">
+          <div className="w-8 h-8 border-4 border-[#08733e]/20 border-t-[#08733e] rounded-full animate-spin mb-4"></div>
+          Loading your tournaments...
+        </div>
+      ) : filteredTournaments.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-[#e5e5e5] p-16 text-center shadow-sm">
+          <div className="w-16 h-16 bg-[#f8f7f4] text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#e5e5e5]">
+            <Trophy size={28} />
+          </div>
+          <h3 className="text-lg font-bold text-[#111111]">No Tournaments Found</h3>
+          <p className="text-gray-500 text-sm max-w-sm mx-auto mt-1">
+            You haven't created any tournaments matching the active filters. Click "Create Tournament" to get started.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredTournaments.map(t => (
+            <div key={t.tournament_id || t.id} className="bg-white rounded-2xl border border-[#e5e5e5] shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col group">
+              {/* Cover Banner */}
+              <div className="h-24 bg-gradient-to-r from-[#00382D] to-[#08733e] relative p-4 flex items-start justify-end">
+                {getStatusBadge(t.approval_status)}
+              </div>
+              
+              <div className="p-6 flex-grow flex flex-col justify-between">
+                <div>
+                  <h3 className="text-[17px] font-bold text-[#111111] leading-tight mb-3 group-hover:text-[#00382D] transition-colors">
+                    {t.title}
+                  </h3>
+                  
+                  <div className="space-y-2 text-xs font-semibold text-gray-500 mb-6">
+                    <div className="flex items-center gap-2">
+                      <MapPin size={14} className="text-gray-400 shrink-0" />
+                      <span>{t.location}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar size={14} className="text-gray-400 shrink-0" />
+                      <span>Held Date: {formatDate(t.tournament_held_date)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-[#f4f4f4] space-y-2.5">
+                  <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                    <span>Registrations</span>
+                    <span className="text-gray-600">{formatDate(t.start_date)} - {formatDate(t.end_date)}</span>
+                  </div>
+                  
+                  {t.approval_status.toUpperCase() === 'APPROVED' ? (
+                    <div className="flex gap-2">
+                      <Link 
+                        to={`/tournaments/${t.tournament_id || t.id}`}
+                        className="flex-1 py-2.5 bg-[#f8f7f4] hover:bg-[#e5e5e5] text-[#333333] rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1 border border-[#e5e5e5] shadow-sm cursor-pointer"
+                      >
+                        View Details
+                      </Link>
+                      <Link 
+                        to={`/organizer/tournaments/manage/${t.tournament_id || t.id}`}
+                        className="flex-1 py-2.5 bg-[#00382D] hover:bg-[#002a22] text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+                      >
+                        Manage
+                      </Link>
+                    </div>
+                  ) : (
+                    <Link 
+                      to={`/tournaments/${t.tournament_id || t.id}`}
+                      className="w-full py-2.5 bg-[#f8f7f4] hover:bg-[#e5e5e5] text-[#333333] rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 group/btn border border-[#e5e5e5] shadow-sm cursor-pointer"
+                    >
+                      View Details
+                      <ChevronRight size={14} className="text-[#888888] group-hover/btn:text-[#333333] transition-colors" />
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
     </div>
   );
 }
