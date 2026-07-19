@@ -22,6 +22,7 @@ import CreateTournament from "./pages/organizer/CreateTournament";
 import OrganizerSettings from "./pages/organizer/OrganizerSettings";
 import OrganizerNotifications from "./pages/organizer/OrganizerNotifications";
 import OrganizerTeams from "./pages/organizer/OrganizerTeams";
+import ManageTournament from "./pages/organizer/ManageTournament";
 import OrganizerReferees from "./pages/organizer/OrganizerReferees";
 import OrganizerPlaygrounds from "./pages/organizer/OrganizerPlaygrounds";
 import OrganizerSponsors from "./pages/organizer/OrganizerSponsors";
@@ -68,6 +69,7 @@ function App() {
            <CreateTournament />
          </ErrorBoundary>
        } />
+       <Route path="tournaments/manage/:id" element={<ManageTournament />} />
        <Route path="teams" element={<OrganizerTeams />} />
        <Route path="referees" element={<OrganizerReferees />} />
        <Route path="playgrounds" element={<OrganizerPlaygrounds />} />

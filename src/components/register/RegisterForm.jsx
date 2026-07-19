@@ -60,6 +60,7 @@ function RegisterForm({selectedRole}){
     const [agreed, setAgreed] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
+    const [errors, setErrors] = useState({});
     const navigate = useNavigate();
     const fields = roleFields[selectedRole] || [];
 
@@ -84,6 +85,14 @@ function RegisterForm({selectedRole}){
  function handleChange(e) {
   const { name, value, type, files } = e.target;
 
+  if (errors[name]) {
+    setErrors((prev) => {
+      const copy = { ...prev };
+      delete copy[name];
+      return copy;
+    });
+  }
+
   if (type === "file") {
     setFormData((prevData) => ({
       ...prevData,
@@ -99,27 +108,38 @@ function RegisterForm({selectedRole}){
 
 function validateForm() {
   const fields = roleFields[selectedRole] || [];
+  const tempErrors = {};
+  let isValid = true;
 
   for (let field of fields) {
     if (!formData[field.name]) {
-      alert(`${field.label} is required`);
-      return false;
+      tempErrors[field.name] = `${field.label} is required`;
+      isValid = false;
     }
   }
 
   const phoneRegex = /^(\+94|0)[0-9]{9}$/;
 
-  if (!phoneRegex.test(formData.contactNumber)) {
-    alert("Enter a valid Sri Lankan phone number");
-    return false;
+  if (formData.contactNumber && !phoneRegex.test(formData.contactNumber)) {
+    tempErrors.contactNumber = "Enter a valid Sri Lankan phone number (+94XXXXXXXXX or 0XXXXXXXXX)";
+    isValid = false;
   }
 
-  if (formData.password.length < 6) {
-    alert("Password must be at least 6 characters");
-    return false;
+  if (formData.password && formData.password.length < 6) {
+    tempErrors.password = "Password must be at least 6 characters";
+    isValid = false;
   }
 
-  return true;
+  setErrors(tempErrors);
+
+  if (!isValid) {
+    setErrorMessage("Please correct the errors in the form below.");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    setErrorMessage("");
+  }
+
+  return isValid;
 }
 
 function getRoleFormData() {
@@ -214,6 +234,7 @@ function handleSubmit(e) {
                  placeholder={field.placeholder}
                  value={formData[field.name] || ""}
                  onChange={handleChange}
+                 error={errors[field.name]}
               />
         ))}
 
