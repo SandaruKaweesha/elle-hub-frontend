@@ -26,3 +26,56 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+.availability-day {
+  background: #d9f8e5;
+  color: #005c31;
+  font-weight: 700;
+}
+
+.availability-day::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #00884a;
+  transform: translateX(-50%);
+}
+/* Referee availability calendar */
+
+.availability-calendar .rdp-month,
+.availability-calendar .rdp-month_grid {
+  width: 100%;
+}
+
+.availability-calendar .availability-day {
+  position: relative;
+  background: #d9f8e5;
+  color: #005c31;
+  font-weight: 700;
+}
+
+.availability-calendar .availability-day::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #00884a;
+  transform: translateX(-50%);
+}
+
+.availability-calendar .rdp-day_button {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.availability-calendar .rdp-day_button:hover {
+  transform: scale(0.98);
+}

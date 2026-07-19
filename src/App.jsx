@@ -41,6 +41,9 @@ import AdminTournaments from "./pages/admin/AdminTournaments";
 import AdminUsers from "./pages/admin/AdminUsers";
 import SponsorLayout from "./components/sponsor/SponsorLayout";
 import SponsorDashboard from "./pages/sponsor/SponsorDashboard";
+import RefereeAvailability from "./pages/referee/RefereeAvailability";
+import RefereeSchedule from "./pages/referee/RefereeSchedule";
+import RefereeRequests from "./pages/referee/RefereeRequests";
 
 function App() {
   return (
@@ -104,6 +107,9 @@ function App() {
      <Route path="/referee" element={<RefereeLayout />}>
        <Route index element={<RefereeDashboard />} />
        <Route path="dashboard" element={<RefereeDashboard />} />
+       <Route path="availability" element={<RefereeAvailability />} />
+       <Route path="schedule" element={<RefereeSchedule />} />
+       <Route path="requests" element={<RefereeRequests />} />
      </Route>
 
      {/* Sponsor Routes */}

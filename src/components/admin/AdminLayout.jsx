@@ -180,13 +180,13 @@ function AdminLayout() {
             <div className="w-[1px] h-8 bg-gray-200 hidden sm:block"></div>
             
             {/* User Profile */}
-            <div className="flex items-center gap-3 cursor-pointer">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/admin/settings')}>
               <div className="hidden sm:flex flex-col items-end">
                 <span className="text-sm font-semibold text-[#111111]">{userName}</span>
                 <span className="text-[11px] text-gray-500">{userRole}</span>
               </div>
-              <div className="w-9 h-9 rounded-full bg-[#111111] overflow-hidden shadow-sm flex items-center justify-center shrink-0">
-                 <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}&backgroundColor=0f172a`} alt="Avatar" className="w-full h-full object-cover" />
+              <div className="w-9 h-9 rounded-full bg-white border border-[#111111] overflow-hidden shadow-sm flex items-center justify-center shrink-0">
+                 <img src={displayUser.profilePicture || displayUser.profile_picture || displayUser.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}&backgroundColor=eaf1ec`} alt="Avatar" className="w-full h-full object-cover" />
               </div>
             </div>
           </div>

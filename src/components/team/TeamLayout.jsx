@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import ImageCropperModal from "../ImageCropperModal";
 import api from "../../services/api";
 import {
   Search,
@@ -32,6 +33,7 @@ export default function TeamLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [recentTournaments, setRecentTournaments] = useState([]);
   const [selectedNotification, setSelectedNotification] = useState(null);
   const location = useLocation();
@@ -62,6 +64,12 @@ export default function TeamLayout() {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     navigate('/login');
+  };
+
+  const handleSaveProfilePhoto = (base64Image) => {
+    const updatedUser = { ...user, profilePicture: base64Image };
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    window.location.reload();
   };
 
   return (
@@ -119,9 +127,9 @@ export default function TeamLayout() {
         {/* Bottom Actions */}
         <div className="p-4 border-t border-[#e5e5e5] space-y-1 mt-auto">
           <button 
-            onClick={() => navigate('/team/profile?tab=profile')}
+            onClick={() => navigate('/team/settings?tab=profile')}
             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors mb-4 cursor-pointer ${
-              location.pathname.startsWith('/team/profile') 
+              location.pathname.startsWith('/team/settings') 
                 ? 'bg-[#00382D] text-white hover:bg-[#002a22]' 
                 : 'text-[#666666] hover:bg-[#eaeaeb]/50 hover:text-[#111111]'
             }`}
@@ -228,17 +236,20 @@ export default function TeamLayout() {
               <Settings size={20} />
             </button>
 
-            {/* User Profile */}
             <div 
-              className="flex items-center gap-3 cursor-pointer select-none pl-3 lg:pl-5 border-l border-gray-200"
-              onClick={() => navigate('/team/profile?tab=profile')}
+              className="flex items-center gap-3 cursor-pointer select-none pl-3 lg:pl-5 border-l border-gray-200 group"
+              onClick={() => setIsCropperOpen(true)}
+              title="Change Profile Photo"
             >
               <div className="hidden sm:flex flex-col items-end">
                 <span className="text-sm font-semibold text-[#111111]">{userName}</span>
                 <span className="text-xs text-[#666666] capitalize">{userRole.toLowerCase()}</span>
               </div>
-              <div className="w-10 h-10 rounded-full bg-[#08733e] overflow-hidden border-2 border-white shadow-sm flex items-center justify-center shrink-0">
-                 <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`} alt="Avatar" className="w-full h-full object-cover" />
+              <div className="w-10 h-10 rounded-full bg-white overflow-hidden border-2 border-[#111111] group-hover:border-[#333333] shadow-sm flex items-center justify-center shrink-0 transition-colors relative">
+                 <img src={user.profilePicture || user.profile_picture || user.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}&backgroundColor=eaf1ec`} alt="Avatar" className="w-full h-full object-cover" />
+                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                   <User size={16} className="text-white" />
+                 </div>
               </div>
             </div>
           </div>
@@ -328,6 +339,13 @@ export default function TeamLayout() {
           </div>
         </div>
       )}
+
+      {/* Profile Photo Cropper */}
+      <ImageCropperModal 
+        isOpen={isCropperOpen} 
+        onClose={() => setIsCropperOpen(false)} 
+        onSave={handleSaveProfilePhoto} 
+      />
     </div>
   );
 }
