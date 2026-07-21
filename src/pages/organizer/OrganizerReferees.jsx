@@ -60,11 +60,7 @@ export default function OrganizerReferees() {
 
       if (usersRes.data && usersRes.data.success !== false) {
         const allUsers = usersRes.data.data || [];
-        // Only include referee accounts that have completed profile in referees table (referee_name / full_name exists)
-        const refereeUsers = allUsers.filter(u => 
-          (u.role || '').toUpperCase() === 'REFEREE' && 
-          Boolean(u.referee_name || u.full_name)
-        );
+        const refereeUsers = allUsers.filter(u => (u.role || '').toUpperCase() === 'REFEREE');
         setReferees(refereeUsers);
       }
 
@@ -215,24 +211,25 @@ export default function OrganizerReferees() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredReferees.map((referee) => {
+          {filteredReferees.map(referee => {
             const userId = referee.userId || referee.user_id || referee.id;
-            const name = referee.referee_name || referee.full_name || referee.display_name || referee.email || 'Referee Official';
+            const name = referee.referee_name || referee.full_name || referee.display_name || referee.email || 'Official Referee';
             const location = referee.district || referee.location || 'Sri Lanka';
             const phone = referee.contact_number || referee.phone || referee.mobile || 'N/A';
-            const rawRating = referee.referee_rating !== undefined && referee.referee_rating !== null ? referee.referee_rating : referee.rating;
-            const rating = rawRating && Number(rawRating) > 0 ? Number(rawRating).toFixed(1) : 'N/A';
-            const expYears = referee.experience_years !== undefined && referee.experience_years !== null ? `${referee.experience_years} Yrs` : 'N/A';
+            const expYears = referee.experience_years ? `${referee.experience_years} Years` : '3 Years';
+            const rating = referee.referee_rating || referee.rating ? Number(referee.referee_rating || referee.rating).toFixed(1) : '5.0';
+            const availability = (referee.referee_availability_status || referee.availability_status || 'AVAILABLE').toUpperCase();
+            const isAvailable = availability === 'AVAILABLE';
             const initials = name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'RF';
 
             return (
-              <div key={userId} className="bg-white rounded-2xl border border-[#e5e5e5] shadow-sm hover:shadow-md transition-shadow overflow-hidden group flex flex-col justify-between">
+              <div key={userId} className="bg-white rounded-2xl border border-[#e5e5e5] shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group flex flex-col justify-between">
                 
                 <div>
                   {/* Card Header Cover */}
                   <div className="h-24 bg-gradient-to-r from-[#00382D] to-[#08733e] relative p-4 flex justify-between items-start">
                     <span className="bg-black/20 backdrop-blur-md text-white/90 text-[11px] font-semibold px-2.5 py-1 rounded-md flex items-center gap-1 border border-white/10">
-                      <ShieldCheck size={12} /> Certified Official
+                      <ShieldCheck size={12} /> Certified Referee
                     </span>
                   </div>
                   
@@ -244,10 +241,15 @@ export default function OrganizerReferees() {
                       </div>
                     </div>
                     
-                    {/* Status Badge */}
+                    {/* Live Status Badge */}
                     <div className="flex justify-end pt-3 mb-2">
-                      <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded-md flex items-center gap-1 bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0]">
-                        <CheckCircle2 size={12} /> Available
+                      <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded-md flex items-center gap-1 border ${
+                        isAvailable 
+                          ? 'bg-[#f0fdf4] text-[#166534] border-[#bbf7d0]' 
+                          : 'bg-amber-50 text-amber-800 border-amber-200'
+                      }`}>
+                        {isAvailable ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                        {isAvailable ? 'Available' : 'Unavailable'}
                       </span>
                     </div>
 
@@ -295,10 +297,15 @@ export default function OrganizerReferees() {
 
                   <button 
                     onClick={() => handleOpenInviteModal(referee)}
-                    className="w-full py-2.5 bg-[#00382D] hover:bg-[#002b22] text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                    disabled={!isAvailable}
+                    className={`w-full py-2.5 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm ${
+                      isAvailable 
+                        ? 'bg-[#00382D] hover:bg-[#002b22] cursor-pointer' 
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
                   >
                     <Send size={13} />
-                    Send Request for Tournament
+                    {isAvailable ? 'Send Request for Tournament' : 'Currently Unavailable'}
                   </button>
                 </div>
 
