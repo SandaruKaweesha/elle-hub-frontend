@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, ChevronRight, Navigation2, Check, AlertCircle, CheckCircle2, X, Send, Map, Phone, Building } from 'lucide-react';
+import { Search, MapPin, ChevronRight, Navigation2, Check, AlertCircle, CheckCircle2, X, Send, Map, Phone, Building, ChevronDown } from 'lucide-react';
 import api from '../../services/api';
+
+const SRI_LANKA_DISTRICTS = [
+  "Ampara", "Anuradhapura", "Badulla", "Batticaloa", "Colombo",
+  "Galle", "Gampaha", "Hambantota", "Jaffna", "Kalutara",
+  "Kandy", "Kegalle", "Kilinochchi", "Kurunegala", "Mannar",
+  "Matale", "Matara", "Monaragala", "Mullaitivu", "Nuwara Eliya",
+  "Polonnaruwa", "Puttalam", "Ratnapura", "Trincomalee", "Vavuniya"
+];
 
 export default function OrganizerPlaygrounds() {
   const [playgrounds, setPlaygrounds] = useState([]);
@@ -9,7 +17,7 @@ export default function OrganizerPlaygrounds() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
-  const [locationSearch, setLocationSearch] = useState('');
+  const [selectedDistrict, setSelectedDistrict] = useState('');
 
   // Request Modal state
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -121,14 +129,14 @@ export default function OrganizerPlaygrounds() {
   };
 
   const filteredPlaygrounds = playgrounds.filter(p => {
-    const query = locationSearch.toLowerCase();
-    const name = (p.playground_name || p.display_name || p.email || '').toLowerCase();
-    const location = (p.location || p.district || '').toLowerCase();
-    return name.includes(query) || location.includes(query);
+    if (!selectedDistrict) return true;
+    const distTarget = selectedDistrict.toLowerCase();
+    const location = (p.playground_location || p.location || p.district || p.playground_district || '').toLowerCase();
+    return location.includes(distTarget);
   });
 
   return (
-    <div className="max-w-7xl mx-auto font-['Poppins'] animate-in fade-in duration-300">
+    <div className="max-w-7xl mx-auto font-[#Poppins'] animate-in fade-in duration-300">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
@@ -139,7 +147,7 @@ export default function OrganizerPlaygrounds() {
             </span>
             <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">Find a Playground</h1>
           </div>
-          <p className="text-[#666666] text-sm mt-1">Search registered grounds by location and request a venue for your tournament.</p>
+          <p className="text-[#666666] text-sm mt-1">Select your tournament district to find registered playgrounds across Sri Lanka.</p>
         </div>
       </div>
 
@@ -168,23 +176,30 @@ export default function OrganizerPlaygrounds() {
         </div>
       )}
 
-      {/* Controls & Search */}
-      <div className="bg-white p-6 rounded-2xl border border-[#e5e5e5] shadow-sm mb-8 flex flex-col gap-4">
-        <label className="text-sm font-bold text-[#111111]">Where is your tournament located?</label>
-        <div className="flex flex-col sm:flex-row gap-4">
+      {/* Controls & District Dropdown */}
+      <div className="bg-white p-6 rounded-2xl border border-[#e5e5e5] shadow-sm mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex flex-col gap-1.5 w-full sm:max-w-md">
+          <label className="text-xs font-bold text-[#333333] uppercase tracking-wider">Select District (25 Districts in Sri Lanka):</label>
           <div className="relative w-full">
-            <Navigation2 size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#888888]" />
-            <input 
-              type="text" 
-              placeholder="e.g. Colombo, Kandy, Galle..." 
-              value={locationSearch}
-              onChange={(e) => setLocationSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all"
-            />
+            <MapPin size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#00382D]" />
+            <select 
+              value={selectedDistrict}
+              onChange={(e) => setSelectedDistrict(e.target.value)}
+              className="w-full pl-11 pr-10 py-3 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm font-semibold text-[#111111] focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all appearance-none cursor-pointer"
+            >
+              <option value="">All 25 Districts (Sri Lanka)</option>
+              {SRI_LANKA_DISTRICTS.map((districtName) => (
+                <option key={districtName} value={districtName}>
+                  {districtName} District
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={18} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#888888] pointer-events-none" />
           </div>
-          <button className="bg-[#00382D] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#002a22] transition-colors whitespace-nowrap shadow-sm">
-            Search Venues
-          </button>
+        </div>
+
+        <div className="text-sm font-medium text-[#666666] shrink-0">
+          Showing Playgrounds: <span className="text-[#00382D] font-bold text-base">{filteredPlaygrounds.length}</span>
         </div>
       </div>
 
