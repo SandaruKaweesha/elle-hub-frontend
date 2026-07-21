@@ -18,7 +18,8 @@ import {
   UserCheck,
   Ban,
   Check,
-  RefreshCw
+  RefreshCw,
+  Award
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -191,6 +192,39 @@ export default function RefereeRequests() {
     }
   };
 
+  const getStageInfo = (status) => {
+    const s = (status || '').toUpperCase();
+    if (s === 'APPROVED' || s === 'ACCEPTED') {
+      return {
+        step: 3,
+        label: 'Stage 3: Confirmed & Accepted by Organizer',
+        bg: 'bg-emerald-600',
+        text: 'text-emerald-700'
+      };
+    } else if (s === 'REJECTED' || s === 'DECLINED') {
+      return {
+        step: 3,
+        label: 'Stage 3: Declined by Organizer',
+        bg: 'bg-red-500',
+        text: 'text-red-700'
+      };
+    } else if (s === 'CANCELLED') {
+      return {
+        step: 1,
+        label: 'Cancelled by You',
+        bg: 'bg-gray-400',
+        text: 'text-gray-500'
+      };
+    } else {
+      return {
+        step: 2,
+        label: 'Stage 2: Pending Organizer Review',
+        bg: 'bg-amber-500',
+        text: 'text-amber-700'
+      };
+    }
+  };
+
   const pendingSentCount = sentRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING').length;
   const pendingReceivedCount = receivedRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING').length;
 
@@ -206,7 +240,7 @@ export default function RefereeRequests() {
             </span>
             <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">Officiating Requests Management</h1>
           </div>
-          <p className="text-[#666666] text-sm mt-1">Manage applications you sent to organizers and respond to incoming tournament invitations.</p>
+          <p className="text-[#666666] text-sm mt-1">Track your sent tournament applications and manage incoming organizer invitations.</p>
         </div>
       </div>
 
@@ -234,10 +268,10 @@ export default function RefereeRequests() {
         </div>
       )}
 
-      {/* TWO MAIN SECTION SELECTION TABS */}
+      {/* CLEAN MAIN TABS (NO 'SECTION 1/2' WORDS OR SUBTEXT) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
-        {/* Section 1 Tab: My Applications (Sent) */}
+        {/* Tab 1: My Sent Applications */}
         <button
           onClick={() => { setActiveTab("SENT"); setStatusFilter("ALL"); }}
           className={`p-5 rounded-2xl border text-left transition-all duration-300 flex items-center justify-between cursor-pointer shadow-sm ${
@@ -246,30 +280,25 @@ export default function RefereeRequests() {
               : "bg-white text-gray-700 border-[#e5e5e5] hover:bg-gray-50"
           }`}
         >
-          <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold shrink-0 ${
+          <div className="flex items-center gap-3.5">
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold shrink-0 ${
               activeTab === "SENT" ? "bg-white/10 text-white" : "bg-[#00382D]/10 text-[#00382D]"
             }`}>
-              <Send size={22} />
+              <Send size={20} />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base">Section 1: My Sent Applications</h3>
-                {pendingSentCount > 0 && (
-                  <span className="bg-amber-400 text-amber-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                    {pendingSentCount} Pending
-                  </span>
-                )}
-              </div>
-              <p className={`text-xs mt-0.5 ${activeTab === "SENT" ? "text-emerald-100" : "text-gray-500"}`}>
-                Requests you submitted to apply for tournament officiating.
-              </p>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-base">My Sent Applications</h3>
+              {pendingSentCount > 0 && (
+                <span className="bg-amber-400 text-amber-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                  {pendingSentCount} Pending
+                </span>
+              )}
             </div>
           </div>
-          <span className="font-bold text-lg">{sentRequests.length}</span>
+          <span className="font-extrabold text-lg">{sentRequests.length}</span>
         </button>
 
-        {/* Section 2 Tab: Incoming Invitations (Received) */}
+        {/* Tab 2: Organizer Invitations */}
         <button
           onClick={() => { setActiveTab("RECEIVED"); setStatusFilter("ALL"); }}
           className={`p-5 rounded-2xl border text-left transition-all duration-300 flex items-center justify-between cursor-pointer shadow-sm ${
@@ -278,27 +307,22 @@ export default function RefereeRequests() {
               : "bg-white text-gray-700 border-[#e5e5e5] hover:bg-gray-50"
           }`}
         >
-          <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold shrink-0 ${
+          <div className="flex items-center gap-3.5">
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold shrink-0 ${
               activeTab === "RECEIVED" ? "bg-white/10 text-white" : "bg-[#00382D]/10 text-[#00382D]"
             }`}>
-              <Inbox size={22} />
+              <Inbox size={20} />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base">Section 2: Organizer Invitations</h3>
-                {pendingReceivedCount > 0 && (
-                  <span className="bg-emerald-400 text-emerald-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full animate-bounce">
-                    {pendingReceivedCount} Action Needed
-                  </span>
-                )}
-              </div>
-              <p className={`text-xs mt-0.5 ${activeTab === "RECEIVED" ? "text-emerald-100" : "text-gray-500"}`}>
-                Invitations sent to you by tournament organizers.
-              </p>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-base">Organizer Invitations</h3>
+              {pendingReceivedCount > 0 && (
+                <span className="bg-emerald-400 text-emerald-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full animate-bounce">
+                  {pendingReceivedCount} Action Needed
+                </span>
+              )}
             </div>
           </div>
-          <span className="font-bold text-lg">{receivedRequests.length}</span>
+          <span className="font-extrabold text-lg">{receivedRequests.length}</span>
         </button>
 
       </div>
@@ -398,6 +422,7 @@ export default function RefereeRequests() {
             const statusUpper = (req.status || '').toUpperCase();
             const isPending = statusUpper === 'PENDING';
             const isActionLoading = actionLoadingId === tournamentId;
+            const stageInfo = getStageInfo(req.status);
 
             return (
               <div key={`${req.request_id}-${tournamentId}`} className="bg-white rounded-2xl border border-[#e5e5e5] shadow-sm hover:shadow-md transition-all p-6 space-y-4">
@@ -450,6 +475,35 @@ export default function RefereeRequests() {
                   </div>
                 </div>
 
+                {/* VISUAL STAGE STEPPER TIMELINE FOR MY SENT APPLICATIONS */}
+                {activeTab === "SENT" && (
+                  <div className="pt-2">
+                    <div className="flex items-center justify-between text-xs font-bold mb-1.5">
+                      <span className="text-[#333333]">Application Review Timeline</span>
+                      <span className={stageInfo.text}>{stageInfo.label}</span>
+                    </div>
+
+                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-2">
+                      <div 
+                        className={`h-full transition-all duration-500 ${stageInfo.bg}`} 
+                        style={{ width: `${(stageInfo.step / 3) * 100}%` }}
+                      ></div>
+                    </div>
+
+                    <div className="grid grid-cols-3 text-[11px] font-semibold text-center text-gray-500">
+                      <div className="text-emerald-700 flex items-center justify-start gap-1 font-bold">
+                        <CheckCircle2 size={12} /> 1. Request Sent
+                      </div>
+                      <div className={`flex items-center justify-center gap-1 ${stageInfo.step >= 2 ? "text-emerald-700 font-bold" : "text-gray-400"}`}>
+                        {stageInfo.step >= 2 ? <CheckCircle2 size={12} /> : <Clock size={12} />} 2. Organizer Review
+                      </div>
+                      <div className={`flex items-center justify-end gap-1 ${stageInfo.step === 3 ? (statusUpper === 'REJECTED' ? "text-red-600 font-bold" : "text-emerald-700 font-bold") : "text-gray-400"}`}>
+                        {stageInfo.step === 3 ? (statusUpper === 'REJECTED' ? <XCircle size={12} /> : <CheckCircle2 size={12} />) : <Award size={12} />} 3. Final Decision
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Section Specific Action Footers */}
                 <div className="pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <span className="text-xs text-gray-400 font-medium">
@@ -457,7 +511,7 @@ export default function RefereeRequests() {
                   </span>
 
                   <div className="flex items-center gap-2 w-full sm:w-auto">
-                    {/* SECTION 1: MY SENT APPLICATIONS -> CANCEL BUTTON IF PENDING */}
+                    {/* MY SENT APPLICATIONS -> CANCEL BUTTON IF PENDING */}
                     {activeTab === "SENT" && isPending && (
                       <button
                         onClick={() => handleCancelMyRequest(tournamentId, title)}
@@ -478,7 +532,7 @@ export default function RefereeRequests() {
                       </button>
                     )}
 
-                    {/* SECTION 2: INCOMING INVITATIONS -> ACCEPT & DECLINE BUTTONS IF PENDING */}
+                    {/* INCOMING INVITATIONS -> ACCEPT & DECLINE BUTTONS IF PENDING */}
                     {activeTab === "RECEIVED" && isPending && (
                       <div className="flex items-center gap-2 w-full sm:w-auto">
                         <button
