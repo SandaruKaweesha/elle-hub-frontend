@@ -1133,38 +1133,6 @@ export default function ManageTournament() {
                     </div>
                   );
                 })()}
-
-                {/* Additional Manual Directory Selection */}
-                <div className="border-t border-gray-100 pt-6 mt-6">
-                  <h4 className="font-bold text-xs text-gray-400 uppercase tracking-wider mb-3">Manual Selection from Team Directory</h4>
-                  <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
-                    {teams.map(team => {
-                      const isChecked = selectedTeams.includes(team.user_id);
-                      return (
-                        <label 
-                          key={team.user_id} 
-                          className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
-                            isChecked 
-                              ? 'bg-emerald-50 border-emerald-200 text-[#00382D]' 
-                              : 'bg-white border-[#e5e5e5] text-gray-700 hover:bg-gray-50'
-                          } ${isFinalized ? 'cursor-not-allowed' : ''}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              disabled={isFinalized}
-                              checked={isChecked}
-                              onChange={() => handleTeamToggle(team.user_id)}
-                              className="w-4 h-4 accent-[#00382D] cursor-pointer disabled:cursor-not-allowed"
-                            />
-                            <span className="text-xs font-bold">{team.display_name}</span>
-                          </div>
-                          <span className="text-[10px] text-gray-400 font-semibold">{team.district || 'Location N/A'}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
               </div>
             </div>
           )}
