@@ -66,9 +66,9 @@ export default function RefereeRequests() {
     fetchRequests();
   }, [userId]);
 
-  // Separate requests into SENT (initiated by REFEREE) and RECEIVED (initiated by ORGANIZER)
+  // Separate requests into SENT (initiated by REFEREE or default) and RECEIVED (initiated by ORGANIZER)
   const sentRequests = useMemo(() => {
-    return requests.filter(r => (r.initiated_by || '').toUpperCase() === 'REFEREE');
+    return requests.filter(r => (r.initiated_by || '').toUpperCase() !== 'ORGANIZER');
   }, [requests]);
 
   const receivedRequests = useMemo(() => {
