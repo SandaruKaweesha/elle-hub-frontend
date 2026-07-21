@@ -51,3 +51,24 @@ const TOURNAMENT_LOG = [
     status: "Completed",
   },
 ];
+
+function RefereeTournamentLog() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("All");
+
+  const filteredLog = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+
+    return TOURNAMENT_LOG.filter((item) => {
+      const matchesSearch =
+        item.tournament.toLowerCase().includes(query) ||
+        item.venue.toLowerCase().includes(query);
+      const matchesRole = roleFilter === "All" || item.role === roleFilter;
+
+      return matchesSearch && matchesRole;
+    });
+  }, [roleFilter, searchTerm]);
+
+  }
+
+export default RefereeTournamentLog;
