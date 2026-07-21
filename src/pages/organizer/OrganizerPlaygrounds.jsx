@@ -131,8 +131,8 @@ export default function OrganizerPlaygrounds() {
   const filteredPlaygrounds = playgrounds.filter(p => {
     if (!selectedDistrict) return true;
     const distTarget = selectedDistrict.toLowerCase();
-    const location = (p.playground_location || p.location || p.district || p.playground_district || '').toLowerCase();
-    return location.includes(distTarget);
+    const locatedDistrict = (p.located_district || p.district || p.playground_district || p.playground_location || p.location || '').toLowerCase();
+    return locatedDistrict.includes(distTarget);
   });
 
   return (
@@ -213,7 +213,7 @@ export default function OrganizerPlaygrounds() {
           </div>
           <h3 className="text-lg font-bold text-[#111111] mb-1">No Playgrounds Found</h3>
           <p className="text-[#666666] text-sm max-w-md mx-auto">
-            No registered playgrounds match your search location or are registered in the platform database.
+            No registered playgrounds match your selected district filter.
           </p>
         </div>
       ) : (
@@ -221,8 +221,10 @@ export default function OrganizerPlaygrounds() {
           {filteredPlaygrounds.map(venue => {
             const userId = venue.userId || venue.user_id || venue.id;
             const name = venue.playground_name || venue.display_name || venue.email || 'Elle Ground';
-            const location = venue.location || venue.district || 'Sri Lanka';
+            const rawDistrict = venue.located_district || venue.district || venue.playground_district || venue.location || 'Sri Lanka';
+            const districtDisplay = rawDistrict.charAt(0).toUpperCase() + rawDistrict.slice(1);
             const phone = venue.contact_number || venue.phone || 'N/A';
+            const capacityDisplay = venue.playground_capacity || venue.capacity ? `${venue.playground_capacity || venue.capacity} Cap.` : 'N/A';
             const initials = name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'PG';
 
             return (
@@ -255,8 +257,8 @@ export default function OrganizerPlaygrounds() {
                     <div className="mt-2">
                       <h3 className="text-lg font-bold text-[#111111] leading-tight mb-1 group-hover:text-[#00382D] transition-colors">{name}</h3>
                       <div className="flex items-center gap-3 text-[#666666] text-xs font-medium mt-1">
-                        <span className="flex items-center gap-1">
-                          <MapPin size={13} className="text-[#888888]" /> {location}
+                        <span className="flex items-center gap-1 capitalize">
+                          <MapPin size={13} className="text-[#888888]" /> {districtDisplay}
                         </span>
                         <span className="flex items-center gap-1">
                           <Phone size={13} className="text-[#888888]" /> {phone}
