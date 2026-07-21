@@ -55,10 +55,7 @@ export default function OrganizerSponsors() {
 
       if (usersRes.data && usersRes.data.success !== false) {
         const allUsers = usersRes.data.data || [];
-        const sponsorUsers = allUsers.filter(u => 
-          (u.role || '').toUpperCase() === 'SPONSOR' && 
-          Boolean(u.company_name)
-        );
+        const sponsorUsers = allUsers.filter(u => (u.role || '').toUpperCase() === 'SPONSOR');
         setSponsors(sponsorUsers);
       }
 
@@ -106,7 +103,7 @@ export default function OrganizerSponsors() {
 
       if (res.data && res.data.success !== false) {
         const companyName = selectedSponsor.company_name || selectedSponsor.display_name || selectedSponsor.email || 'Sponsor';
-        setSuccessMsg(`Sponsorship proposal successfully sent to ${companyName}!`);
+        setSuccessMsg(`Sponsorship invitation successfully sent to ${companyName}!`);
         setShowInviteModal(false);
         setSelectedSponsor(null);
       } else {
@@ -123,7 +120,8 @@ export default function OrganizerSponsors() {
   const filteredSponsors = sponsors.filter(s => {
     const query = searchQuery.toLowerCase();
     const name = (s.company_name || s.display_name || s.email || '').toLowerCase();
-    return name.includes(query);
+    const contact = (s.sponsor_contact_person || s.contact_person || '').toLowerCase();
+    return name.includes(query) || contact.includes(query);
   });
 
   return (
@@ -138,7 +136,7 @@ export default function OrganizerSponsors() {
             </span>
             <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">Sponsors & Partners</h1>
           </div>
-          <p className="text-[#666666] text-sm mt-1">Review registered corporate partners and send tournament sponsorship proposals.</p>
+          <p className="text-[#666666] text-sm mt-1">Review registered corporate partners and send tournament sponsorship invitations.</p>
         </div>
       </div>
 
@@ -205,9 +203,10 @@ export default function OrganizerSponsors() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredSponsors.map(sponsor => {
             const userId = sponsor.userId || sponsor.user_id || sponsor.id;
-            const name = sponsor.company_name || sponsor.display_name || sponsor.email || 'Corporate Sponsor';
-            const email = sponsor.email || 'N/A';
+            const name = sponsor.company_name || sponsor.display_name || sponsor.email || 'Corporate Partner';
+            const contactPerson = sponsor.sponsor_contact_person || sponsor.contact_person || sponsor.email || 'Representative';
             const phone = sponsor.contact_number || sponsor.phone || 'N/A';
+            const address = sponsor.sponsor_address || sponsor.address || 'Sri Lanka';
             const initials = name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'SP';
 
             return (
@@ -217,7 +216,7 @@ export default function OrganizerSponsors() {
                   {/* Card Header Cover */}
                   <div className="h-24 bg-gradient-to-r from-[#00382D] to-[#08733e] relative p-4 flex justify-between items-start">
                     <span className="bg-black/20 backdrop-blur-md text-white/90 text-[11px] font-semibold px-2.5 py-1 rounded-md flex items-center gap-1 border border-white/10">
-                      <DollarSign size={12} /> Official Partner
+                      <DollarSign size={12} /> Official Sponsor
                     </span>
                   </div>
                   
@@ -232,14 +231,15 @@ export default function OrganizerSponsors() {
                     {/* Status Badge */}
                     <div className="flex justify-end pt-3 mb-2">
                       <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded-md flex items-center gap-1 bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0]">
-                        <CheckCircle2 size={12} /> Verified Sponsor
+                        <CheckCircle2 size={12} /> Verified Partner
                       </span>
                     </div>
 
                     {/* Info */}
                     <div className="mt-2">
                       <h3 className="text-lg font-bold text-[#111111] leading-tight mb-1 group-hover:text-[#00382D] transition-colors">{name}</h3>
-                      <p className="text-xs text-[#666666] font-medium mt-1">{email}</p>
+                      <p className="text-xs text-[#666666] font-medium mt-0.5">Contact: <span className="text-[#111111] font-semibold">{contactPerson}</span></p>
+                      <p className="text-xs text-[#666666] font-medium mt-0.5">Location: <span className="text-[#111111] font-semibold">{address}</span></p>
                     </div>
 
                   </div>
@@ -252,7 +252,7 @@ export default function OrganizerSponsors() {
                     className="w-full py-2.5 bg-[#00382D] hover:bg-[#002b22] text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm"
                   >
                     <Send size={13} />
-                    Send Sponsorship Request
+                    Invite for Tournament
                   </button>
                 </div>
 
