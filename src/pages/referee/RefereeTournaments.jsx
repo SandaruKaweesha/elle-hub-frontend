@@ -330,166 +330,86 @@ export default function RefereeTournaments() {
         </div>
       )}
 
-      {/* --- RICH COMPREHENSIVE TOURNAMENT DETAILS MODAL --- */}
+      {/* --- RICH CLEAN COMPACT TOURNAMENT DETAILS MODAL --- */}
       {showDetailsModal && selectedTournament && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 md:p-8 shadow-2xl border border-[#e5e5e5] relative max-h-[90vh] overflow-y-auto my-auto">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-[#e5e5e5] relative">
             
             {/* Close Button */}
             <button 
               onClick={() => setShowDetailsModal(false)}
-              className="absolute top-5 right-5 text-gray-400 hover:text-gray-700 transition-colors p-1 rounded-full hover:bg-gray-100"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
             >
               <X size={20} />
             </button>
 
             {/* Header */}
-            <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100">
-              <div className="w-14 h-14 rounded-2xl bg-[#00382D] text-white flex items-center justify-center font-bold shadow-md shrink-0">
-                <Trophy size={28} />
+            <div className="flex items-center gap-3.5 mb-5 pb-4 border-b border-gray-100">
+              <div className="w-12 h-12 rounded-xl bg-[#00382D] text-white flex items-center justify-center font-bold shadow-sm shrink-0">
+                <Trophy size={24} />
               </div>
               <div>
-                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider">
-                  Approved & Active Tournament
-                </span>
-                <h3 className="text-xl md:text-2xl font-extrabold text-[#111111] leading-tight mt-1">
+                <h3 className="text-xl font-bold text-[#111111] leading-tight">
                   {selectedTournament.title || 'National Championship'}
                 </h3>
                 <p className="text-xs text-[#666666] font-medium mt-0.5">
-                  Organized by: <strong className="text-[#00382D] font-bold">{selectedTournament.organization_name || selectedTournament.organizer_name || 'Elle Sports Association'}</strong>
+                  Organized by: <strong className="text-[#00382D] font-semibold">{selectedTournament.organization_name || selectedTournament.organizer_name || 'Elle Sports Association'}</strong>
                 </p>
               </div>
             </div>
 
-            {/* Quick Summary Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-              <div className="bg-[#f8f7f4] p-3 rounded-xl border border-[#e5e5e5]">
-                <span className="text-[10px] font-bold text-[#888888] uppercase tracking-wider block mb-1">Participating Teams</span>
-                <div className="flex items-center gap-1.5 text-[#111111] font-extrabold text-base">
-                  <Users size={16} className="text-[#00382D]" />
-                  {modalDetailsLoading ? "..." : `${participatingTeams.length} Teams`}
-                </div>
+            {/* Simple Information Table List */}
+            <div className="space-y-3 text-xs text-[#333333] mb-6">
+              
+              <div className="flex items-center justify-between py-1 border-b border-gray-50">
+                <span className="text-[#888888] font-medium flex items-center gap-2">
+                  <MapPin size={14} className="text-[#00382D]" /> Tournament Venue:
+                </span>
+                <span className="font-bold text-[#111111]">{selectedTournament.location || 'Sri Lanka'}</span>
               </div>
 
-              <div className="bg-[#f8f7f4] p-3 rounded-xl border border-[#e5e5e5]">
-                <span className="text-[10px] font-bold text-[#888888] uppercase tracking-wider block mb-1">Assigned Referees</span>
-                <div className="flex items-center gap-1.5 text-[#111111] font-extrabold text-base">
-                  <UserCheck size={16} className="text-emerald-700" />
-                  {modalDetailsLoading ? "..." : `${assignedReferees.length} Referees`}
-                </div>
+              <div className="flex items-center justify-between py-1 border-b border-gray-50">
+                <span className="text-[#888888] font-medium flex items-center gap-2">
+                  <Calendar size={14} className="text-[#00382D]" /> Tournament Dates:
+                </span>
+                <span className="font-bold text-[#111111]">
+                  {selectedTournament.start_date || 'TBD'} {selectedTournament.end_date ? `to ${selectedTournament.end_date}` : ''}
+                </span>
               </div>
 
-              <div className="bg-[#f8f7f4] p-3 rounded-xl border border-[#e5e5e5]">
-                <span className="text-[10px] font-bold text-[#888888] uppercase tracking-wider block mb-1">Venue District</span>
-                <div className="flex items-center gap-1.5 text-[#111111] font-extrabold text-xs truncate">
-                  <MapPin size={16} className="text-[#00382D] shrink-0" />
-                  <span className="truncate">{selectedTournament.location || 'Sri Lanka'}</span>
-                </div>
+              <div className="flex items-center justify-between py-1 border-b border-gray-50">
+                <span className="text-[#888888] font-medium flex items-center gap-2">
+                  <Phone size={14} className="text-[#00382D]" /> Organizer Contact:
+                </span>
+                <span className="font-bold text-[#00382D]">{selectedTournament.contact_number || 'Available on Request'}</span>
               </div>
 
-              <div className="bg-[#f8f7f4] p-3 rounded-xl border border-[#e5e5e5]">
-                <span className="text-[10px] font-bold text-[#888888] uppercase tracking-wider block mb-1">Schedule Dates</span>
-                <div className="flex items-center gap-1.5 text-[#111111] font-bold text-[11px]">
-                  <Calendar size={16} className="text-[#00382D] shrink-0" />
-                  <span>{selectedTournament.start_date || 'TBD'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Deep Sections */}
-            <div className="space-y-6">
-
-              {/* 1. Participating Teams List */}
-              <div className="border border-[#e5e5e5] rounded-xl p-4 bg-[#fcfbf9]">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wider flex items-center gap-2">
-                    <Users size={16} className="text-[#00382D]" />
-                    Participating Teams ({participatingTeams.length})
-                  </h4>
-                  <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    Approved Entries
-                  </span>
-                </div>
-
-                {modalDetailsLoading ? (
-                  <p className="text-xs text-[#888888]">Loading confirmed teams...</p>
-                ) : participatingTeams.length === 0 ? (
-                  <p className="text-xs text-[#888888] italic">No teams have been officially approved for this tournament yet.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {participatingTeams.map((team, idx) => (
-                      <span key={idx} className="px-3 py-1.5 bg-white border border-[#e5e5e5] rounded-xl text-xs font-bold text-[#111111] shadow-2xs flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#00382D]"></span>
-                        {team.team_name || team.display_name || team.name || `Team #${idx + 1}`}
-                      </span>
-                    ))}
-                  </div>
-                )}
+              <div className="flex items-center justify-between py-1 border-b border-gray-50">
+                <span className="text-[#888888] font-medium flex items-center gap-2">
+                  <Users size={14} className="text-[#00382D]" /> Participating Teams:
+                </span>
+                <span className="font-bold text-[#111111]">
+                  {modalDetailsLoading ? "Loading..." : participatingTeams.length > 0 
+                    ? `${participatingTeams.length} Teams (${participatingTeams.map(t => t.team_name || t.name || 'Team').join(', ')})`
+                    : "No teams registered yet"}
+                </span>
               </div>
 
-              {/* 2. Officiating Referees Panel */}
-              <div className="border border-[#e5e5e5] rounded-xl p-4 bg-[#fcfbf9]">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wider flex items-center gap-2">
-                    <ShieldCheck size={16} className="text-emerald-700" />
-                    Assigned Referees Panel ({assignedReferees.length})
-                  </h4>
-                  <span className="text-[10px] font-semibold text-[#00382D] bg-[#00382D]/10 px-2 py-0.5 rounded">
-                    Official Officials
-                  </span>
-                </div>
-
-                {modalDetailsLoading ? (
-                  <p className="text-xs text-[#888888]">Loading officiating referees...</p>
-                ) : assignedReferees.length === 0 ? (
-                  <p className="text-xs text-[#888888] italic">No referees have been assigned yet. Apply below to request officiating for this tournament!</p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {assignedReferees.map((ref, idx) => (
-                      <div key={idx} className="p-2.5 bg-white border border-[#e5e5e5] rounded-xl flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-[11px]">
-                            RF
-                          </div>
-                          <div>
-                            <p className="font-bold text-[#111111]">{ref.full_name || ref.referee_name || `Referee #${idx + 1}`}</p>
-                            <p className="text-[10px] text-[#666666]">{ref.experience_years ? `${ref.experience_years} Yrs Exp` : 'Official Referee'}</p>
-                          </div>
-                        </div>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                          Confirmed
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <div className="flex items-center justify-between py-1 border-b border-gray-50">
+                <span className="text-[#888888] font-medium flex items-center gap-2">
+                  <UserCheck size={14} className="text-[#00382D]" /> Assigned Referees:
+                </span>
+                <span className="font-bold text-[#111111]">
+                  {modalDetailsLoading ? "Loading..." : assignedReferees.length > 0 
+                    ? `${assignedReferees.length} Referees (${assignedReferees.map(r => r.full_name || r.referee_name || 'Referee').join(', ')})`
+                    : "No referees assigned yet"}
+                </span>
               </div>
 
-              {/* 3. Organizer Contact Info */}
-              <div className="border border-[#e5e5e5] rounded-xl p-4 bg-white space-y-2 text-xs">
-                <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <Building size={16} className="text-[#00382D]" />
-                  Organizer Details & Contact
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[#555555]">
-                  <div>
-                    <span className="text-[#888888] font-medium block">Organization:</span>
-                    <strong className="text-[#111111] font-bold">{selectedTournament.organization_name || selectedTournament.organizer_name || 'Elle Association'}</strong>
-                  </div>
-                  <div>
-                    <span className="text-[#888888] font-medium block">Contact Number:</span>
-                    <strong className="text-[#00382D] font-bold">{selectedTournament.contact_number || 'Available on Request'}</strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* 4. Overview Description */}
               {selectedTournament.description && (
-                <div>
-                  <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wider mb-1.5">
-                    Tournament Overview & Guidelines
-                  </h4>
-                  <p className="text-xs text-[#555555] leading-relaxed bg-[#f8f7f4] p-3.5 rounded-xl border border-[#e5e5e5]">
+                <div className="pt-2">
+                  <span className="text-[#888888] font-medium block mb-1">Tournament Overview:</span>
+                  <p className="text-[#555555] bg-[#f8f7f4] p-3 rounded-xl border border-[#e5e5e5] leading-relaxed">
                     {selectedTournament.description}
                   </p>
                 </div>
@@ -497,11 +417,11 @@ export default function RefereeTournaments() {
 
             </div>
 
-            {/* Modal Footer Actions */}
-            <div className="mt-8 pt-4 border-t border-gray-100 flex gap-3">
+            {/* Actions */}
+            <div className="flex gap-3">
               <button 
                 onClick={() => setShowDetailsModal(false)}
-                className="w-1/3 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+                className="w-1/3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold text-xs transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -513,10 +433,10 @@ export default function RefereeTournaments() {
                   handleApplyAsReferee(tId, selectedTournament.title);
                 }}
                 disabled={Boolean(refereeRequestsMap[selectedTournament.tournament_id || selectedTournament.id])}
-                className="w-2/3 py-3 bg-[#00382D] hover:bg-[#002b22] text-white rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-2/3 py-2.5 bg-[#00382D] hover:bg-[#002b22] text-white rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Send size={14} />
-                {refereeRequestsMap[selectedTournament.tournament_id || selectedTournament.id] ? 'Officiating Request Sent' : 'Request to Officiate Tournament'}
+                {refereeRequestsMap[selectedTournament.tournament_id || selectedTournament.id] ? 'Request Already Sent' : 'Request to Officiate'}
               </button>
             </div>
 
