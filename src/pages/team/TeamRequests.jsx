@@ -195,8 +195,8 @@ export default function TeamRequests() {
           {[
             { key: 'ALL', label: 'All' },
             { key: 'PENDING', label: 'Pending' },
-            { key: 'APPROVED', label: 'Approved/Accepted' },
-            { key: 'REJECTED', label: 'Rejected/Declined' }
+            { key: 'APPROVED', label: 'Approved' },
+            { key: 'REJECTED', label: 'Rejected' }
           ].map((tab) => (
             <button
               key={tab.key}

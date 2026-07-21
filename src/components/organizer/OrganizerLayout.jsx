@@ -45,19 +45,33 @@ function OrganizerLayout() {
 
   useEffect(() => {
     const userString = localStorage.getItem('user');
-    if (userString) {
-      const localUser = JSON.parse(userString);
-      const targetId = localUser?.userId || localUser?.id;
-      if (targetId) {
-        api.get(`/user/${targetId}`)
-          .then(res => {
-            const userData = res.data.data || res.data;
-            if (userData && res.data.success !== false) {
-              setDbUser(userData);
-            }
-          })
-          .catch(err => console.error("Error fetching user data from DB:", err));
-      }
+    if (!userString) {
+      navigate('/login');
+      return;
+    }
+
+    const localUser = JSON.parse(userString);
+    const role = (localUser?.role || '').toString().trim().toUpperCase();
+
+    if (role && role !== 'ORGANIZER') {
+      if (role === 'TEAM') navigate('/team');
+      else if (role === 'ADMIN') navigate('/admin');
+      else if (role === 'REFEREE') navigate('/referee');
+      else if (role === 'SPONSOR') navigate('/sponsor');
+      else navigate('/login');
+      return;
+    }
+
+    const targetId = localUser?.userId || localUser?.user_id || localUser?.id;
+    if (targetId) {
+      api.get(`/user/${targetId}`)
+        .then(res => {
+          const userData = res.data.data || res.data;
+          if (userData && res.data.success !== false) {
+            setDbUser(userData);
+          }
+        })
+        .catch(err => console.error("Error fetching user data from DB:", err));
     }
   }, []);
 
@@ -70,7 +84,7 @@ function OrganizerLayout() {
   const localUser = userString ? JSON.parse(userString) : null;
   const displayUser = dbUser || localUser || {};
 
-  const userName = displayUser.organizationName || displayUser.fullName || 'Organizer';
+  const userName = String(displayUser.organizationName || displayUser.fullName || displayUser.display_name || 'Organizer');
   const userRole = displayUser.role || 'Organizer';
   const avatarSeed = userName.replace(/\s+/g, '');
 
@@ -137,15 +151,7 @@ function OrganizerLayout() {
             New Tournament
           </Link>
 
-          <Link 
-            to="/organizer/management-tools"
-            onClick={() => setIsSidebarOpen(false)}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-4"
-          >
-            <Settings size={18} />
-            Management Tools
-          </Link>
-          
+
           <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:bg-[#eaeaeb]/50 hover:text-[#111111] rounded-lg transition-colors">
             <HelpCircle size={18} className="text-[#888888]" />
             Help Center

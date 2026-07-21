@@ -38,19 +38,33 @@ function AdminLayout() {
 
   useEffect(() => {
     const userString = localStorage.getItem('user');
-    if (userString) {
-      const localUser = JSON.parse(userString);
-      const targetId = localUser.userId || localUser.id;
-      if (targetId) {
-        api.get(`/user/${targetId}`)
-          .then(res => {
-            const userData = res.data.data || res.data;
-            if (userData && res.data.success !== false) {
-              setDbUser(userData);
-            }
-          })
-          .catch(err => console.error("Error fetching user data from DB:", err));
-      }
+    if (!userString) {
+      navigate('/login');
+      return;
+    }
+
+    const localUser = JSON.parse(userString);
+    const role = (localUser?.role || '').toString().trim().toUpperCase();
+
+    if (role && role !== 'ADMIN') {
+      if (role === 'ORGANIZER') navigate('/organizer');
+      else if (role === 'TEAM') navigate('/team');
+      else if (role === 'REFEREE') navigate('/referee');
+      else if (role === 'SPONSOR') navigate('/sponsor');
+      else navigate('/login');
+      return;
+    }
+
+    const targetId = localUser.userId || localUser.user_id || localUser.id;
+    if (targetId) {
+      api.get(`/user/${targetId}`)
+        .then(res => {
+          const userData = res.data.data || res.data;
+          if (userData && res.data.success !== false) {
+            setDbUser(userData);
+          }
+        })
+        .catch(err => console.error("Error fetching user data from DB:", err));
     }
   }, []);
 

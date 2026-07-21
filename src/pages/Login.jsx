@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../services/api";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
@@ -15,6 +15,12 @@ function Login() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Clear previous session when on login page
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+  }, []);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -27,29 +33,56 @@ function Login() {
     setIsLoading(true);
     setError(null);
 
+    // Wiping old user data to prevent stale role collisions
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+
     try {
       const response = await api.post('/auth/login', formData);
-      console.log("Login success:", response.data);
-      const userData = response.data.user || response.data;
-      localStorage.setItem('user', JSON.stringify(userData));
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-      }
+      console.log("Login success response:", response.data);
 
-      // Role-based routing
-      const userRole = (userData.role || '').toLowerCase();
-      if (userRole === 'admin') {
-        navigate('/admin');
-      } else if (userRole === 'referee') {
-        navigate('/referee');
-      } else if (userRole === 'organizer') {
-        navigate('/organizer');
-      } else if (userRole === 'team') {
-        navigate('/team');
-      } else if (userRole === 'sponsor') {
-        navigate('/sponsor');
+      if (response.data && response.data.success !== false) {
+        const rawUserData = response.data.user || response.data.data || response.data;
+        const targetId = rawUserData.userId || rawUserData.user_id || rawUserData.id;
+        const userRole = String(rawUserData.role || '').trim().toUpperCase();
+
+        const userData = {
+          userId: targetId,
+          user_id: targetId,
+          id: targetId,
+          email: rawUserData.email,
+          role: userRole,
+          status: rawUserData.status,
+          ...rawUserData
+        };
+
+        if (userRole === 'ORGANIZER') {
+          userData.organizer_id = targetId;
+        }
+
+        localStorage.setItem('user', JSON.stringify(userData));
+
+        if (response.data.token) {
+          localStorage.setItem('token', response.data.token);
+        }
+
+        console.log("Navigating for role:", userRole);
+
+        if (userRole === 'ADMIN') {
+          navigate('/admin');
+        } else if (userRole === 'ORGANIZER') {
+          navigate('/organizer');
+        } else if (userRole === 'TEAM') {
+          navigate('/team');
+        } else if (userRole === 'REFEREE') {
+          navigate('/referee');
+        } else if (userRole === 'SPONSOR') {
+          navigate('/sponsor');
+        } else {
+          navigate('/');
+        }
       } else {
-        navigate('/'); // Fallback
+        throw new Error(response.data.message || "Invalid email or password.");
       }
     } catch (err) {
       console.error("Login error:", err);

@@ -23,8 +23,8 @@ function OrganizerRequests() {
       setLoading(true);
       setError(null);
       const userString = localStorage.getItem('user');
-      const user = userString ? JSON.parse(userString) : null;
-      const organizerId = user?.userId || user?.id;
+      const localUser = userString ? JSON.parse(userString) : {};
+      const organizerId = localUser?.userId || localUser?.user_id || localUser?.id || localUser?.organizer_id;
 
       if (!organizerId) {
         throw new Error("Organizer ID not found. Please log in again.");
@@ -307,7 +307,7 @@ function OrganizerRequests() {
 
             {/* Modal Actions */}
             <div className="p-6 bg-gray-50 border-t border-gray-100 flex gap-4">
-              {selectedRequest.status.toUpperCase() === 'PENDING' ? (
+              {(selectedRequest.status || '').toUpperCase() === 'PENDING' ? (
                 <>
                   <button
                     disabled={actionLoading}

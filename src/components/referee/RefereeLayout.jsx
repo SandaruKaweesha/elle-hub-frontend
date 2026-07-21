@@ -37,19 +37,33 @@ function RefereeLayout() {
 
   useEffect(() => {
     const userString = localStorage.getItem('user');
-    if (userString) {
-      const localUser = JSON.parse(userString);
-      const targetId = localUser.userId || localUser.id;
-      if (targetId) {
-        api.get(`/user/${targetId}`)
-          .then(res => {
-            const userData = res.data.data || res.data;
-            if (userData && res.data.success !== false) {
-              setDbUser(userData);
-            }
-          })
-          .catch(err => console.error("Error fetching user data from DB:", err));
-      }
+    if (!userString) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const localUser = JSON.parse(userString);
+    const role = (localUser?.role || '').toString().trim().toUpperCase();
+
+    if (role && role !== 'REFEREE') {
+      if (role === 'ORGANIZER') window.location.href = '/organizer';
+      else if (role === 'TEAM') window.location.href = '/team';
+      else if (role === 'ADMIN') window.location.href = '/admin';
+      else if (role === 'SPONSOR') window.location.href = '/sponsor';
+      else window.location.href = '/login';
+      return;
+    }
+
+    const targetId = localUser.userId || localUser.user_id || localUser.id;
+    if (targetId) {
+      api.get(`/user/${targetId}`)
+        .then(res => {
+          const userData = res.data.data || res.data;
+          if (userData && res.data.success !== false) {
+            setDbUser(userData);
+          }
+        })
+        .catch(err => console.error("Error fetching user data from DB:", err));
     }
   }, []);
 
