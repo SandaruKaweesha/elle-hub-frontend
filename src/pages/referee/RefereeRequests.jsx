@@ -13,9 +13,12 @@ import {
   X, 
   ShieldCheck, 
   ChevronRight,
-  Info,
-  Award,
-  Send
+  Send,
+  Inbox,
+  UserCheck,
+  Ban,
+  Check,
+  RefreshCw
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -23,9 +26,12 @@ export default function RefereeRequests() {
   const currentUser = JSON.parse(localStorage.getItem("user")) || {};
   const userId = currentUser.userId || currentUser.user_id || currentUser.id;
 
+  const [activeTab, setActiveTab] = useState("SENT"); // "SENT" (My Applications) or "RECEIVED" (Organizer Invitations)
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
@@ -59,8 +65,19 @@ export default function RefereeRequests() {
     fetchRequests();
   }, [userId]);
 
+  // Separate requests into SENT (initiated by REFEREE) and RECEIVED (initiated by ORGANIZER)
+  const sentRequests = useMemo(() => {
+    return requests.filter(r => (r.initiated_by || '').toUpperCase() === 'REFEREE');
+  }, [requests]);
+
+  const receivedRequests = useMemo(() => {
+    return requests.filter(r => (r.initiated_by || '').toUpperCase() === 'ORGANIZER');
+  }, [requests]);
+
+  const currentTabRequests = activeTab === "SENT" ? sentRequests : receivedRequests;
+
   const filteredRequests = useMemo(() => {
-    return requests.filter((r) => {
+    return currentTabRequests.filter((r) => {
       const query = searchQuery.toLowerCase();
       const title = (r.tournament_title || "").toLowerCase();
       const organizer = (r.organizer_name || "").toLowerCase();
@@ -81,66 +98,115 @@ export default function RefereeRequests() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [requests, searchQuery, statusFilter]);
+  }, [currentTabRequests, searchQuery, statusFilter]);
 
-  const pendingCount = requests.filter(r => (r.status || '').toUpperCase() === 'PENDING').length;
-  const approvedCount = requests.filter(r => {
-    const s = (r.status || '').toUpperCase();
-    return s === 'APPROVED' || s === 'ACCEPTED';
-  }).length;
-  const rejectedCount = requests.filter(r => {
-    const s = (r.status || '').toUpperCase();
-    return s === 'REJECTED' || s === 'DECLINED';
-  }).length;
+  // Handler for Referee cancelling their sent application
+  const handleCancelMyRequest = async (tournamentId, tournamentTitle) => {
+    try {
+      setActionLoadingId(tournamentId);
+      setError(null);
+      setSuccessMsg(null);
 
-  const getStageInfo = (status) => {
-    const s = (status || '').toUpperCase();
-    if (s === 'APPROVED' || s === 'ACCEPTED') {
-      return {
-        stageNumber: 3,
-        stageTotal: 3,
-        stageTitle: 'Officially Confirmed as Referee',
-        description: 'The organizer has accepted your request. You are officially appointed as a referee for this tournament.',
-        badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-        progressBg: 'bg-emerald-600',
-        icon: <CheckCircle2 size={16} className="text-emerald-600" />
-      };
-    } else if (s === 'REJECTED' || s === 'DECLINED') {
-      return {
-        stageNumber: 2,
-        stageTotal: 3,
-        stageTitle: 'Application Declined',
-        description: 'The organizer has declined this officiating request.',
-        badgeBg: 'bg-red-50 text-red-700 border-red-200',
-        progressBg: 'bg-red-500',
-        icon: <XCircle size={16} className="text-red-600" />
-      };
-    } else {
-      return {
-        stageNumber: 2,
-        stageTotal: 3,
-        stageTitle: 'Pending Organizer Review',
-        description: 'Your request has been submitted successfully and is currently under review by the tournament organizer.',
-        badgeBg: 'bg-amber-50 text-amber-800 border-amber-200',
-        progressBg: 'bg-amber-500',
-        icon: <Clock size={16} className="text-amber-600" />
-      };
+      const res = await api.post("/tournament/referee-request/cancel", {
+        tournamentId,
+        refereeUserId: userId
+      });
+
+      if (res.data && res.data.success !== false) {
+        setSuccessMsg(`Your officiating application for "${tournamentTitle}" has been cancelled.`);
+        setShowModal(false);
+        fetchRequests();
+      } else {
+        throw new Error(res.data.message || "Failed to cancel request.");
+      }
+    } catch (err) {
+      console.error("Cancel request error:", err);
+      setError(err.response?.data?.message || err.message || "Could not cancel request.");
+    } finally {
+      setActionLoadingId(null);
     }
   };
+
+  // Handler for Referee Accepting or Declining Organizer's Invitation
+  const handleRespondToInvitation = async (tournamentId, tournamentTitle, newStatus) => {
+    try {
+      setActionLoadingId(tournamentId);
+      setError(null);
+      setSuccessMsg(null);
+
+      const res = await api.post(`/tournament/${tournamentId}/referee-requests/respond`, {
+        tournamentId,
+        refereeUserId: userId,
+        status: newStatus
+      });
+
+      if (res.data && res.data.success !== false) {
+        const text = (newStatus === 'APPROVED' || newStatus === 'ACCEPTED') ? 'accepted' : 'declined';
+        setSuccessMsg(`Organizer invitation for "${tournamentTitle}" ${text} successfully!`);
+        setShowModal(false);
+        fetchRequests();
+      } else {
+        throw new Error(res.data.message || "Failed to respond to invitation.");
+      }
+    } catch (err) {
+      console.error("Respond to invitation error:", err);
+      setError(err.response?.data?.message || err.message || "Could not respond to invitation.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const getStatusBadge = (status, initiatedBy) => {
+    const s = (status || '').toUpperCase();
+    const isRefereeSent = (initiatedBy || '').toUpperCase() === 'REFEREE';
+
+    if (s === 'APPROVED' || s === 'ACCEPTED') {
+      return (
+        <span className="px-3 py-1 text-xs font-bold rounded-xl border bg-emerald-50 text-emerald-800 border-emerald-200 flex items-center gap-1.5 shadow-2xs">
+          <CheckCircle2 size={14} className="text-emerald-600" />
+          {isRefereeSent ? "Organizer Accepted & Approved" : "Invitation Accepted"}
+        </span>
+      );
+    } else if (s === 'REJECTED' || s === 'DECLINED') {
+      return (
+        <span className="px-3 py-1 text-xs font-bold rounded-xl border bg-red-50 text-red-700 border-red-200 flex items-center gap-1.5 shadow-2xs">
+          <XCircle size={14} className="text-red-600" />
+          {isRefereeSent ? "Organizer Declined" : "Invitation Declined"}
+        </span>
+      );
+    } else if (s === 'CANCELLED') {
+      return (
+        <span className="px-3 py-1 text-xs font-bold rounded-xl border bg-gray-100 text-gray-600 border-gray-200 flex items-center gap-1.5 shadow-2xs">
+          <Ban size={14} className="text-gray-500" />
+          Cancelled by You
+        </span>
+      );
+    } else {
+      return (
+        <span className="px-3 py-1 text-xs font-bold rounded-xl border bg-amber-50 text-amber-800 border-amber-200 flex items-center gap-1.5 shadow-2xs">
+          <Clock size={14} className="text-amber-600 animate-pulse" />
+          {isRefereeSent ? "Pending Organizer Review" : "Pending Your Response"}
+        </span>
+      );
+    }
+  };
+
+  const pendingSentCount = sentRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING').length;
+  const pendingReceivedCount = receivedRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING').length;
 
   return (
     <div className="max-w-7xl mx-auto font-['Poppins'] space-y-6 pb-12 animate-in fade-in duration-300">
       
-      {/* Header */}
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="bg-[#00382D]/10 text-[#00382D] p-2 rounded-xl">
               <ClipboardList size={24} />
             </span>
-            <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">Match Requests & Status</h1>
+            <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">Officiating Requests Management</h1>
           </div>
-          <p className="text-[#666666] text-sm mt-1">Track the current review stage and approval status of your tournament officiating applications.</p>
+          <p className="text-[#666666] text-sm mt-1">Manage applications you sent to organizers and respond to incoming tournament invitations.</p>
         </div>
       </div>
 
@@ -156,62 +222,143 @@ export default function RefereeRequests() {
         </div>
       )}
 
-      {/* Filter Tabs & Search Bar */}
+      {successMsg && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl flex items-center justify-between text-sm shadow-sm">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={18} className="shrink-0 text-emerald-600" />
+            <span>{successMsg}</span>
+          </div>
+          <button onClick={() => setSuccessMsg(null)} className="text-emerald-600 hover:text-emerald-800">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* TWO MAIN SECTION SELECTION TABS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        {/* Section 1 Tab: My Applications (Sent) */}
+        <button
+          onClick={() => { setActiveTab("SENT"); setStatusFilter("ALL"); }}
+          className={`p-5 rounded-2xl border text-left transition-all duration-300 flex items-center justify-between cursor-pointer shadow-sm ${
+            activeTab === "SENT"
+              ? "bg-[#00382D] text-white border-[#00382D] ring-2 ring-[#00382D]/20"
+              : "bg-white text-gray-700 border-[#e5e5e5] hover:bg-gray-50"
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold shrink-0 ${
+              activeTab === "SENT" ? "bg-white/10 text-white" : "bg-[#00382D]/10 text-[#00382D]"
+            }`}>
+              <Send size={22} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-base">Section 1: My Sent Applications</h3>
+                {pendingSentCount > 0 && (
+                  <span className="bg-amber-400 text-amber-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                    {pendingSentCount} Pending
+                  </span>
+                )}
+              </div>
+              <p className={`text-xs mt-0.5 ${activeTab === "SENT" ? "text-emerald-100" : "text-gray-500"}`}>
+                Requests you submitted to apply for tournament officiating.
+              </p>
+            </div>
+          </div>
+          <span className="font-bold text-lg">{sentRequests.length}</span>
+        </button>
+
+        {/* Section 2 Tab: Incoming Invitations (Received) */}
+        <button
+          onClick={() => { setActiveTab("RECEIVED"); setStatusFilter("ALL"); }}
+          className={`p-5 rounded-2xl border text-left transition-all duration-300 flex items-center justify-between cursor-pointer shadow-sm ${
+            activeTab === "RECEIVED"
+              ? "bg-[#00382D] text-white border-[#00382D] ring-2 ring-[#00382D]/20"
+              : "bg-white text-gray-700 border-[#e5e5e5] hover:bg-gray-50"
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold shrink-0 ${
+              activeTab === "RECEIVED" ? "bg-white/10 text-white" : "bg-[#00382D]/10 text-[#00382D]"
+            }`}>
+              <Inbox size={22} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-base">Section 2: Organizer Invitations</h3>
+                {pendingReceivedCount > 0 && (
+                  <span className="bg-emerald-400 text-emerald-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full animate-bounce">
+                    {pendingReceivedCount} Action Needed
+                  </span>
+                )}
+              </div>
+              <p className={`text-xs mt-0.5 ${activeTab === "RECEIVED" ? "text-emerald-100" : "text-gray-500"}`}>
+                Invitations sent to you by tournament organizers.
+              </p>
+            </div>
+          </div>
+          <span className="font-bold text-lg">{receivedRequests.length}</span>
+        </button>
+
+      </div>
+
+      {/* Filter Toolbar & Search */}
       <div className="bg-white p-4 rounded-2xl border border-[#e5e5e5] shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         
-        {/* Status Tabs */}
+        {/* Status Sub-Filters */}
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <button
             onClick={() => setStatusFilter("ALL")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
               statusFilter === "ALL"
-                ? "bg-[#00382D] text-white border-[#00382D] shadow-xs"
+                ? "bg-[#00382D] text-white border-[#00382D]"
                 : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
             }`}
           >
-            All Requests ({requests.length})
+            All ({currentTabRequests.length})
           </button>
 
           <button
             onClick={() => setStatusFilter("PENDING")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
               statusFilter === "PENDING"
-                ? "bg-amber-500 text-white border-amber-500 shadow-xs"
+                ? "bg-amber-500 text-white border-amber-500"
                 : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
             }`}
           >
-            Pending Review ({pendingCount})
+            Pending
           </button>
 
           <button
             onClick={() => setStatusFilter("APPROVED")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
               statusFilter === "APPROVED"
-                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                ? "bg-emerald-600 text-white border-emerald-600"
                 : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
             }`}
           >
-            Confirmed ({approvedCount})
+            Accepted
           </button>
 
           <button
             onClick={() => setStatusFilter("REJECTED")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
               statusFilter === "REJECTED"
-                ? "bg-red-600 text-white border-red-600 shadow-xs"
+                ? "bg-red-600 text-white border-red-600"
                 : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
             }`}
           >
-            Declined ({rejectedCount})
+            Declined
           </button>
         </div>
 
-        {/* Search */}
+        {/* Search Input */}
         <div className="relative w-full md:w-72">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#888888]" />
           <input
             type="text"
-            placeholder="Search request or organizer..."
+            placeholder="Search title, venue, organizer..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-xs focus:outline-none focus:border-[#00382D]"
@@ -219,60 +366,70 @@ export default function RefereeRequests() {
         </div>
       </div>
 
-      {/* Requests List */}
+      {/* Requests List Area */}
       {loading ? (
         <div className="py-20 text-center">
           <div className="w-10 h-10 border-4 border-[#00382D] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#666666] font-medium text-sm">Loading your match officiating requests...</p>
+          <p className="text-[#666666] font-medium text-sm">Loading requests directory...</p>
         </div>
       ) : filteredRequests.length === 0 ? (
         <div className="bg-white rounded-2xl border border-[#e5e5e5] p-12 text-center shadow-sm">
           <div className="w-16 h-16 bg-[#f8f7f4] rounded-full flex items-center justify-center mx-auto mb-4 text-[#888888]">
-            <ClipboardList size={32} />
+            {activeTab === "SENT" ? <Send size={32} /> : <Inbox size={32} />}
           </div>
-          <h3 className="text-lg font-bold text-[#111111] mb-1">No Match Requests Found</h3>
+          <h3 className="text-lg font-bold text-[#111111] mb-1">
+            {activeTab === "SENT" ? "No Sent Applications Found" : "No Incoming Organizer Invitations"}
+          </h3>
           <p className="text-[#666666] text-sm max-w-md mx-auto">
-            {statusFilter === "ALL" 
-              ? "You have not submitted any tournament officiating requests yet. Go to the Tournaments page to apply!" 
-              : "No requests found under the selected status filter."}
+            {activeTab === "SENT" 
+              ? "You haven't submitted any officiating applications to tournament organizers yet."
+              : "No organizer invitations received yet matching your search filter."}
           </p>
         </div>
       ) : (
         <div className="space-y-4">
           {filteredRequests.map((req) => {
-            const stage = getStageInfo(req.status);
-            const reqDate = req.request_date ? new Date(req.request_date).toLocaleDateString() : 'Recently';
+            const tournamentId = req.tournament_id;
+            const title = req.tournament_title || 'Elle Tournament';
+            const organizer = req.organizer_name || 'Elle Sports Association';
+            const contactPhone = req.contact_number || 'Available on Request';
+            const location = req.location || 'Sri Lanka';
+            const heldDate = req.tournament_held_date || req.start_date || 'TBD';
+            const statusUpper = (req.status || '').toUpperCase();
+            const isPending = statusUpper === 'PENDING';
+            const isActionLoading = actionLoadingId === tournamentId;
 
             return (
-              <div key={req.request_id || req.tournament_id} className="bg-white rounded-2xl border border-[#e5e5e5] shadow-sm hover:shadow-md transition-all p-6 space-y-4">
+              <div key={`${req.request_id}-${tournamentId}`} className="bg-white rounded-2xl border border-[#e5e5e5] shadow-sm hover:shadow-md transition-all p-6 space-y-4">
                 
-                {/* Top Row: Tournament Title & Current Stage Badge */}
+                {/* Header Row */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-[#00382D] text-white flex items-center justify-center font-bold shrink-0">
-                      <ShieldCheck size={22} />
+                    <div className={`w-11 h-11 rounded-xl text-white flex items-center justify-center font-bold shrink-0 ${
+                      activeTab === "SENT" ? "bg-[#00382D]" : "bg-emerald-800"
+                    }`}>
+                      {activeTab === "SENT" ? <Send size={20} /> : <Inbox size={20} />}
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-[#111111] leading-tight">{req.tournament_title || 'Elle Tournament'}</h3>
+                      <h3 className="text-lg font-bold text-[#111111] leading-tight">{title}</h3>
                       <p className="text-xs text-[#666666] font-medium mt-0.5">
-                        Organized by: <strong className="text-[#00382D]">{req.organizer_name || 'Elle Sports Association'}</strong>
+                        Organizer: <strong className="text-[#00382D]">{organizer}</strong>
                       </p>
                     </div>
                   </div>
 
-                  <span className={`px-3 py-1.5 text-xs font-bold rounded-xl border flex items-center gap-2 self-start sm:self-center shrink-0 ${stage.badgeBg}`}>
-                    {stage.icon}
-                    <span>{stage.stageTitle}</span>
-                  </span>
+                  <div className="flex items-center gap-2 self-start sm:self-center">
+                    {getStatusBadge(req.status, req.initiated_by)}
+                  </div>
                 </div>
 
-                {/* Middle Row: Detailed Information */}
+                {/* Info Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-[#555555]">
                   <div className="flex items-center gap-2 bg-[#f8f7f4] p-3 rounded-xl border border-[#e5e5e5]">
                     <MapPin size={15} className="text-[#00382D] shrink-0" />
                     <div>
                       <span className="text-[#888888] font-medium block">Venue:</span>
-                      <strong className="text-[#111111]">{req.location || 'Sri Lanka'}</strong>
+                      <strong className="text-[#111111]">{location}</strong>
                     </div>
                   </div>
 
@@ -280,57 +437,81 @@ export default function RefereeRequests() {
                     <Calendar size={15} className="text-[#00382D] shrink-0" />
                     <div>
                       <span className="text-[#888888] font-medium block">Held Date:</span>
-                      <strong className="text-[#111111]">{req.tournament_held_date || req.start_date || 'TBD'}</strong>
+                      <strong className="text-[#111111]">{heldDate}</strong>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 bg-[#f8f7f4] p-3 rounded-xl border border-[#e5e5e5]">
                     <Phone size={15} className="text-[#00382D] shrink-0" />
                     <div>
-                      <span className="text-[#888888] font-medium block">Organizer Contact:</span>
-                      <strong className="text-[#00382D]">{req.contact_number || 'Available on Request'}</strong>
+                      <span className="text-[#888888] font-medium block">Contact Number:</span>
+                      <strong className="text-[#00382D]">{contactPhone}</strong>
                     </div>
                   </div>
                 </div>
 
-                {/* Bottom Row: Stage Stepper Progress Indicator */}
-                <div className="pt-2">
-                  <div className="flex items-center justify-between text-xs font-bold mb-2">
-                    <span className="text-[#333333]">Application Stage Timeline</span>
-                    <span className="text-[#666666]">Step {stage.stageNumber} of {stage.stageTotal}</span>
-                  </div>
+                {/* Section Specific Action Footers */}
+                <div className="pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <span className="text-xs text-gray-400 font-medium">
+                    Requested on: {req.request_date ? new Date(req.request_date).toLocaleDateString() : 'Recently'}
+                  </span>
 
-                  {/* Visual Progress Bar */}
-                  <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-3">
-                    <div 
-                      className={`h-full transition-all duration-500 ${stage.progressBg}`} 
-                      style={{ width: `${(stage.stageNumber / stage.stageTotal) * 100}%` }}
-                    ></div>
-                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    {/* SECTION 1: MY SENT APPLICATIONS -> CANCEL BUTTON IF PENDING */}
+                    {activeTab === "SENT" && isPending && (
+                      <button
+                        onClick={() => handleCancelMyRequest(tournamentId, title)}
+                        disabled={isActionLoading}
+                        className="w-full sm:w-auto px-4 py-2.5 bg-white border border-red-200 hover:bg-red-50 text-red-600 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        {isActionLoading ? (
+                          <>
+                            <div className="w-3.5 h-3.5 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                            Cancelling...
+                          </>
+                        ) : (
+                          <>
+                            <Ban size={14} />
+                            Cancel Application
+                          </>
+                        )}
+                      </button>
+                    )}
 
-                  {/* Stage Stepper Labels */}
-                  <div className="grid grid-cols-3 text-[11px] font-semibold text-center text-gray-500">
-                    <div className="text-emerald-700 flex items-center justify-start gap-1 font-bold">
-                      <CheckCircle2 size={12} /> 1. Request Sent
-                    </div>
-                    <div className={`flex items-center justify-center gap-1 ${stage.stageNumber >= 2 ? "text-emerald-700 font-bold" : "text-gray-400"}`}>
-                      {stage.stageNumber >= 2 ? <CheckCircle2 size={12} /> : <Clock size={12} />} 2. Organizer Review
-                    </div>
-                    <div className={`flex items-center justify-end gap-1 ${stage.stageNumber === 3 ? "text-emerald-700 font-bold" : "text-gray-400"}`}>
-                      {stage.stageNumber === 3 ? <CheckCircle2 size={12} /> : <Award size={12} />} 3. Final Decision
-                    </div>
-                  </div>
-                </div>
+                    {/* SECTION 2: INCOMING INVITATIONS -> ACCEPT & DECLINE BUTTONS IF PENDING */}
+                    {activeTab === "RECEIVED" && isPending && (
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <button
+                          onClick={() => handleRespondToInvitation(tournamentId, title, 'APPROVED')}
+                          disabled={isActionLoading}
+                          className="flex-1 sm:flex-initial px-4 py-2.5 bg-[#00382D] hover:bg-[#002a22] text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+                        >
+                          {isActionLoading ? (
+                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <Check size={14} />
+                          )}
+                          Accept Invitation
+                        </button>
 
-                {/* Card Action Footer */}
-                <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
-                  <span className="text-gray-400 font-medium">Submitted on: {reqDate}</span>
-                  <button 
-                    onClick={() => { setSelectedReq(req); setShowModal(true); }}
-                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#333333] font-bold rounded-xl transition-colors flex items-center gap-1 cursor-pointer"
-                  >
-                    View Stage Details <ChevronRight size={14} />
-                  </button>
+                        <button
+                          onClick={() => handleRespondToInvitation(tournamentId, title, 'REJECTED')}
+                          disabled={isActionLoading}
+                          className="flex-1 sm:flex-initial px-4 py-2.5 bg-white border border-red-200 hover:bg-red-50 text-red-600 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          <X size={14} />
+                          Decline Invitation
+                        </button>
+                      </div>
+                    )}
+
+                    <button 
+                      onClick={() => { setSelectedReq(req); setShowModal(true); }}
+                      className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-[#333333] text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      View Details <ChevronRight size={14} />
+                    </button>
+                  </div>
                 </div>
 
               </div>
@@ -365,20 +546,19 @@ export default function RefereeRequests() {
               </div>
             </div>
 
-            {/* Current Stage Detailed Info Box */}
             <div className="bg-[#f8f7f4] p-4 rounded-xl border border-[#e5e5e5] mb-5 space-y-2 text-xs">
               <div className="flex justify-between items-center pb-2 border-b border-gray-200">
-                <span className="text-gray-500 font-medium">Application Status:</span>
-                <span className={`px-2.5 py-0.5 font-bold uppercase rounded-lg border ${getStageInfo(selectedReq.status).badgeBg}`}>
-                  {selectedReq.status}
+                <span className="text-gray-500 font-medium">Request Type:</span>
+                <span className="font-bold text-[#00382D]">
+                  {(selectedReq.initiated_by || '').toUpperCase() === 'REFEREE' ? 'My Sent Application' : 'Incoming Organizer Invitation'}
                 </span>
               </div>
 
-              <div className="pt-1">
-                <span className="text-[#888888] font-semibold block mb-1">Stage Status Note:</span>
-                <p className="text-gray-800 font-medium leading-relaxed">
-                  {getStageInfo(selectedReq.status).description}
-                </p>
+              <div className="flex justify-between items-center pt-1">
+                <span className="text-gray-500 font-medium">Current Status:</span>
+                <div>
+                  {getStatusBadge(selectedReq.status, selectedReq.initiated_by)}
+                </div>
               </div>
             </div>
 
