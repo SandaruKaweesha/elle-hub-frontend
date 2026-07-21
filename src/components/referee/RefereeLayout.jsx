@@ -14,7 +14,9 @@ import {
   User,
   ShieldCheck,
   Search,
-  Trophy
+  Trophy,
+  UserCheck,
+  Settings
 } from "lucide-react";
 
 const SIDEBAR_LINKS = [
@@ -22,8 +24,8 @@ const SIDEBAR_LINKS = [
   { id: "tournaments", label: "Tournaments", icon: Trophy, path: "/referee/tournaments" },
   { id: "requests", label: "Match Requests", icon: ClipboardList, path: "/referee/requests" },
   { id: "schedule", label: "My Schedule", icon: CalendarDays, path: "/referee/schedule" },
-  { id: "performance", label: "Performance", icon: Star, path: "/referee/performance" },
-  { id: "log", label: "Tournament Log", icon: History, path: "/referee/log" },
+  { id: "availability", label: "Set Availability", icon: UserCheck, path: "/referee/availability" },
+  { id: "history", label: "History", icon: History, path: "/referee/history" },
 ];
 
 export default function RefereeLayout() {

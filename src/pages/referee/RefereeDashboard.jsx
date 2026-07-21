@@ -62,13 +62,35 @@ export default function RefereeDashboard() {
         });
       }
 
+      // Fetch Availability Calendar to derive today's status from database
+      try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const availRes = await api.get(`/referee/${userId}/availability-calendar`);
+        if (availRes.data && availRes.data.success !== false) {
+          const data = availRes.data.data || {};
+          const dbAvail = data.availability || [];
+          const assigned = data.assignedTournaments || [];
+
+          const todayDbRow = dbAvail.find(r => r.available_date === todayStr);
+          const todayAssigned = assigned.find(t => t.assigned_date === todayStr);
+
+          if (todayAssigned || (todayDbRow && (todayDbRow.status || '').toUpperCase() === 'UNAVAILABLE')) {
+            setRefereeInfo(prev => ({ ...prev, availabilityStatus: 'UNAVAILABLE' }));
+          } else if (todayDbRow && (todayDbRow.status || '').toUpperCase() === 'AVAILABLE') {
+            setRefereeInfo(prev => ({ ...prev, availabilityStatus: 'AVAILABLE' }));
+          }
+        }
+      } catch (e) {
+        console.warn("Could not fetch today availability status:", e);
+      }
+
       // Fetch Tournament Referee Requests
       try {
         const reqRes = await api.get(`/referee/${userId}/requests`);
         if (reqRes.data && reqRes.data.success !== false) {
           const allReqs = reqRes.data.data || [];
           setPendingRequests(allReqs.filter(r => (r.status || '').toUpperCase() === 'PENDING'));
-          setAssignedTournaments(allReqs.filter(r => (r.status || '').toUpperCase() === 'APPROVED'));
+          setAssignedTournaments(allReqs.filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED'));
         }
       } catch (e) {
         console.warn("Could not fetch referee requests:", e);
@@ -92,13 +114,22 @@ export default function RefereeDashboard() {
 
   // Toggle Availability Handler
   const handleToggleAvailability = async () => {
+    const todayStr = new Date().toISOString().split('T')[0];
     const newStatus = refereeInfo.availabilityStatus === "AVAILABLE" ? "UNAVAILABLE" : "AVAILABLE";
     try {
       setIsUpdatingAvailability(true);
       setError(null);
       setSuccessMsg(null);
 
-      const response = await api.put("/user/update", {
+      // Save to referee_availability database table
+      await api.post("/referee/availability/save", {
+        refereeUserId: userId,
+        availableDate: todayStr,
+        status: newStatus
+      });
+
+      // Update user profile status
+      await api.put("/user/update", {
         availabilityStatus: newStatus,
         availability_status: newStatus,
         fullName: refereeInfo.fullName,
@@ -106,16 +137,11 @@ export default function RefereeDashboard() {
         contactNumber: refereeInfo.contactNumber,
       });
 
-      if (response.data && response.data.success !== false) {
-        setRefereeInfo(prev => ({ ...prev, availabilityStatus: newStatus }));
-        setSuccessMsg(`Your match availability status is now set to ${newStatus}!`);
+      setRefereeInfo(prev => ({ ...prev, availabilityStatus: newStatus }));
+      setSuccessMsg(`Availability updated to ${newStatus === 'AVAILABLE' ? 'Available' : 'Unavailable'}!`);
 
-        // Update localStorage
-        const updatedUser = { ...currentUser, availabilityStatus: newStatus, referee_availability_status: newStatus };
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-      } else {
-        throw new Error(response.data.message || "Failed to update availability status.");
-      }
+      const updatedUser = { ...currentUser, availabilityStatus: newStatus, referee_availability_status: newStatus };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
     } catch (err) {
       console.error("Availability update error:", err);
       setError(err.response?.data?.message || err.message || "Could not update availability status.");
@@ -223,21 +249,31 @@ export default function RefereeDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         
         {/* Availability Card */}
-        <div className="bg-white rounded-2xl p-5 border border-[#e5e5e5] shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
+        <div 
+          onClick={handleToggleAvailability}
+          className="bg-white rounded-2xl p-5 border border-[#e5e5e5] shadow-sm flex flex-col justify-between hover:shadow-md hover:border-[#00382D] transition-all cursor-pointer group"
+          title="Click to toggle today's availability status in database"
+        >
           <div className="flex justify-between items-start mb-4">
             <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${
               isAvailable ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
             }`}>
-              <UserCheck size={22} />
+              {isUpdatingAvailability ? (
+                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <UserCheck size={22} />
+              )}
             </div>
             <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider ${
               isAvailable ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-amber-50 text-amber-700 border border-amber-200"
             }`}>
-              {isAvailable ? "Active" : "On Leave"}
+              {isAvailable ? "Active" : "Unavailable"}
             </span>
           </div>
           <div>
-            <p className="text-xs text-[#888888] font-semibold uppercase tracking-wider mb-1">Status Mode</p>
+            <p className="text-xs text-[#888888] font-semibold uppercase tracking-wider mb-1 flex items-center justify-between">
+              Status Mode <span className="text-[10px] text-[#00382D] opacity-0 group-hover:opacity-100 font-normal transition-opacity">Click to Change</span>
+            </p>
             <h3 className="text-xl font-bold text-[#111111] leading-tight">
               {isAvailable ? "Available" : "Unavailable"}
             </h3>
@@ -273,7 +309,9 @@ export default function RefereeDashboard() {
           <div>
             <p className="text-xs text-[#888888] font-semibold uppercase tracking-wider mb-1">Official Rating</p>
             <div className="flex items-center gap-2">
-              <h3 className="text-2xl font-bold text-[#111111]">{Number(refereeInfo.rating || 5.0).toFixed(1)}</h3>
+              <h3 className="text-2xl font-bold text-[#111111]">
+                {Number(refereeInfo.rating || 5.0).toFixed(1)}
+              </h3>
               <div className="flex text-amber-500">
                 {[1, 2, 3, 4, 5].map(i => (
                   <Star key={i} size={14} fill="currentColor" />
@@ -324,7 +362,7 @@ export default function RefereeDashboard() {
               </div>
             ) : (
               <div className="space-y-4">
-                {assignedTournaments.map(match => (
+                {assignedTournaments.slice(0, 3).map(match => (
                   <div key={match.request_id || match.id} className="bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-[#00382D] text-white rounded-xl flex flex-col items-center justify-center font-bold text-xs shrink-0">
@@ -344,6 +382,14 @@ export default function RefereeDashboard() {
                     </span>
                   </div>
                 ))}
+
+                {assignedTournaments.length > 3 && (
+                  <div className="pt-2 text-center">
+                    <a href="/referee/schedule" className="text-xs font-bold text-[#00382D] hover:underline">
+                      View all {assignedTournaments.length} tournaments in My Schedule →
+                    </a>
+                  </div>
+                )}
               </div>
             )}
           </div>

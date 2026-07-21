@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { User, Shield, Save, Edit2, Key, CheckCircle, AlertCircle, X, Award, Phone, Mail } from "lucide-react";
+import { User, Shield, Save, Edit2, Key, CheckCircle, AlertCircle, X, Award, Phone, Mail, Trash2 } from "lucide-react";
 import api from "../../services/api";
 
 export default function RefereeSettings() {
@@ -23,6 +23,8 @@ export default function RefereeSettings() {
   });
   const [originalProfileData, setOriginalProfileData] = useState({});
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [accountStatus, setAccountStatus] = useState("");
+  const [showDeletionConfirmModal, setShowDeletionConfirmModal] = useState(false);
 
   const [passwordData, setPasswordData] = useState({
     newPassword: "",
@@ -45,6 +47,7 @@ export default function RefereeSettings() {
         };
         setProfileData(mappedData);
         setOriginalProfileData(mappedData);
+        setAccountStatus(data.status || "APPROVED");
       } else {
         setError(response.data.message || "Failed to load referee profile.");
       }
@@ -136,13 +139,13 @@ export default function RefereeSettings() {
     setSuccessMsg(null);
 
     try {
-      const response = await api.post("/user/update-password", {
+      const response = await api.put("/user/updatePassword", {
         newPassword: passwordData.newPassword,
       });
 
       if (response.data && response.data.success !== false) {
         setPasswordData({ newPassword: "", confirmPassword: "" });
-        showFeedback("Password changed successfully!", "success");
+        showFeedback("Password updated successfully!", "success");
       } else {
         showFeedback(response.data.message || "Failed to update password.", "error");
       }
@@ -151,6 +154,30 @@ export default function RefereeSettings() {
       showFeedback(err.response?.data?.message || "Failed to update password.", "error");
     } finally {
       setIsSavingPassword(false);
+    }
+  };
+
+  const handleDeletionRequestSubmit = async () => {
+    try {
+      setIsSavingProfile(true);
+      setError(null);
+      setSuccessMsg(null);
+      const response = await api.post("/user/request-deletion");
+      if (response.data && response.data.success !== false) {
+        setSuccessMsg("Your account deletion request has been submitted successfully to system administrators.");
+        setAccountStatus("DELETION_PENDING");
+        setShowDeletionConfirmModal(false);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        throw new Error(response.data.message || "Failed to submit deletion request.");
+      }
+    } catch (err) {
+      console.error("Deletion request error:", err);
+      setError(err.response?.data?.message || err.message || "Failed to submit deletion request.");
+      setShowDeletionConfirmModal(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -232,7 +259,7 @@ export default function RefereeSettings() {
                 <button
                   type="button"
                   onClick={() => setProfileEditMode(true)}
-                  className="px-4 py-2 bg-[#00382D] text-white text-xs font-bold rounded-xl hover:bg-[#002a22] transition-colors flex items-center gap-1.5 shadow-sm"
+                  className="px-4 py-2 bg-[#00382D] text-white text-xs font-bold rounded-xl hover:bg-[#002a22] transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <Edit2 size={14} /> Edit Profile
                 </button>
@@ -240,7 +267,7 @@ export default function RefereeSettings() {
                 <button
                   type="button"
                   onClick={() => { setProfileData(originalProfileData); setProfileEditMode(false); }}
-                  className="px-4 py-2 bg-gray-100 text-[#555555] text-xs font-bold rounded-xl hover:bg-gray-200 transition-colors flex items-center gap-1"
+                  className="px-4 py-2 bg-gray-100 text-[#555555] text-xs font-bold rounded-xl hover:bg-gray-200 transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   <X size={14} /> Cancel
                 </button>
@@ -313,13 +340,48 @@ export default function RefereeSettings() {
                   <button
                     type="submit"
                     disabled={isSavingProfile}
-                    className="px-6 py-2.5 bg-[#00382D] text-white text-xs font-bold rounded-xl hover:bg-[#002a22] transition-colors flex items-center gap-2 shadow-sm"
+                    className="px-6 py-2.5 bg-[#00382D] text-white text-xs font-bold rounded-xl hover:bg-[#002a22] transition-colors flex items-center gap-2 shadow-sm cursor-pointer"
                   >
                     <Save size={14} /> Save Changes
                   </button>
                 </div>
               )}
             </form>
+
+            {/* Danger Zone: Account Status & Deletion Request */}
+            <div className="mt-8 pt-6 border-t border-[#e5e5e5]">
+              <h3 className="text-xs font-bold text-red-600 uppercase tracking-wider mb-3">Danger Zone</h3>
+              <div className="bg-red-50/50 border border-red-100 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-[#333333]">Current Account Status:</span>
+                    <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${
+                      accountStatus === "DELETION_PENDING" 
+                        ? "bg-amber-100 text-amber-800 border border-amber-300"
+                        : "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                    }`}>
+                      {accountStatus === "DELETION_PENDING" ? "Deletion Pending Approval" : "Active & Verified Referee"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#666666] mt-1">
+                    {accountStatus === "DELETION_PENDING" 
+                      ? "Your request to delete this referee account is under review by system administrators." 
+                      : "Your referee account is active and verified for officiating official tournaments."}
+                  </p>
+                </div>
+
+                {accountStatus !== "DELETION_PENDING" && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeletionConfirmModal(true)}
+                    className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 text-xs font-bold rounded-xl hover:bg-red-100 transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
+                  >
+                    <Trash2 size={14} /> Request Account Deletion
+                  </button>
+                )}
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -365,7 +427,7 @@ export default function RefereeSettings() {
                 <button
                   type="submit"
                   disabled={isSavingPassword}
-                  className="w-full py-3 bg-[#00382D] text-white text-xs font-bold rounded-xl hover:bg-[#002a22] transition-colors flex items-center justify-center gap-2 shadow-sm"
+                  className="w-full py-3 bg-[#00382D] text-white text-xs font-bold rounded-xl hover:bg-[#002a22] transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
                 >
                   <Save size={14} /> Update Password
                 </button>
@@ -374,6 +436,49 @@ export default function RefereeSettings() {
           </div>
         )}
       </div>
+
+      {/* --- ACCOUNT DELETION CONFIRMATION MODAL --- */}
+      {showDeletionConfirmModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-gray-100 relative">
+            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-4">
+              <AlertCircle size={24} />
+            </div>
+
+            <h3 className="text-lg font-bold text-[#111111] mb-2">Request Account Deletion?</h3>
+            <p className="text-xs text-[#666666] leading-relaxed mb-6">
+              Are you sure you want to request deletion of your referee account? Once submitted, a system administrator will review your request.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDeletionConfirmModal(false)}
+                className="px-4 py-2.5 bg-gray-100 text-[#555555] text-xs font-bold rounded-xl hover:bg-gray-200 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeletionRequestSubmit}
+                disabled={isSavingProfile}
+                className="px-5 py-2.5 bg-red-600 text-white text-xs font-bold rounded-xl hover:bg-red-700 transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                {isSavingProfile ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} /> Confirm Request
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

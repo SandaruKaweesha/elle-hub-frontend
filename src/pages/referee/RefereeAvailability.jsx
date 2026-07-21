@@ -1,9 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
-  Moon,
-  Save,
-  Sun,
   Calendar as CalendarIcon,
   ShieldCheck,
   AlertCircle,
@@ -11,57 +8,14 @@ import {
   Trophy,
   MapPin,
   Clock,
-  X
+  X,
+  UserCheck,
+  UserX,
+  Check
 } from "lucide-react";
 
 import AvailabilityCalendar from "../../components/referee/AvailabilityCalendar";
 import api from "../../services/api";
-
-const TIME_SLOTS = [
-  {
-    id: "08-10",
-    startTime: "08:00",
-    endTime: "10:00",
-    label: "08:00 AM - 10:00 AM",
-    icon: Sun,
-  },
-  {
-    id: "10-12",
-    startTime: "10:00",
-    endTime: "12:00",
-    label: "10:00 AM - 12:00 PM",
-    icon: Sun,
-  },
-  {
-    id: "12-14",
-    startTime: "12:00",
-    endTime: "14:00",
-    label: "12:00 PM - 02:00 PM",
-    icon: Sun,
-  },
-  {
-    id: "14-16",
-    startTime: "14:00",
-    endTime: "16:00",
-    label: "02:00 PM - 04:00 PM",
-    icon: Moon,
-  },
-  {
-    id: "16-18",
-    startTime: "16:00",
-    endTime: "18:00",
-    label: "04:00 PM - 06:00 PM",
-    icon: Moon,
-  },
-];
-
-const EMPTY_SLOTS = {
-  "08-10": false,
-  "10-12": false,
-  "12-14": false,
-  "14-16": false,
-  "16-18": false,
-};
 
 function RefereeAvailability() {
   const currentUser = JSON.parse(localStorage.getItem("user")) || {};
@@ -75,6 +29,7 @@ function RefereeAvailability() {
   const [availabilityByDate, setAvailabilityByDate] = useState({});
   const [assignedTournaments, setAssignedTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saveLoading, setSaveLoading] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -104,27 +59,13 @@ function RefereeAvailability() {
         const availMap = {};
 
         dbAvail.forEach(row => {
-          const dateKey = row.available_date;
-          const isAvailable = row.status === 'AVAILABLE';
-          availMap[dateKey] = {
-            "08-10": isAvailable,
-            "10-12": isAvailable,
-            "12-14": isAvailable,
-            "14-16": isAvailable,
-            "16-18": isAvailable,
-          };
+          availMap[row.available_date] = row.status || 'AVAILABLE';
         });
 
-        // Also mark assigned tournament dates as unavailable in map
+        // Also mark assigned tournament dates as UNAVAILABLE
         assigned.forEach(t => {
           if (t.assigned_date) {
-            availMap[t.assigned_date] = {
-              "08-10": false,
-              "10-12": false,
-              "12-14": false,
-              "14-16": false,
-              "16-18": false,
-            };
+            availMap[t.assigned_date] = 'UNAVAILABLE';
           }
         });
 
@@ -144,73 +85,42 @@ function RefereeAvailability() {
     }
   }, [userId]);
 
-  const selectedDateAvailability = availabilityByDate[selectedDateKey] || EMPTY_SLOTS;
-
-  const selectedSlots = TIME_SLOTS.filter(
-    (slot) => selectedDateAvailability[slot.id]
-  );
-
-  const unavailableSlots = TIME_SLOTS.filter(
-    (slot) => !selectedDateAvailability[slot.id]
-  );
+  const selectedDateStatus = availabilityByDate[selectedDateKey] || "UNSET";
 
   const formattedDate = useMemo(() => {
     return format(selectedDate, "EEEE, MMMM d, yyyy");
   }, [selectedDate]);
 
-  function updateSelectedDateSlots(updatedSlots) {
-    setSavedMessage("");
-    setAvailabilityByDate((previous) => ({
-      ...previous,
-      [selectedDateKey]: updatedSlots,
-    }));
-  }
+  const handleUpdateAvailabilityStatus = async (newStatus) => {
+    if (!userId || assignedForSelectedDate) return;
 
-  function toggleSlot(slotId) {
-    if (assignedForSelectedDate) return; // Prevent toggling if assigned to tournament
-    updateSelectedDateSlots({
-      ...selectedDateAvailability,
-      [slotId]: !selectedDateAvailability[slotId],
-    });
-  }
+    try {
+      setSaveLoading(true);
+      setSavedMessage("");
+      setErrorMessage("");
 
-  function selectPreset(preset) {
-    if (assignedForSelectedDate) return;
-
-    if (preset === "morning") {
-      updateSelectedDateSlots({
-        "08-10": true,
-        "10-12": true,
-        "12-14": false,
-        "14-16": false,
-        "16-18": false,
+      const res = await api.post("/referee/availability/save", {
+        refereeUserId: userId,
+        availableDate: selectedDateKey,
+        status: newStatus
       });
-    }
 
-    if (preset === "evening") {
-      updateSelectedDateSlots({
-        "08-10": false,
-        "10-12": false,
-        "12-14": false,
-        "14-16": true,
-        "16-18": true,
-      });
+      if (res.data && res.data.success !== false) {
+        setSavedMessage(`Availability updated to ${newStatus === 'AVAILABLE' ? 'Available' : 'Unavailable'}!`);
+        setAvailabilityByDate(prev => ({
+          ...prev,
+          [selectedDateKey]: newStatus
+        }));
+      } else {
+        throw new Error(res.data.message || "Failed to update availability.");
+      }
+    } catch (err) {
+      console.error("Save availability error:", err);
+      setErrorMessage(err.response?.data?.message || err.message || "Could not update availability.");
+    } finally {
+      setSaveLoading(false);
     }
-
-    if (preset === "fullDay") {
-      updateSelectedDateSlots({
-        "08-10": true,
-        "10-12": true,
-        "12-14": true,
-        "14-16": true,
-        "16-18": true,
-      });
-    }
-
-    if (preset === "clear") {
-      updateSelectedDateSlots({ ...EMPTY_SLOTS });
-    }
-  }
+  };
 
   function handlePreviousMonth() {
     setCurrentMonth((previousMonth) => new Date(previousMonth.getFullYear(), previousMonth.getMonth() - 1, 1));
@@ -223,26 +133,27 @@ function RefereeAvailability() {
   function handleSelectDate(date) {
     setSelectedDate(date);
     setSavedMessage("");
+    setErrorMessage("");
     setCurrentMonth(new Date(date.getFullYear(), date.getMonth(), 1));
   }
 
   const availableDateKeys = Object.entries(availabilityByDate)
-    .filter(([, slots]) => Object.values(slots).some(Boolean))
+    .filter(([, status]) => status === 'AVAILABLE')
     .map(([dateKey]) => dateKey);
 
   return (
     <div className="space-y-6 pb-10 font-['Poppins']">
       <div>
         <h1 className="text-2xl font-bold text-[#111111] sm:text-3xl">
-          Referee Officiating Availability
+          Set Availability
         </h1>
         <p className="mt-1 text-sm text-[#777777]">
-          Manage your availability schedule. Assigned tournament dates automatically mark you as unavailable for officiating.
+          Select dates on the calendar to mark your availability status in the database.
         </p>
       </div>
 
       {errorMessage && (
-        <div className="bg-red-50 text-red-700 p-4 rounded-xl text-sm border border-red-200 flex items-center justify-between">
+        <div className="bg-red-50 text-red-700 p-4 rounded-xl text-sm border border-red-200 flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-2">
             <AlertCircle size={18} />
             <span>{errorMessage}</span>
@@ -254,38 +165,38 @@ function RefereeAvailability() {
       )}
 
       {savedMessage && (
-        <div className="bg-emerald-50 text-emerald-800 p-4 rounded-xl text-sm border border-emerald-200 flex items-center gap-2">
-          <CheckCircle2 size={18} className="text-emerald-600" />
+        <div className="bg-emerald-50 text-emerald-800 p-4 rounded-xl text-sm border border-emerald-200 flex items-center gap-2 shadow-2xs">
+          <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
           <span>{savedMessage}</span>
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        {/* Calendar */}
+        {/* Calendar Section */}
         <section className="rounded-2xl border border-[#dfe4e1] bg-white p-4 shadow-sm sm:p-6">
           <div className="mb-5">
             <h2 className="text-xl font-bold text-[#102019]">
               Availability Calendar
             </h2>
             <p className="mt-1 text-xs text-[#777777]">
-              Dates with confirmed tournament assignments are automatically marked as Officiating Duty.
+              Confirmed tournament assignments automatically reserve dates in the database as Unavailable.
             </p>
           </div>
 
           <div className="mb-5 flex flex-wrap gap-4 rounded-xl border border-[#dde2df] bg-[#fafbf9] px-4 py-3 text-xs text-[#444444]">
             <span className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-[#66f49a]" />
-              Available
+              Available Date
             </span>
 
             <span className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full border border-[#00884a] bg-[#d9f8e5]" />
-              Selected date
+              Selected Date
             </span>
 
             <span className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-amber-500" />
-              Tournament Officiating Duty
+              Tournament Duty (Unavailable)
             </span>
           </div>
 
@@ -299,10 +210,10 @@ function RefereeAvailability() {
             onNextMonth={handleNextMonth}
           />
 
-          {/* Selected Date Summary & Tournament Status */}
+          {/* Selected Date Summary & Database Status Toggle */}
           <div className="mt-5 rounded-2xl bg-[#eef8f2] p-5 border border-[#d2ebe0]">
             <p className="text-xs font-semibold uppercase tracking-wide text-[#00783f]">
-              Selected Date Summary
+              Selected Date Availability Control
             </p>
 
             <h3 className="mt-1 text-lg font-bold text-[#102019]">
@@ -320,56 +231,57 @@ function RefereeAvailability() {
                   <MapPin size={13} /> {assignedForSelectedDate.location || 'Sri Lanka'}
                 </p>
                 <p className="text-[11px] font-medium text-amber-700 pt-1 border-t border-amber-200/60">
-                  ⚠️ Status automatically set to <strong>UNAVAILABLE</strong> in database for officiating duty.
+                  ⚠️ Status set to <strong>UNAVAILABLE</strong> in database for officiating duty.
                 </p>
               </div>
             ) : (
-              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#00783f]">
-                    Available slots
-                  </p>
-
-                  {selectedSlots.length > 0 ? (
-                    <div className="space-y-2">
-                      {selectedSlots.map((slot) => (
-                        <p
-                          key={slot.id}
-                          className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-[#234b39] border border-emerald-100 shadow-2xs"
-                        >
-                          ✓ {slot.label}
-                        </p>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-[#6b746f]">
-                      No available slots selected.
-                    </p>
-                  )}
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between text-xs bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs">
+                  <span className="text-gray-500 font-medium">Database Status for {selectedDateKey}:</span>
+                  <span className={`px-3 py-1 font-bold text-[11px] uppercase rounded-lg border ${
+                    selectedDateStatus === 'AVAILABLE'
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : selectedDateStatus === 'UNAVAILABLE'
+                      ? 'bg-red-50 text-red-700 border-red-200'
+                      : 'bg-gray-100 text-gray-700 border-gray-200'
+                  }`}>
+                    {selectedDateStatus === 'AVAILABLE' ? 'Available' : selectedDateStatus === 'UNAVAILABLE' ? 'Unavailable' : 'Unset (Default)'}
+                  </span>
                 </div>
 
-                <div>
-                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#777777]">
-                    Not available
-                  </p>
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <button
+                    onClick={() => handleUpdateAvailabilityStatus('AVAILABLE')}
+                    disabled={saveLoading || selectedDateStatus === 'AVAILABLE'}
+                    className="flex-1 py-3 px-4 bg-[#00382D] hover:bg-[#002a22] text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+                  >
+                    {saveLoading ? (
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <UserCheck size={16} />
+                    )}
+                    Mark as Available
+                  </button>
 
-                  <div className="space-y-2">
-                    {unavailableSlots.map((slot) => (
-                      <p
-                        key={slot.id}
-                        className="rounded-lg bg-white/70 px-3 py-2 text-xs text-[#777777] border border-gray-100"
-                      >
-                        {slot.label}
-                      </p>
-                    ))}
-                  </div>
+                  <button
+                    onClick={() => handleUpdateAvailabilityStatus('UNAVAILABLE')}
+                    disabled={saveLoading || selectedDateStatus === 'UNAVAILABLE'}
+                    className="flex-1 py-3 px-4 bg-white border border-red-200 hover:bg-red-50 text-red-600 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs disabled:opacity-50"
+                  >
+                    {saveLoading ? (
+                      <div className="w-3.5 h-3.5 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <UserX size={16} />
+                    )}
+                    Mark as Unavailable
+                  </button>
                 </div>
               </div>
             )}
           </div>
         </section>
 
-        {/* Side Panel: Confirmed Officiating Tournaments List */}
+        {/* Side Panel: Confirmed Officiating Duties */}
         <section className="space-y-6">
           <div className="rounded-2xl border border-[#dfe4e1] bg-white p-6 shadow-sm">
             <h2 className="text-lg font-bold text-[#102019] mb-1 flex items-center gap-2">
@@ -388,7 +300,7 @@ function RefereeAvailability() {
               </div>
             ) : (
               <div className="space-y-3">
-                {assignedTournaments.map((t, idx) => (
+                {assignedTournaments.slice(0, 3).map((t, idx) => (
                   <div key={idx} className="p-3.5 bg-[#f8f7f4] rounded-xl border border-[#e5e5e5] space-y-1">
                     <div className="flex items-center justify-between">
                       <h4 className="font-bold text-xs text-[#111111]">{t.tournament_title}</h4>

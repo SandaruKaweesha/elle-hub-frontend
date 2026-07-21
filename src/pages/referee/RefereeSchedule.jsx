@@ -62,9 +62,9 @@ function RefereeSchedule() {
           return {
             id: r.request_id || r.tournament_id,
             tournament: r.tournament_title || 'Elle Tournament',
-            venue: r.location || 'Sugathadasa Stadium, Colombo',
-            date: r.tournament_held_date || r.start_date || '2026-08-28',
-            time: '09:00 AM - 04:00 PM',
+            venue: r.location || 'Sri Lanka',
+            date: r.tournament_held_date || r.start_date || 'TBD',
+            time: 'Full Day Match Schedule',
             role: 'Official Match Referee',
             organizer: r.organizer_name || 'Elle Sports Association',
             contact: r.contact_number || 'Available on Request',
@@ -276,8 +276,8 @@ function RefereeSchedule() {
 
                     <div className="mt-4 grid grid-cols-1 gap-3 text-xs text-[#5f6763] sm:grid-cols-2 xl:grid-cols-3">
                       <p className="flex items-center gap-2">
-                        <Clock3 size={15} className="text-[#00783f] shrink-0" />
-                        <span>Time: <strong>{item.time}</strong></span>
+                        <CalendarDays size={15} className="text-[#00783f] shrink-0" />
+                        <span>Held Date: <strong>{item.date}</strong></span>
                       </p>
 
                       <p className="flex items-start gap-2">
@@ -376,7 +376,7 @@ function RefereeSchedule() {
 
             <div className="space-y-2.5 text-xs text-[#333333] mb-6">
               <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                <span className="text-gray-500 font-medium">Scheduled Date:</span>
+                <span className="text-gray-500 font-medium">Held Date:</span>
                 <span className="font-bold">{selectedItem.date}</span>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-gray-50">

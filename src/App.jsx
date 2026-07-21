@@ -46,6 +46,7 @@ import SponsorDashboard from "./pages/sponsor/SponsorDashboard";
 import RefereeAvailability from "./pages/referee/RefereeAvailability";
 import RefereeSchedule from "./pages/referee/RefereeSchedule";
 import RefereeRequests from "./pages/referee/RefereeRequests";
+import RefereeHistory from "./pages/referee/RefereeHistory";
 
 function App() {
   return (
@@ -121,6 +122,8 @@ function App() {
        <Route path="availability" element={<RefereeAvailability />} />
        <Route path="schedule" element={<RefereeSchedule />} />
        <Route path="requests" element={<RefereeRequests />} />
+       <Route path="history" element={<RefereeHistory />} />
+       <Route path="log" element={<RefereeHistory />} />
        <Route path="settings" element={<RefereeSettings />} />
      </Route>
 
