@@ -34,6 +34,7 @@ import CertificateQR from "./pages/organizer/CertificateQR";
 import ErrorBoundary from "./ErrorBoundary";
 import RefereeLayout from "./components/referee/RefereeLayout";
 import RefereeDashboard from "./pages/referee/RefereeDashboard";
+import RefereeSettings from "./pages/referee/RefereeSettings";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminRequests from "./pages/admin/AdminRequests";
@@ -118,6 +119,7 @@ function App() {
        <Route path="availability" element={<RefereeAvailability />} />
        <Route path="schedule" element={<RefereeSchedule />} />
        <Route path="requests" element={<RefereeRequests />} />
+       <Route path="settings" element={<RefereeSettings />} />
      </Route>
 
      {/* Sponsor Routes */}
