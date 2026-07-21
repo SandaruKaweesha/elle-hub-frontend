@@ -152,10 +152,6 @@ function OrganizerLayout() {
           </Link>
 
 
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:bg-[#eaeaeb]/50 hover:text-[#111111] rounded-lg transition-colors">
-            <HelpCircle size={18} className="text-[#888888]" />
-            Help Center
-          </button>
           <button 
             onClick={() => setShowLogoutConfirm(true)}
             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:bg-[#eaeaeb]/50 hover:text-[#111111] rounded-lg transition-colors"
