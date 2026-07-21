@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, CheckCircle2, AlertCircle, X, Send, Briefcase, DollarSign, Building } from 'lucide-react';
+import { Search, MapPin, CheckCircle2, AlertCircle, X, Send, Briefcase, DollarSign, Phone, Mail, User, ChevronRight, ExternalLink } from 'lucide-react';
 import api from '../../services/api';
 
 export default function OrganizerSponsors() {
@@ -10,6 +10,10 @@ export default function OrganizerSponsors() {
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Profile Modal states
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedSponsorProfile, setSelectedSponsorProfile] = useState(null);
 
   // Request Modal state
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -76,6 +80,11 @@ export default function OrganizerSponsors() {
     }
   };
 
+  const handleOpenProfile = (sponsor) => {
+    setSelectedSponsorProfile(sponsor);
+    setShowProfileModal(true);
+  };
+
   const handleOpenInviteModal = (sponsor) => {
     setSelectedSponsor(sponsor);
     setSelectedTournamentId(organizerTournaments.length > 0 ? organizerTournaments[0].tournament_id : '');
@@ -121,7 +130,8 @@ export default function OrganizerSponsors() {
     const query = searchQuery.toLowerCase();
     const name = (s.company_name || s.display_name || s.email || '').toLowerCase();
     const contact = (s.sponsor_contact_person || s.contact_person || '').toLowerCase();
-    return name.includes(query) || contact.includes(query);
+    const location = (s.sponsor_address || s.address || '').toLowerCase();
+    return name.includes(query) || contact.includes(query) || location.includes(query);
   });
 
   return (
@@ -136,7 +146,7 @@ export default function OrganizerSponsors() {
             </span>
             <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">Sponsors & Partners</h1>
           </div>
-          <p className="text-[#666666] text-sm mt-1">Review registered corporate partners and send tournament sponsorship invitations.</p>
+          <p className="text-[#666666] text-sm mt-1">Review registered corporate partners, view contact details, and send tournament sponsorship invitations.</p>
         </div>
       </div>
 
@@ -171,7 +181,7 @@ export default function OrganizerSponsors() {
           <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#888888]" />
           <input 
             type="text" 
-            placeholder="Search corporate sponsors by name..." 
+            placeholder="Search corporate sponsors by name, contact, or location..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all"
@@ -204,9 +214,10 @@ export default function OrganizerSponsors() {
           {filteredSponsors.map(sponsor => {
             const userId = sponsor.userId || sponsor.user_id || sponsor.id;
             const name = sponsor.company_name || sponsor.display_name || sponsor.email || 'Corporate Partner';
-            const contactPerson = sponsor.sponsor_contact_person || sponsor.contact_person || sponsor.email || 'Representative';
+            const contactPerson = sponsor.sponsor_contact_person || sponsor.contact_person || 'Representative';
             const phone = sponsor.contact_number || sponsor.phone || 'N/A';
             const address = sponsor.sponsor_address || sponsor.address || 'Sri Lanka';
+            const email = sponsor.email || 'N/A';
             const initials = name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'SP';
 
             return (
@@ -237,16 +248,38 @@ export default function OrganizerSponsors() {
 
                     {/* Info */}
                     <div className="mt-2">
-                      <h3 className="text-lg font-bold text-[#111111] leading-tight mb-1 group-hover:text-[#00382D] transition-colors">{name}</h3>
-                      <p className="text-xs text-[#666666] font-medium mt-0.5">Contact: <span className="text-[#111111] font-semibold">{contactPerson}</span></p>
-                      <p className="text-xs text-[#666666] font-medium mt-0.5">Location: <span className="text-[#111111] font-semibold">{address}</span></p>
+                      <h3 className="text-lg font-bold text-[#111111] leading-tight mb-2 group-hover:text-[#00382D] transition-colors">{name}</h3>
+                      
+                      <div className="space-y-1.5 text-xs text-[#555555] font-medium bg-[#f9faf9] p-3 rounded-xl border border-[#f0f0f0]">
+                        <div className="flex items-center gap-2">
+                          <User size={13} className="text-[#00382D] shrink-0" />
+                          <span>Contact: <strong className="text-[#111111]">{contactPerson}</strong></span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Phone size={13} className="text-[#00382D] shrink-0" />
+                          <span>Phone: <a href={`tel:${phone}`} className="text-[#00382D] font-bold hover:underline">{phone}</a></span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin size={13} className="text-[#00382D] shrink-0" />
+                          <span>Location: <strong className="text-[#111111]">{address}</strong></span>
+                        </div>
+                      </div>
+
                     </div>
 
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="p-6 pt-0">
+                <div className="p-6 pt-0 space-y-2">
+                  <button 
+                    onClick={() => handleOpenProfile(sponsor)}
+                    className="w-full py-2.5 bg-[#f8f7f4] hover:bg-[#e5e5e5] text-[#333333] rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 border border-[#e5e5e5] shadow-sm"
+                  >
+                    View Details
+                    <ChevronRight size={14} className="text-[#888888]" />
+                  </button>
+
                   <button 
                     onClick={() => handleOpenInviteModal(sponsor)}
                     className="w-full py-2.5 bg-[#00382D] hover:bg-[#002b22] text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm"
@@ -259,6 +292,79 @@ export default function OrganizerSponsors() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* --- SPONSOR PROFILE MODAL --- */}
+      {showProfileModal && selectedSponsorProfile && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-[#e5e5e5] relative">
+            <button 
+              onClick={() => setShowProfileModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-[#00382D] text-white flex items-center justify-center font-bold text-xl shadow-md">
+                {(selectedSponsorProfile.company_name || selectedSponsorProfile.display_name || selectedSponsorProfile.email || 'S')[0].toUpperCase()}
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[#111111]">
+                  {selectedSponsorProfile.company_name || selectedSponsorProfile.display_name || selectedSponsorProfile.email}
+                </h3>
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-[#166534] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 mt-1">
+                  <CheckCircle2 size={12} /> Corporate Sponsor
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-4 border-t border-b border-gray-100 py-4 text-sm text-[#333333]">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500 font-medium flex items-center gap-2"><User size={15} /> Representative:</span>
+                <span className="font-bold">{selectedSponsorProfile.sponsor_contact_person || selectedSponsorProfile.contact_person || 'N/A'}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500 font-medium flex items-center gap-2"><Phone size={15} /> Contact Number:</span>
+                <a href={`tel:${selectedSponsorProfile.contact_number || selectedSponsorProfile.phone}`} className="font-bold text-[#00382D] hover:underline">
+                  {selectedSponsorProfile.contact_number || selectedSponsorProfile.phone || 'N/A'}
+                </a>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500 font-medium flex items-center gap-2"><Mail size={15} /> Account Email:</span>
+                <a href={`mailto:${selectedSponsorProfile.email}`} className="font-bold text-[#00382D] hover:underline">
+                  {selectedSponsorProfile.email || 'N/A'}
+                </a>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500 font-medium flex items-center gap-2"><MapPin size={15} /> Address / Location:</span>
+                <span className="font-bold">{selectedSponsorProfile.sponsor_address || selectedSponsorProfile.address || 'Sri Lanka'}</span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button 
+                onClick={() => setShowProfileModal(false)}
+                className="w-1/2 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold text-xs transition-colors"
+              >
+                Close
+              </button>
+
+              <button 
+                onClick={() => {
+                  setShowProfileModal(false);
+                  handleOpenInviteModal(selectedSponsorProfile);
+                }}
+                className="w-1/2 py-2.5 bg-[#00382D] hover:bg-[#002b22] text-white rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <Send size={13} /> Invite
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
