@@ -47,6 +47,7 @@ import RefereeAvailability from "./pages/referee/RefereeAvailability";
 import RefereeSchedule from "./pages/referee/RefereeSchedule";
 import RefereeRequests from "./pages/referee/RefereeRequests";
 import RefereeHistory from "./pages/referee/RefereeHistory";
+import VerifyCertificate from "./pages/public/VerifyCertificate";
 
 function App() {
   return (
@@ -63,6 +64,7 @@ function App() {
          <Login />
        </ErrorBoundary>
      }/>
+     <Route path="/verify/:id" element={<VerifyCertificate/>}/>
      
      {/* Organizer Routes */}
      <Route path="/organizer" element={

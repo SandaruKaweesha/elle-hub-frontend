@@ -38,4 +38,15 @@ api.interceptors.response.use(
   }
 );
 
+export const certificateAPI = {
+  generate: (data) => api.post('/certificates', data),
+  getHistory: () => api.get('/certificates/history'),
+  verify: (id) => api.get(`/certificates/verify/${id}`)
+};
+
+export const tournamentResultsAPI = {
+  saveResults: (tournamentId, results) => api.post(`/tournaments/${tournamentId}/results`, { results }),
+  getResults: (tournamentId) => api.get(`/tournaments/${tournamentId}/results`)
+};
+
 export default api;
