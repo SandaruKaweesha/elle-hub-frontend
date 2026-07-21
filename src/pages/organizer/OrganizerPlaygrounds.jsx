@@ -176,30 +176,27 @@ export default function OrganizerPlaygrounds() {
         </div>
       )}
 
-      {/* Controls & District Dropdown */}
-      <div className="bg-white p-6 rounded-2xl border border-[#e5e5e5] shadow-sm mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex flex-col gap-1.5 w-full sm:max-w-md">
-          <label className="text-xs font-bold text-[#333333] uppercase tracking-wider">Select District (25 Districts in Sri Lanka):</label>
-          <div className="relative w-full">
-            <MapPin size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#00382D]" />
-            <select 
-              value={selectedDistrict}
-              onChange={(e) => setSelectedDistrict(e.target.value)}
-              className="w-full pl-11 pr-10 py-3 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm font-semibold text-[#111111] focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all appearance-none cursor-pointer"
-            >
-              <option value="">All 25 Districts (Sri Lanka)</option>
-              {SRI_LANKA_DISTRICTS.map((districtName) => (
-                <option key={districtName} value={districtName}>
-                  {districtName} District
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={18} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#888888] pointer-events-none" />
-          </div>
+      {/* Controls & District Dropdown (Right-Aligned) */}
+      <div className="bg-white p-4 rounded-2xl border border-[#e5e5e5] shadow-sm mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="text-sm font-medium text-[#666666]">
+          Total Playgrounds: <span className="text-[#111111] font-bold text-base">{filteredPlaygrounds.length}</span>
         </div>
 
-        <div className="text-sm font-medium text-[#666666] shrink-0">
-          Showing Playgrounds: <span className="text-[#00382D] font-bold text-base">{filteredPlaygrounds.length}</span>
+        <div className="relative w-full sm:w-60">
+          <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#00382D]" />
+          <select 
+            value={selectedDistrict}
+            onChange={(e) => setSelectedDistrict(e.target.value)}
+            className="w-full pl-9 pr-9 py-2.5 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm font-semibold text-[#111111] focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all appearance-none cursor-pointer"
+          >
+            <option value="">District (All)</option>
+            {SRI_LANKA_DISTRICTS.map((districtName) => (
+              <option key={districtName} value={districtName}>
+                {districtName}
+              </option>
+            ))}
+          </select>
+          <ChevronDown size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#888888] pointer-events-none" />
         </div>
       </div>
 
