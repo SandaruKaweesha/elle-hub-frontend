@@ -287,17 +287,6 @@ export default function OrganizerSettings() {
         >
           <Shield size={18} strokeWidth={activeTab === "security" ? 2 : 1.5} /> Security & Password
         </button>
-        <div className="w-[1px] bg-[#e5e5e5] shrink-0"></div>
-        <button
-          onClick={() => handleTabChange("notifications")}
-          className={`flex-1 min-w-[180px] flex items-center justify-center gap-2 px-6 py-4 text-sm font-semibold transition-colors border-b-2 ${
-            activeTab === "notifications" 
-              ? "border-[#00382D] text-[#00382D] bg-[#00382D]/5" 
-              : "border-transparent text-[#666666] hover:text-[#111111] hover:bg-gray-50"
-          }`}
-        >
-          <Bell size={18} strokeWidth={activeTab === "notifications" ? 2 : 1.5} /> Notification Preferences
-        </button>
       </div>
 
       {/* Main Settings Body */}
@@ -528,80 +517,6 @@ export default function OrganizerSettings() {
                   )}
                 </button>
               </div>
-            </form>
-          </div>
-        )}
-
-        {/* --- TAB 3: NOTIFICATION PREFERENCES --- */}
-        {activeTab === "notifications" && (
-          <div className="animate-in fade-in duration-300">
-            <div className="pb-6 mb-6 border-b border-[#e5e5e5]">
-              <h2 className="text-xl font-bold text-[#111111]">Notification Preferences</h2>
-              <p className="text-xs text-[#666666] mt-0.5">Control how and when you receive system alerts and tournament updates.</p>
-            </div>
-
-            <form onSubmit={handleNotificationsSave} className="space-y-6 max-w-xl">
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl">
-                  <div>
-                    <h4 className="text-sm font-bold text-[#111111]">Email Notifications</h4>
-                    <p className="text-xs text-[#666666]">Receive email notifications for team registration requests and approval updates.</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={notificationsData.emailAlerts}
-                    onChange={(e) => setNotificationsData({ ...notificationsData, emailAlerts: e.target.checked })}
-                    className="w-5 h-5 accent-[#00382D] cursor-pointer"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl">
-                  <div>
-                    <h4 className="text-sm font-bold text-[#111111]">Tournament Status Updates</h4>
-                    <p className="text-xs text-[#666666]">Get real-time alerts when your tournament applications are approved by Admin.</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={notificationsData.tournamentUpdates}
-                    onChange={(e) => setNotificationsData({ ...notificationsData, tournamentUpdates: e.target.checked })}
-                    className="w-5 h-5 accent-[#00382D] cursor-pointer"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl">
-                  <div>
-                    <h4 className="text-sm font-bold text-[#111111]">SMS Instant Alerts</h4>
-                    <p className="text-xs text-[#666666]">Receive urgent SMS messages for match scheduling changes.</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={notificationsData.smsAlerts}
-                    onChange={(e) => setNotificationsData({ ...notificationsData, smsAlerts: e.target.checked })}
-                    className="w-5 h-5 accent-[#00382D] cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-[#e5e5e5]">
-                <button
-                  type="submit"
-                  disabled={isSavingNotifications}
-                  className="px-6 py-3 bg-[#00382D] text-white text-xs font-bold rounded-xl hover:bg-[#002a22] transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
-                >
-                  {isSavingNotifications ? (
-                    <>
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Saving Preferences...
-                    </>
-                  ) : (
-                    <>
-                      <Save size={14} /> Save Preferences
-                    </>
-                  )}
-                </button>
-              </div>
-
             </form>
           </div>
         )}
