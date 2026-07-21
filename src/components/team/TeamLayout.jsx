@@ -46,6 +46,24 @@ export default function TeamLayout() {
   const avatarSeed = userName.replace(/\s+/g, '');
 
   useEffect(() => {
+    const userString = localStorage.getItem('user');
+    if (!userString) {
+      navigate('/login');
+      return;
+    }
+
+    const localUser = JSON.parse(userString);
+    const role = (localUser?.role || '').toString().trim().toUpperCase();
+
+    if (role && role !== 'TEAM') {
+      if (role === 'ORGANIZER') navigate('/organizer');
+      else if (role === 'ADMIN') navigate('/admin');
+      else if (role === 'REFEREE') navigate('/referee');
+      else if (role === 'SPONSOR') navigate('/sponsor');
+      else navigate('/login');
+      return;
+    }
+
     const fetchTournaments = async () => {
       try {
         const response = await api.get('/tournaments');
@@ -58,7 +76,7 @@ export default function TeamLayout() {
       }
     };
     fetchTournaments();
-  }, []);
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('user');

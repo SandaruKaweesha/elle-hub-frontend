@@ -1,25 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, MapPin, Calendar, Users, Search, ArrowRight, Loader2, Award, ShieldAlert } from 'lucide-react';
+import { Trophy, MapPin, Calendar, Users, Search, ArrowRight, Loader2, Award, ShieldAlert, ArrowLeft } from 'lucide-react';
 import api from '../../services/api';
 
 export default function TeamTournaments() {
   const navigate = useNavigate();
   const [tournaments, setTournaments] = useState([]);
+  const [teamRequests, setTeamRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('UPCOMING'); // 'UPCOMING', 'ONGOING', 'COMPLETED', 'ALL'
+  const [activeTab, setActiveTab] = useState('ACTIVE'); // 'ACTIVE', 'ONGOING', 'COMPLETED', 'CANCELLED', 'ALL'
+  const [selectedTournament, setSelectedTournament] = useState(null);
+
+  const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+  const teamUserId = currentUser.userId || currentUser.user_id;
 
   useEffect(() => {
     const fetchTournaments = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/tournaments');
-        if (response.data.success) {
-          setTournaments(response.data.data || []);
+        const [tournamentsRes, requestsRes] = await Promise.all([
+          api.get('/tournaments'),
+          teamUserId ? api.get(`/team/${teamUserId}/requests`).catch(() => ({ data: { data: [] } })) : Promise.resolve({ data: { data: [] } })
+        ]);
+        
+        if (tournamentsRes.data.success) {
+          setTournaments(tournamentsRes.data.data || []);
         } else {
-          setError(response.data.message || "Failed to load tournaments");
+          setError(tournamentsRes.data.message || "Failed to load tournaments");
+        }
+
+        if (requestsRes.data && requestsRes.data.success !== false) {
+          setTeamRequests(requestsRes.data.data || []);
         }
       } catch (err) {
         console.error("Fetch tournaments error:", err);
@@ -30,7 +43,7 @@ export default function TeamTournaments() {
     };
 
     fetchTournaments();
-  }, []);
+  }, [teamUserId]);
 
   const formatDate = (dateString) => {
     if (!dateString) return "TBD";
@@ -53,16 +66,18 @@ export default function TeamTournaments() {
   // Calculate status counts
   const counts = {
     ALL: tournaments.length,
-    UPCOMING: tournaments.filter(t => (t.status || '').toUpperCase() === 'UPCOMING').length,
+    ACTIVE: tournaments.filter(t => (t.status || '').toUpperCase() === 'ACTIVE').length,
     ONGOING: tournaments.filter(t => (t.status || '').toUpperCase() === 'ONGOING').length,
     COMPLETED: tournaments.filter(t => (t.status || '').toUpperCase() === 'COMPLETED').length,
+    CANCELLED: tournaments.filter(t => (t.status || '').toUpperCase() === 'CANCELLED').length,
   };
 
   const getStatusBadgeStyle = (status) => {
     const s = (status || '').toUpperCase();
     if (s === 'ONGOING') return 'bg-[#eaf1ec] text-[#08733e] border-[#08733e]/20';
     if (s === 'COMPLETED') return 'bg-gray-100 text-gray-700 border-gray-200';
-    return 'bg-[#e0f2fe] text-[#0369a1] border-[#0369a1]/20'; // Upcoming
+    if (s === 'CANCELLED') return 'bg-red-50 text-red-600 border-red-200';
+    return 'bg-[#e0f2fe] text-[#0369a1] border-[#0369a1]/20'; // ACTIVE
   };
 
   const getFallbackImage = (index) => {
@@ -85,14 +100,16 @@ export default function TeamTournaments() {
 
 
       {/* Filter and Search Bar */}
+      {!selectedTournament && (
       <div className="bg-white border border-[#e5e5e5] rounded-2xl p-4 md:p-6 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
         
         {/* Horizontal Navigation Tabs */}
         <div className="flex gap-2 w-full md:w-auto overflow-x-auto hide-scrollbar">
           {[
-            { key: 'UPCOMING', label: 'Upcoming' },
+            { key: 'ACTIVE', label: 'Active' },
             { key: 'ONGOING', label: 'Ongoing' },
             { key: 'COMPLETED', label: 'Completed' },
+            { key: 'CANCELLED', label: 'Cancelled' },
             { key: 'ALL', label: 'All Events' }
           ].map((tab) => (
             <button
@@ -128,6 +145,7 @@ export default function TeamTournaments() {
           />
         </div>
       </div>
+      )}
 
       {/* Tournaments Grid */}
       {loading ? (
@@ -148,103 +166,235 @@ export default function TeamTournaments() {
           <h3 className="text-lg font-bold text-[#111111]">No Tournaments Found</h3>
           <p className="text-gray-500 text-sm max-w-sm mt-1">There are no tournaments matching the selected filters or search terms.</p>
         </div>
+      ) : selectedTournament ? (
+        <div className="bg-white rounded-3xl border border-[#e5e5e5] overflow-hidden shadow-sm">
+          <div className="p-6 border-b border-[#e5e5e5] flex items-center justify-between bg-[#f8f7f4]">
+            <button 
+              onClick={() => setSelectedTournament(null)}
+              className="flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-[#111111] bg-white border border-[#e5e5e5] px-4 py-2 rounded-xl transition-all"
+            >
+              <ArrowLeft size={16} /> Back to Directory
+            </button>
+            <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border shadow-sm ${getStatusBadgeStyle(selectedTournament.status)}`}>
+              {selectedTournament.status || 'Upcoming'}
+            </span>
+          </div>
+
+          <div className="flex flex-col lg:flex-row">
+            <div className="lg:w-2/5 relative h-64 lg:h-auto bg-[#002c21]">
+              <img 
+                src={selectedTournament.image_url || getFallbackImage(filteredTournaments.indexOf(selectedTournament))} 
+                alt={selectedTournament.title} 
+                className="w-full h-full object-cover opacity-80"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#111111]/80 via-transparent to-transparent"></div>
+              <div className="absolute bottom-6 left-6 pr-6">
+                <h2 className="text-2xl font-black text-white leading-snug">{selectedTournament.title}</h2>
+              </div>
+            </div>
+
+            <div className="lg:w-3/5 p-6 md:p-8 flex flex-col justify-between">
+              <div>
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">About Tournament</h4>
+                <p className="text-gray-600 text-sm leading-relaxed mb-8">
+                  {selectedTournament.description || "The pinnacle of seasonal competition. Compete with top-tier athletes for the ultimate glory and secure your spot in the hall of fame."}
+                </p>
+
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Event Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100 shrink-0">
+                      <Users size={14} className="text-gray-500" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Organizer</p>
+                      <p className="text-sm font-semibold text-[#111111]">{selectedTournament.organizer_name || "Sports Organizer"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100 shrink-0">
+                      <MapPin size={14} className="text-gray-500" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Location</p>
+                      <p className="text-sm font-semibold text-[#111111]">{selectedTournament.location || "Central Arena"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100 shrink-0">
+                      <Calendar size={14} className="text-gray-500" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Held Date</p>
+                      <p className="text-sm font-semibold text-[#111111]">{formatDate(selectedTournament.tournament_held_date)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100 shrink-0">
+                      <Calendar size={14} className="text-gray-500" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Registration Deadline</p>
+                      <p className="text-sm font-semibold text-[#c2410c]">{formatDate(selectedTournament.end_date)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center border border-emerald-100 shrink-0">
+                      <Trophy size={14} className="text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-emerald-600/70 uppercase tracking-wider">Prize Pool</p>
+                      <p className="text-sm font-bold text-[#08733e]">{selectedTournament.prize_details || "TBD"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center border border-blue-100 shrink-0">
+                      <Users size={14} className="text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-blue-600/70 uppercase tracking-wider">Team Capacity</p>
+                      <p className="text-sm font-bold text-[#111111]">{selectedTournament.maximum_team_limit || "TBD"} Teams</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center border border-purple-100 shrink-0">
+                      <Award size={14} className="text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-purple-600/70 uppercase tracking-wider">Registered Teams</p>
+                      <p className="text-sm font-bold text-[#08733e]">{selectedTournament.registered_teams_count || 0} Teams</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-10 pt-6 border-t border-[#e5e5e5]">
+                {(() => {
+                  const statusUpper = (selectedTournament.status || 'ACTIVE').toUpperCase();
+                  const requestStatus = teamRequests.find(r => r.tournament_id === selectedTournament.tournament_id);
+                  
+                  if (requestStatus) {
+                    return (
+                      <div className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold border transition-all ${
+                        requestStatus.status === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                        requestStatus.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                        'bg-red-50 text-red-600 border-red-200'
+                      }`}>
+                        Request {requestStatus.status}
+                      </div>
+                    );
+                  }
+
+                  if (statusUpper === 'ACTIVE') {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const regDeadline = selectedTournament.end_date ? new Date(selectedTournament.end_date) : null;
+                    if (regDeadline) {
+                      regDeadline.setHours(23, 59, 59, 999);
+                    }
+                    const isRegistrationClosed = regDeadline && today > regDeadline;
+
+                    if (isRegistrationClosed) {
+                      return (
+                        <button disabled className="w-full bg-gray-100 border border-gray-200 text-gray-400 py-3.5 rounded-xl text-sm font-bold cursor-not-allowed">
+                          Registration Closed
+                        </button>
+                      );
+                    }
+
+                    return (
+                      <button
+                        onClick={() => navigate(`/team/join-tournament/${selectedTournament.tournament_id}`)}
+                        className="w-full flex items-center justify-center gap-2 bg-[#08733e] hover:bg-[#065b31] text-white py-3.5 rounded-xl text-sm font-bold transition-all shadow-md"
+                      >
+                        Request to Join Tournament <ArrowRight size={16} />
+                      </button>
+                    );
+                  }
+
+                  return (
+                    <button
+                      onClick={() => navigate(`/tournaments/${selectedTournament.tournament_id}`)}
+                      className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-50 border border-[#e5e5e5] text-gray-700 py-3.5 rounded-xl text-sm font-bold transition-all"
+                    >
+                      View Brackets & Live Details <ArrowRight size={16} />
+                    </button>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {filteredTournaments.map((t, idx) => {
-            const statusUpper = (t.status || 'Upcoming').toUpperCase();
+            const requestStatus = teamRequests.find(r => r.tournament_id === t.tournament_id);
+            const statusUpper = (t.status || 'ACTIVE').toUpperCase();
             
             return (
               <div 
                 key={t.tournament_id || idx}
-                className="bg-white rounded-2xl border border-[#e5e5e5] overflow-hidden shadow-sm flex flex-col group hover:shadow-md transition-all duration-300"
+                className="bg-white rounded-2xl border border-[#e5e5e5] overflow-hidden shadow-sm flex flex-col group hover:shadow-md transition-all duration-300 relative"
               >
-                {/* Cover Image & Status Tag */}
-                <div className="relative h-44 w-full bg-[#002c21] overflow-hidden">
+                {/* Simplified Cover Image */}
+                <div className="relative h-36 w-full bg-[#002c21] overflow-hidden">
                   <img 
                     src={t.image_url || getFallbackImage(idx)} 
                     alt={t.title} 
-                    className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+                    className="w-full h-full object-cover opacity-75 group-hover:scale-105 transition-transform duration-500 pointer-events-none"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
                   
-                  <span className={`absolute top-4 left-4 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border shadow-sm ${getStatusBadgeStyle(t.status)}`}>
-                    {t.status || 'Upcoming'}
+                  <span className={`absolute top-3 left-3 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border shadow-sm ${getStatusBadgeStyle(t.status)}`}>
+                    {t.status || 'ACTIVE'}
                   </span>
                 </div>
 
-                {/* Card Content */}
-                <div className="p-5 flex-1 flex flex-col justify-between">
+                {/* Card Content with 2 Buttons */}
+                <div className="p-4 flex-1 flex flex-col justify-between bg-white space-y-3">
                   <div>
-                    <h3 className="text-[17px] font-bold text-[#111111] leading-snug line-clamp-1 group-hover:text-[#08733e] transition-colors">
+                    <h3 className="text-[15px] font-bold text-[#111111] leading-snug line-clamp-2 group-hover:text-[#08733e] transition-colors mb-1.5">
                       {t.title}
                     </h3>
-                    <p className="text-gray-500 text-xs mt-1.5 line-clamp-2 leading-relaxed">
-                      {t.description || "The pinnacle of seasonal competition. Compete with top-tier athletes for the ultimate glory."}
-                    </p>
                     
-                    {/* Meta Fields */}
-                    <div className="mt-5 space-y-2.5 border-t border-gray-100 pt-4">
-                      <div className="flex items-center gap-2.5 text-xs text-gray-600 font-medium">
-                        <MapPin size={14} className="text-gray-400 shrink-0" />
-                        <span className="truncate">{t.location || "Central Arena"}</span>
-                      </div>
-                      <div className="flex items-center gap-2.5 text-xs text-gray-600 font-medium">
-                        <Calendar size={14} className="text-gray-400 shrink-0" />
-                        <span>Tournament Date: <span className="font-bold text-[#111111]">{formatDate(t.tournament_held_date)}</span></span>
-                      </div>
-                      <div className="flex items-center gap-2.5 text-xs text-gray-600 font-medium">
-                        <Calendar size={14} className="text-gray-400 shrink-0" />
-                        <span>Registration Deadline: <span className="font-bold text-[#c2410c]">{formatDate(t.end_date)}</span></span>
-                      </div>
-                      <div className="flex items-center gap-2.5 text-xs text-gray-600 font-medium">
-                        <Trophy size={14} className="text-gray-400 shrink-0" />
-                        <span className="truncate">Prize Pool: <span className="font-bold text-[#08733e]">{t.prize_details || "TBD"}</span></span>
-                      </div>
-                      <div className="flex items-center gap-2.5 text-xs text-gray-600 font-medium">
-                        <Users size={14} className="text-gray-400 shrink-0" />
-                        <span>Max Teams Capacity: <span className="font-bold text-[#111111]">{t.maximum_team_limit || "TBD"}</span></span>
-                      </div>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                      <Calendar size={13} className="text-gray-400 shrink-0" />
+                      <span>{formatDate(t.tournament_held_date)}</span>
                     </div>
                   </div>
 
-                  {/* Actions Row */}
-                  <div className="mt-6 pt-4 border-t border-gray-100">
-                    {statusUpper === 'UPCOMING' ? (
-                      (() => {
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        const regDeadline = t.end_date ? new Date(t.end_date) : null;
-                        if (regDeadline) {
-                          regDeadline.setHours(23, 59, 59, 999);
-                        }
-                        const isRegistrationClosed = regDeadline && today > regDeadline;
+                  {/* 2 Buttons Row */}
+                  <div className="pt-3 border-t border-gray-100 grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setSelectedTournament(t)}
+                      className="flex items-center justify-center gap-1.5 bg-white hover:bg-gray-50 border border-[#e5e5e5] text-gray-700 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                    >
+                      View Details
+                    </button>
 
-                        if (isRegistrationClosed) {
-                          return (
-                            <button
-                              disabled
-                              className="w-full flex items-center justify-center gap-2 bg-gray-100 border border-gray-200 text-gray-400 py-2.5 rounded-xl text-xs font-bold transition-all cursor-not-allowed"
-                            >
-                              Registration Closed
-                            </button>
-                          );
-                        }
-
-                        return (
-                          <button
-                            onClick={() => navigate(`/team/join-tournament/${t.tournament_id}`)}
-                            className="w-full flex items-center justify-center gap-2 bg-[#08733e] hover:bg-[#065b31] text-white py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-                          >
-                            Request to Join <ArrowRight size={14} />
-                          </button>
-                        );
-                      })()
+                    {requestStatus ? (
+                      <button
+                        disabled
+                        className={`flex items-center justify-center text-[10px] font-bold uppercase tracking-wider py-2 rounded-xl border ${
+                          requestStatus.status === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                          requestStatus.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                          'bg-red-50 text-red-600 border-red-200'
+                        }`}
+                      >
+                        {requestStatus.status}
+                      </button>
+                    ) : statusUpper === 'ACTIVE' ? (
+                      <button
+                        onClick={() => navigate(`/team/join-tournament/${t.tournament_id}`)}
+                        className="flex items-center justify-center gap-1 bg-[#08733e] hover:bg-[#065b31] text-white py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                      >
+                        Request <ArrowRight size={12} />
+                      </button>
                     ) : (
                       <button
                         onClick={() => navigate(`/tournaments/${t.tournament_id}`)}
-                        className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-50 border border-[#e5e5e5] text-gray-700 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                        className="flex items-center justify-center gap-1 bg-gray-100 text-gray-600 py-2 rounded-xl text-xs font-bold cursor-pointer"
                       >
-                        View Brackets & Details <ArrowRight size={14} />
+                        Brackets
                       </button>
                     )}
                   </div>

@@ -15,6 +15,7 @@ import TeamNotifications from "./pages/team/TeamNotifications";
 import TeamProfile from "./pages/team/TeamProfile";
 import TeamTournaments from "./pages/team/TeamTournaments";
 import TeamRequests from "./pages/team/TeamRequests";
+import TeamMatches from "./pages/team/TeamMatches";
 import OrganizerLayout from "./components/organizer/OrganizerLayout";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import OrganizerRequests from "./pages/organizer/OrganizerRequests";
@@ -26,7 +27,6 @@ import ManageTournament from "./pages/organizer/ManageTournament";
 import OrganizerReferees from "./pages/organizer/OrganizerReferees";
 import OrganizerPlaygrounds from "./pages/organizer/OrganizerPlaygrounds";
 import OrganizerSponsors from "./pages/organizer/OrganizerSponsors";
-import ManagementTools from "./pages/organizer/ManagementTools";
 import MatchDraw from "./pages/organizer/MatchDraw";
 import UpdateResults from "./pages/organizer/UpdateResults";
 import LiveBroadcastHub from "./pages/organizer/LiveBroadcastHub";
@@ -34,6 +34,8 @@ import CertificateQR from "./pages/organizer/CertificateQR";
 import ErrorBoundary from "./ErrorBoundary";
 import RefereeLayout from "./components/referee/RefereeLayout";
 import RefereeDashboard from "./pages/referee/RefereeDashboard";
+import RefereeSettings from "./pages/referee/RefereeSettings";
+import RefereeTournaments from "./pages/referee/RefereeTournaments";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminRequests from "./pages/admin/AdminRequests";
@@ -44,8 +46,7 @@ import SponsorDashboard from "./pages/sponsor/SponsorDashboard";
 import RefereeAvailability from "./pages/referee/RefereeAvailability";
 import RefereeSchedule from "./pages/referee/RefereeSchedule";
 import RefereeRequests from "./pages/referee/RefereeRequests";
-import RefereeTournamentLog from "./pages/referee/RefereeTournamentLog";
-import RefereePerformance from "./pages/referee/RefereePerformance";
+import RefereeHistory from "./pages/referee/RefereeHistory";
 import VerifyCertificate from "./pages/public/VerifyCertificate";
 
 function App() {
@@ -58,11 +59,19 @@ function App() {
      <Route path="/matches" element={<Matches/>}/>
      <Route path="/rankings" element={<Rankings/>}/>
      <Route path="/register" element={<Register/>}/>
-     <Route path="/login" element={<Login/>}/>
+     <Route path="/login" element={
+       <ErrorBoundary>
+         <Login />
+       </ErrorBoundary>
+     }/>
      <Route path="/verify/:id" element={<VerifyCertificate/>}/>
      
      {/* Organizer Routes */}
-     <Route path="/organizer" element={<OrganizerLayout />}>
+     <Route path="/organizer" element={
+       <ErrorBoundary>
+         <OrganizerLayout />
+       </ErrorBoundary>
+     }>
        <Route index element={<OrganizerDashboard />} />
        <Route path="dashboard" element={<OrganizerDashboard />} />
        <Route path="requests" element={<OrganizerRequests />} />
@@ -71,19 +80,18 @@ function App() {
            <CreateTournament />
          </ErrorBoundary>
        } />
-       <Route path="tournaments/manage/:id" element={<ManageTournament />} />
+       <Route path="tournaments/manage/:id" element={<ManageTournament />}>
+         <Route path="draw" element={<MatchDraw />} />
+         <Route path="results" element={<UpdateResults />} />
+         <Route path="broadcast" element={<LiveBroadcastHub />} />
+         <Route path="certificate-qr" element={<CertificateQR />} />
+       </Route>
        <Route path="teams" element={<OrganizerTeams />} />
        <Route path="referees" element={<OrganizerReferees />} />
        <Route path="playgrounds" element={<OrganizerPlaygrounds />} />
        <Route path="sponsors" element={<OrganizerSponsors />} />
        <Route path="settings" element={<OrganizerSettings />} />
        <Route path="notifications" element={<OrganizerNotifications />} />
-       <Route path="management-tools" element={<ManagementTools />}>
-         <Route path="draw" element={<MatchDraw />} />
-         <Route path="results" element={<UpdateResults />} />
-         <Route path="broadcast" element={<LiveBroadcastHub />} />
-         <Route path="certificate-qr" element={<CertificateQR />} />
-       </Route>
      </Route>
 
      {/* Admin Routes */}
@@ -101,6 +109,7 @@ function App() {
         <Route path="dashboard" element={<TeamDashboard />} />
         <Route path="tournaments" element={<TeamTournaments />} />
         <Route path="requests" element={<TeamRequests />} />
+        <Route path="matches" element={<TeamMatches />} />
         <Route path="join-tournament/:id" element={<JoinTournamentRequest />} />
         <Route path="settings" element={<TeamSettings />} />
         <Route path="notifications" element={<TeamNotifications />} />
@@ -111,11 +120,13 @@ function App() {
      <Route path="/referee" element={<RefereeLayout />}>
        <Route index element={<RefereeDashboard />} />
        <Route path="dashboard" element={<RefereeDashboard />} />
+       <Route path="tournaments" element={<RefereeTournaments />} />
        <Route path="availability" element={<RefereeAvailability />} />
        <Route path="schedule" element={<RefereeSchedule />} />
        <Route path="requests" element={<RefereeRequests />} />
-       <Route path="log" element={<RefereeTournamentLog />} />
-       <Route path="performance" element={<RefereePerformance />} />
+       <Route path="history" element={<RefereeHistory />} />
+       <Route path="log" element={<RefereeHistory />} />
+       <Route path="settings" element={<RefereeSettings />} />
      </Route>
 
      {/* Sponsor Routes */}

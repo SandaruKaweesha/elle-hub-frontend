@@ -1,239 +1,202 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
-  Moon,
-  Save,
-  Sun,
+  Calendar as CalendarIcon,
+  ShieldCheck,
+  AlertCircle,
+  CheckCircle2,
+  Trophy,
+  MapPin,
+  Clock,
+  X,
+  UserCheck,
+  UserX,
+  Check
 } from "lucide-react";
 
 import AvailabilityCalendar from "../../components/referee/AvailabilityCalendar";
-
-const TIME_SLOTS = [
-  {
-    id: "08-10",
-    startTime: "08:00",
-    endTime: "10:00",
-    label: "08:00 AM - 10:00 AM",
-    icon: Sun,
-  },
-  {
-    id: "10-12",
-    startTime: "10:00",
-    endTime: "12:00",
-    label: "10:00 AM - 12:00 PM",
-    icon: Sun,
-  },
-  {
-    id: "12-14",
-    startTime: "12:00",
-    endTime: "14:00",
-    label: "12:00 PM - 02:00 PM",
-    icon: Sun,
-  },
-  {
-    id: "14-16",
-    startTime: "14:00",
-    endTime: "16:00",
-    label: "02:00 PM - 04:00 PM",
-    icon: Moon,
-  },
-  {
-    id: "16-18",
-    startTime: "16:00",
-    endTime: "18:00",
-    label: "04:00 PM - 06:00 PM",
-    icon: Moon,
-  },
-];
-
-const EMPTY_SLOTS = {
-  "08-10": false,
-  "10-12": false,
-  "12-14": false,
-  "14-16": false,
-  "16-18": false,
-};
+import api from "../../services/api";
 
 function RefereeAvailability() {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const currentUser = JSON.parse(localStorage.getItem("user")) || {};
+  const userId = currentUser.userId || currentUser.user_id || currentUser.id;
 
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(
-    new Date(
-      selectedDate.getFullYear(),
-      selectedDate.getMonth(),
-      1
-    )
+    new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
   );
 
   const [availabilityByDate, setAvailabilityByDate] = useState({});
+  const [assignedTournaments, setAssignedTournaments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saveLoading, setSaveLoading] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const selectedDateKey = useMemo(() => {
     return format(selectedDate, "yyyy-MM-dd");
   }, [selectedDate]);
 
-  const selectedDateAvailability =
-    availabilityByDate[selectedDateKey] || EMPTY_SLOTS;
+  // Check if selected date has an assigned tournament
+  const assignedForSelectedDate = useMemo(() => {
+    return assignedTournaments.find(t => t.assigned_date === selectedDateKey);
+  }, [assignedTournaments, selectedDateKey]);
 
-    const selectedSlots = TIME_SLOTS.filter(
-  (slot) => selectedDateAvailability[slot.id]
-);
+  // Fetch real availability & tournament assignments from backend
+  const fetchAvailabilityData = async () => {
+    try {
+      setLoading(true);
+      setErrorMessage("");
 
-const unavailableSlots = TIME_SLOTS.filter(
-  (slot) => !selectedDateAvailability[slot.id]
-);
+      const res = await api.get(`/referee/${userId}/availability-calendar`);
+      if (res.data && res.data.success !== false) {
+        const data = res.data.data || {};
+        const assigned = data.assignedTournaments || [];
+        setAssignedTournaments(assigned);
+
+        // Map database availability entries
+        const dbAvail = data.availability || [];
+        const availMap = {};
+
+        dbAvail.forEach(row => {
+          availMap[row.available_date] = row.status || 'AVAILABLE';
+        });
+
+        // Also mark assigned tournament dates as UNAVAILABLE
+        assigned.forEach(t => {
+          if (t.assigned_date) {
+            availMap[t.assigned_date] = 'UNAVAILABLE';
+          }
+        });
+
+        setAvailabilityByDate(availMap);
+      }
+    } catch (err) {
+      console.error("Fetch availability calendar error:", err);
+      setErrorMessage("Could not query referee availability calendar.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (userId) {
+      fetchAvailabilityData();
+    }
+  }, [userId]);
+
+  const selectedDateStatus = availabilityByDate[selectedDateKey] || "UNSET";
 
   const formattedDate = useMemo(() => {
     return format(selectedDate, "EEEE, MMMM d, yyyy");
   }, [selectedDate]);
 
-  function updateSelectedDateSlots(updatedSlots) {
-    setSavedMessage("");
+  const handleUpdateAvailabilityStatus = async (newStatus) => {
+    if (!userId || assignedForSelectedDate) return;
 
-  setAvailabilityByDate((previous) => ({
-    ...previous,
-    [selectedDateKey]: updatedSlots,
-  }));
-}
+    try {
+      setSaveLoading(true);
+      setSavedMessage("");
+      setErrorMessage("");
 
-  function toggleSlot(slotId) {
-    updateSelectedDateSlots({
-      ...selectedDateAvailability,
-      [slotId]: !selectedDateAvailability[slotId],
-    });
-  }
-
-  function selectPreset(preset) {
-    if (preset === "morning") {
-      updateSelectedDateSlots({
-        "08-10": true,
-        "10-12": true,
-        "12-14": false,
-        "14-16": false,
-        "16-18": false,
+      const res = await api.post("/referee/availability/save", {
+        refereeUserId: userId,
+        availableDate: selectedDateKey,
+        status: newStatus
       });
-    }
 
-    if (preset === "evening") {
-      updateSelectedDateSlots({
-        "08-10": false,
-        "10-12": false,
-        "12-14": false,
-        "14-16": true,
-        "16-18": true,
-      });
+      if (res.data && res.data.success !== false) {
+        setSavedMessage(`Availability updated to ${newStatus === 'AVAILABLE' ? 'Available' : 'Unavailable'}!`);
+        setAvailabilityByDate(prev => ({
+          ...prev,
+          [selectedDateKey]: newStatus
+        }));
+      } else {
+        throw new Error(res.data.message || "Failed to update availability.");
+      }
+    } catch (err) {
+      console.error("Save availability error:", err);
+      setErrorMessage(err.response?.data?.message || err.message || "Could not update availability.");
+    } finally {
+      setSaveLoading(false);
     }
-
-    if (preset === "fullDay") {
-      updateSelectedDateSlots({
-        "08-10": true,
-        "10-12": true,
-        "12-14": true,
-        "14-16": true,
-        "16-18": true,
-      });
-    }
-
-    if (preset === "clear") {
-      updateSelectedDateSlots({ ...EMPTY_SLOTS });
-    }
-  }
+  };
 
   function handlePreviousMonth() {
-    setCurrentMonth((previousMonth) => {
-      return new Date(
-        previousMonth.getFullYear(),
-        previousMonth.getMonth() - 1,
-        1
-      );
-    });
+    setCurrentMonth((previousMonth) => new Date(previousMonth.getFullYear(), previousMonth.getMonth() - 1, 1));
   }
 
   function handleNextMonth() {
-    setCurrentMonth((previousMonth) => {
-      return new Date(
-        previousMonth.getFullYear(),
-        previousMonth.getMonth() + 1,
-        1
-      );
-    });
+    setCurrentMonth((previousMonth) => new Date(previousMonth.getFullYear(), previousMonth.getMonth() + 1, 1));
   }
 
   function handleSelectDate(date) {
     setSelectedDate(date);
     setSavedMessage("");
-
-    setCurrentMonth(
-      new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        1
-      )
-    );
-  }
-
-  function handleSave() {
-    const selectedSlots = TIME_SLOTS.filter(
-      (slot) => selectedDateAvailability[slot.id]
-    ).map((slot) => ({
-      startTime: slot.startTime,
-      endTime: slot.endTime,
-      status: "AVAILABLE",
-      
-    }));
-    setSavedMessage("Availability saved for this date.");
-
-    const availabilityData = {
-      date: selectedDateKey,
-      slots: selectedSlots,
-    };
-
-    console.log("Availability data:", availabilityData);
+    setErrorMessage("");
+    setCurrentMonth(new Date(date.getFullYear(), date.getMonth(), 1));
   }
 
   const availableDateKeys = Object.entries(availabilityByDate)
-    .filter(([, slots]) => Object.values(slots).some(Boolean))
+    .filter(([, status]) => status === 'AVAILABLE')
     .map(([dateKey]) => dateKey);
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6 pb-10 font-['Poppins']">
       <div>
         <h1 className="text-2xl font-bold text-[#111111] sm:text-3xl">
           Set Availability
         </h1>
-
         <p className="mt-1 text-sm text-[#777777]">
-          Select a date from the calendar and choose the hours you are available.
+          Select dates on the calendar to mark your availability status in the database.
         </p>
       </div>
 
+      {errorMessage && (
+        <div className="bg-red-50 text-red-700 p-4 rounded-xl text-sm border border-red-200 flex items-center justify-between shadow-2xs">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={18} />
+            <span>{errorMessage}</span>
+          </div>
+          <button onClick={() => setErrorMessage("")} className="text-red-500 hover:text-red-700">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {savedMessage && (
+        <div className="bg-emerald-50 text-emerald-800 p-4 rounded-xl text-sm border border-emerald-200 flex items-center gap-2 shadow-2xs">
+          <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+          <span>{savedMessage}</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        {/* Calendar */}
-        <section className="rounded-xl border border-[#dfe4e1] bg-white p-4 shadow-sm sm:p-6">
+        {/* Calendar Section */}
+        <section className="rounded-2xl border border-[#dfe4e1] bg-white p-4 shadow-sm sm:p-6">
           <div className="mb-5">
-            <h2 className="text-2xl font-bold text-[#102019]">
+            <h2 className="text-xl font-bold text-[#102019]">
               Availability Calendar
             </h2>
-
-            <p className="mt-1 text-sm text-[#777777]">
-              Green dates already contain at least one available time slot.
+            <p className="mt-1 text-xs text-[#777777]">
+              Confirmed tournament assignments automatically reserve dates in the database as Unavailable.
             </p>
           </div>
 
-          <div className="mb-5 flex flex-wrap gap-4 rounded-lg border border-[#dde2df] bg-[#fafbf9] px-4 py-3 text-xs text-[#444444]">
+          <div className="mb-5 flex flex-wrap gap-4 rounded-xl border border-[#dde2df] bg-[#fafbf9] px-4 py-3 text-xs text-[#444444]">
             <span className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-[#66f49a]" />
-              Available
+              Available Date
             </span>
 
             <span className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full border border-[#00884a] bg-[#d9f8e5]" />
-              Selected date
+              Selected Date
             </span>
 
             <span className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full border border-[#c7ceca] bg-[#e8ece9]" />
-              No availability
+              <span className="h-3 w-3 rounded-full bg-amber-500" />
+              Tournament Duty (Unavailable)
             </span>
           </div>
 
@@ -247,185 +210,116 @@ const unavailableSlots = TIME_SLOTS.filter(
             onNextMonth={handleNextMonth}
           />
 
-          <div className="mt-5 rounded-xl bg-[#eef8f2] p-5">
-  <p className="text-xs font-semibold uppercase tracking-wide text-[#00783f]">
-    Selected date
-  </p>
-
-  <h3 className="mt-2 text-xl font-bold text-[#102019]">
-    {formattedDate}
-  </h3>
-
-  <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-    {/* Available slots */}
-    <div>
-      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#00783f]">
-        Available slots
-      </p>
-
-      {selectedSlots.length > 0 ? (
-        <div className="space-y-2">
-          {selectedSlots.map((slot) => (
-            <p
-              key={slot.id}
-              className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-[#234b39]"
-            >
-              ✓ {slot.label}
+          {/* Selected Date Summary & Database Status Toggle */}
+          <div className="mt-5 rounded-2xl bg-[#eef8f2] p-5 border border-[#d2ebe0]">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#00783f]">
+              Selected Date Availability Control
             </p>
-          ))}
-        </div>
-      ) : (
-        <p className="text-xs text-[#6b746f]">
-          No time slots selected.
-        </p>
-      )}
-    </div>
 
-    {/* Unavailable slots */}
-    <div>
-      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#777777]">
-        Not available
-      </p>
+            <h3 className="mt-1 text-lg font-bold text-[#102019]">
+              {formattedDate}
+            </h3>
 
-      <div className="space-y-2">
-        {unavailableSlots.map((slot) => (
-          <p
-            key={slot.id}
-            className="rounded-lg bg-white/70 px-3 py-2 text-xs text-[#777777]"
-          >
-            {slot.label}
-          </p>
-        ))}
-      </div>
-    </div>
-  </div>
-</div>
+            {assignedForSelectedDate ? (
+              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs space-y-2">
+                <div className="flex items-center gap-2 font-bold text-amber-800 text-sm">
+                  <Trophy size={18} className="text-amber-600" />
+                  <span>Assigned to Tournament</span>
+                </div>
+                <p className="font-semibold text-[#111111]">{assignedForSelectedDate.tournament_title}</p>
+                <p className="text-gray-600 flex items-center gap-1">
+                  <MapPin size={13} /> {assignedForSelectedDate.location || 'Sri Lanka'}
+                </p>
+                <p className="text-[11px] font-medium text-amber-700 pt-1 border-t border-amber-200/60">
+                  ⚠️ Status set to <strong>UNAVAILABLE</strong> in database for officiating duty.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between text-xs bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs">
+                  <span className="text-gray-500 font-medium">Database Status for {selectedDateKey}:</span>
+                  <span className={`px-3 py-1 font-bold text-[11px] uppercase rounded-lg border ${
+                    selectedDateStatus === 'AVAILABLE'
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : selectedDateStatus === 'UNAVAILABLE'
+                      ? 'bg-red-50 text-red-700 border-red-200'
+                      : 'bg-gray-100 text-gray-700 border-gray-200'
+                  }`}>
+                    {selectedDateStatus === 'AVAILABLE' ? 'Available' : selectedDateStatus === 'UNAVAILABLE' ? 'Unavailable' : 'Unset (Default)'}
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <button
+                    onClick={() => handleUpdateAvailabilityStatus('AVAILABLE')}
+                    disabled={saveLoading || selectedDateStatus === 'AVAILABLE'}
+                    className="flex-1 py-3 px-4 bg-[#00382D] hover:bg-[#002a22] text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+                  >
+                    {saveLoading ? (
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <UserCheck size={16} />
+                    )}
+                    Mark as Available
+                  </button>
+
+                  <button
+                    onClick={() => handleUpdateAvailabilityStatus('UNAVAILABLE')}
+                    disabled={saveLoading || selectedDateStatus === 'UNAVAILABLE'}
+                    className="flex-1 py-3 px-4 bg-white border border-red-200 hover:bg-red-50 text-red-600 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs disabled:opacity-50"
+                  >
+                    {saveLoading ? (
+                      <div className="w-3.5 h-3.5 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <UserX size={16} />
+                    )}
+                    Mark as Unavailable
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </section>
 
-        {/* Time slot panel */}
-        <aside className="self-start overflow-hidden rounded-xl border border-[#dfe4e1] bg-white shadow-sm xl:sticky xl:top-6">
-          <div className="border-b border-[#e5e5e5] p-5">
-            <h2 className="text-2xl font-bold text-[#102019]">
-              {format(selectedDate, "EEEE")}
+        {/* Side Panel: Confirmed Officiating Duties */}
+        <section className="space-y-6">
+          <div className="rounded-2xl border border-[#dfe4e1] bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-[#102019] mb-1 flex items-center gap-2">
+              <ShieldCheck size={20} className="text-[#00382D]" />
+              Confirmed Tournament Duties
             </h2>
-
-            <p className="mt-1 text-sm text-[#555555]">
-              {format(selectedDate, "MMMM d, yyyy")}
+            <p className="text-xs text-[#777777] mb-4">
+              Tournaments where your officiating role is confirmed.
             </p>
-          </div>
 
-          <div className="space-y-6 p-5">
-            <div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#666666]">
-                Quick presets
-              </p>
-
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => selectPreset("morning")}
-                  className="rounded-lg border border-[#cfd6d2] px-3 py-3 text-sm font-semibold hover:border-[#00884a] hover:bg-[#eef9f3]"
-                >
-                  Morning
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => selectPreset("evening")}
-                  className="rounded-lg border border-[#cfd6d2] px-3 py-3 text-sm font-semibold hover:border-[#00884a] hover:bg-[#eef9f3]"
-                >
-                  Evening
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => selectPreset("fullDay")}
-                  className="rounded-lg border border-[#cfd6d2] px-3 py-3 text-sm font-semibold hover:border-[#00884a] hover:bg-[#eef9f3]"
-                >
-                  Full Day
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => selectPreset("clear")}
-                  className="rounded-lg border border-[#cfd6d2] px-3 py-3 text-sm font-semibold hover:border-red-300 hover:bg-red-50"
-                >
-                  Clear All
-                </button>
+            {assignedTournaments.length === 0 ? (
+              <div className="p-6 text-center bg-[#fafbf9] rounded-xl border border-[#e8ece9]">
+                <Trophy size={24} className="mx-auto mb-2 text-gray-400" />
+                <p className="text-xs font-bold text-gray-700">No Confirmed Officiating Duties</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">When you accept an organizer invitation or your request is approved, tournament dates will appear here.</p>
               </div>
-            </div>
-
-            <div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#666666]">
-                Specific hourly slots
-              </p>
-
+            ) : (
               <div className="space-y-3">
-                {TIME_SLOTS.map((slot) => {
-                  const Icon = slot.icon;
-                  const isAvailable =
-                    selectedDateAvailability[slot.id];
-
-                  return (
-                    <button
-                      type="button"
-                      key={slot.id}
-                      onClick={() => toggleSlot(slot.id)}
-                     className={`flex min-h-[64px] w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left transition-all ${
-  isAvailable
-    ? "border-[#66f49a] bg-[#66f49a] text-[#063b2b]"
-    : "border-[#d5dbd7] bg-white text-[#333333] hover:bg-[#f7f9f8]"
-}`}
-                    >
-                      <span className="flex min-w-0 items-center gap-3">
-                        <Icon size={20} className="shrink-0" />
-
-                        <span className="text-sm font-medium">
-                          {slot.label}
-                        </span>
+                {assignedTournaments.slice(0, 3).map((t, idx) => (
+                  <div key={idx} className="p-3.5 bg-[#f8f7f4] rounded-xl border border-[#e5e5e5] space-y-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-xs text-[#111111]">{t.tournament_title}</h4>
+                      <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded border border-amber-200 uppercase">
+                        Unavailable
                       </span>
-
-                      <span
-                        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
-                          isAvailable ? "bg-[#00783f]" : "bg-[#c8d0cc]"
-                        }`}
-                      >
-                        <span
-                          className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${
-                            isAvailable
-                              ? "translate-x-6"
-                              : "translate-x-1"
-                          }`}
-                        />
-                      </span>
-                    </button>
-                  );
-                })}
+                    </div>
+                    <p className="text-[11px] text-[#555555] flex items-center gap-1">
+                      <MapPin size={12} className="text-[#00382D]" /> {t.location || 'Sri Lanka'}
+                    </p>
+                    <p className="text-[11px] text-[#00382D] font-bold flex items-center gap-1">
+                      <CalendarIcon size={12} /> {t.assigned_date}
+                    </p>
+                  </div>
+                ))}
               </div>
-            </div>
-          </div>
-
-          <div className="border-t border-[#e5e5e5] bg-[#f8f9f8] p-5">
-            <button
-              type="button"
-              onClick={handleSave}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#d9b52e] px-5 py-4 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#c7a31d] active:scale-[0.98]"
-            >
-              <Save size={19} />
-              Save Availability
-            </button>
-
-            {savedMessage && (
-              <p className="mt-3 text-center text-xs font-semibold text-[#00783f]">
-                {savedMessage}
-              </p>
             )}
-
-            <p className="mt-3 text-center text-[10px] text-[#777777]">
-              Organizers will see these slots when assigning matches.
-            </p>
           </div>
-        </aside>
+        </section>
       </div>
     </div>
   );

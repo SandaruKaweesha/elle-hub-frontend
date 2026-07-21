@@ -13,7 +13,8 @@ import {
   XCircle,
   Trophy,
   SlidersHorizontal,
-  ChevronRight
+  ChevronRight,
+  AlertCircle
 } from "lucide-react";
 
 function OrganizerDashboard() {
@@ -23,27 +24,46 @@ function OrganizerDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL', 'PENDING', 'APPROVED', 'REJECTED'
 
-  const currentUser = JSON.parse(localStorage.getItem('user')) || {};
-  const organizerId = currentUser.userId || currentUser.user_id;
-
   useEffect(() => {
-    if (organizerId) {
-      fetchTournaments();
-    } else {
-      setError("Organizer session not found. Please log in again.");
-      setLoading(false);
-    }
-  }, [organizerId]);
+    const loadDashboard = async () => {
+      setLoading(true);
+      setError(null);
 
-  const fetchTournaments = async () => {
+      let organizerId = null;
+      try {
+        const userString = localStorage.getItem('user');
+        if (userString) {
+          const currentUser = JSON.parse(userString);
+          organizerId = currentUser?.userId || currentUser?.user_id || currentUser?.id || currentUser?.organizer_id;
+        }
+      } catch (e) {
+        console.error("Error reading user from localStorage:", e);
+      }
+
+      if (organizerId) {
+        await fetchTournaments(organizerId);
+      } else {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
+
+  const fetchTournaments = async (targetOrganizerId) => {
+    if (!targetOrganizerId) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get(`/organizer/${organizerId}/tournaments`);
+      const response = await api.get(`/organizer/${targetOrganizerId}/tournaments`);
       if (response.data && response.data.success !== false) {
         setTournaments(response.data.data || []);
       } else {
-        throw new Error(response.data.message || "Failed to fetch tournaments.");
+        setTournaments([]);
       }
     } catch (err) {
       console.error("Error fetching tournaments:", err);
@@ -81,17 +101,26 @@ function OrganizerDashboard() {
       (t.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (t.location || '').toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesStatus = 
-      statusFilter === 'ALL' || 
-      t.approval_status.toUpperCase() === statusFilter.toUpperCase();
+    let matchesStatus = false;
+    if (statusFilter === 'ALL') {
+      matchesStatus = true;
+    } else if (statusFilter === 'COMPLETED') {
+      matchesStatus = t.status && t.status.toUpperCase() === 'COMPLETED';
+    } else {
+      matchesStatus = t.approval_status && t.approval_status.toUpperCase() === statusFilter;
+      // Optional: If tab is 'APPROVED', we might want to exclude 'COMPLETED' tournaments so they only show in Completed tab.
+      if (statusFilter === 'APPROVED' && t.status && t.status.toUpperCase() === 'COMPLETED') {
+        matchesStatus = false; 
+      }
+    }
 
     return matchesSearch && matchesStatus;
   });
 
   // Calculate statistics
   const totalCount = tournaments.length;
-  const approvedCount = tournaments.filter(t => t.approval_status.toUpperCase() === 'APPROVED').length;
-  const pendingCount = tournaments.filter(t => t.approval_status.toUpperCase() === 'PENDING').length;
+  const approvedCount = tournaments.filter(t => (t.approval_status || '').toUpperCase() === 'APPROVED').length;
+  const pendingCount = tournaments.filter(t => (t.approval_status || '').toUpperCase() === 'PENDING').length;
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -163,7 +192,7 @@ function OrganizerDashboard() {
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
+      {/* Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-[#e5e5e5] shadow-sm mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="relative w-full md:max-w-md">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#888888]" />
@@ -176,22 +205,26 @@ function OrganizerDashboard() {
           />
         </div>
         
-        <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-11 px-4 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-xs font-bold text-gray-600 outline-none cursor-pointer focus:border-[#00382D] transition-all"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="PENDING">Pending Approval</option>
-            <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
-          </select>
-          
-          <div className="text-sm font-medium text-[#666666] font-semibold shrink-0">
-            Tournaments: <span className="text-[#111111] font-bold">{filteredTournaments.length}</span>
-          </div>
+        <div className="text-sm font-medium text-[#666666] font-semibold shrink-0">
+          Tournaments: <span className="text-[#111111] font-bold">{filteredTournaments.length}</span>
         </div>
+      </div>
+
+      {/* Tabbed Pane */}
+      <div className="flex items-center gap-2 mb-6 border-b border-[#e5e5e5] overflow-x-auto custom-scrollbar">
+        {['ALL', 'APPROVED', 'PENDING', 'REJECTED', 'COMPLETED'].map(status => (
+          <button
+            key={status}
+            onClick={() => setStatusFilter(status)}
+            className={`px-5 py-3.5 text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-colors border-b-2 ${
+              statusFilter === status 
+                ? 'border-[#08733e] text-[#08733e]' 
+                : 'border-transparent text-gray-400 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            {status === 'ALL' ? 'All Tournaments' : status}
+          </button>
+        ))}
       </div>
 
       {/* Cards List */}
@@ -243,7 +276,7 @@ function OrganizerDashboard() {
                     <span className="text-gray-600">{formatDate(t.start_date)} - {formatDate(t.end_date)}</span>
                   </div>
                   
-                  {t.approval_status.toUpperCase() === 'APPROVED' ? (
+                  {(t.approval_status || '').toUpperCase() === 'APPROVED' ? (
                     <div className="flex gap-2">
                       <Link 
                         to={`/tournaments/${t.tournament_id || t.id}`}

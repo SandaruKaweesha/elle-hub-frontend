@@ -28,28 +28,53 @@ export default function OrganizerTeams() {
   const [confirmAction, setConfirmAction] = useState(null); // { type: 'APPROVE' | 'REJECT', tournamentId, teamUserId, teamName }
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Authenticated user session
-  const currentUser = JSON.parse(localStorage.getItem('user')) || {};
-  const organizerId = currentUser.userId || currentUser.user_id;
-
   useEffect(() => {
-    if (organizerId) {
-      loadAllData();
-    } else {
-      setError("User session not found. Please log in again.");
-      setLoading(false);
-    }
-  }, [organizerId]);
+    const loadTeamsData = async () => {
+      setLoading(true);
+      setError(null);
 
-  const loadAllData = async () => {
+      let targetId = null;
+      try {
+        const userString = localStorage.getItem('user');
+        if (userString) {
+          const userObj = JSON.parse(userString);
+          targetId = userObj?.userId || userObj?.user_id || userObj?.id || userObj?.organizer_id;
+        }
+      } catch (e) {
+        console.error("Session parse error:", e);
+      }
+
+      if (targetId) {
+        await loadAllData(targetId);
+      } else {
+        // Fetch public users list if organizer ID not found
+        try {
+          const usersRes = await api.get('/user/getAllUsers');
+          if (usersRes.data && usersRes.data.success !== false) {
+            const allUsers = usersRes.data.data || [];
+            const teams = allUsers.filter(u => (u.role || '').toUpperCase() === 'TEAM');
+            setAllRegisteredTeams(teams);
+          }
+        } catch (err) {
+          console.error("Error fetching users:", err);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadTeamsData();
+  }, []);
+
+  const loadAllData = async (targetOrganizerId) => {
     try {
       setLoading(true);
       setError(null);
 
       // Fetch all three resources in parallel
       const [requestsRes, tournamentsRes, usersRes] = await Promise.all([
-        api.get(`/organizer/${organizerId}/team-requests`),
-        api.get(`/organizer/${organizerId}/tournaments`),
+        api.get(`/organizer/${targetOrganizerId}/team-requests`),
+        api.get(`/organizer/${targetOrganizerId}/tournaments`),
         api.get('/user/getAllUsers')
       ]);
 
@@ -59,13 +84,16 @@ export default function OrganizerTeams() {
       
       if (tournamentsRes.data && tournamentsRes.data.success !== false) {
         const list = tournamentsRes.data.data || [];
-        const activeOnly = list.filter(t => t.approval_status.toUpperCase() === 'APPROVED');
+        const activeOnly = list.filter(t => 
+          (t.approval_status || '').toUpperCase() === 'APPROVED' && 
+          (t.status || '').toUpperCase() === 'ACTIVE'
+        );
         setOrganizerTournaments(activeOnly);
       }
 
       if (usersRes.data && usersRes.data.success !== false) {
         const allUsers = usersRes.data.data || [];
-        const teams = allUsers.filter(u => u.role.toUpperCase() === 'TEAM' && u.status.toUpperCase() === 'APPROVED');
+        const teams = allUsers.filter(u => (u.role || '').toUpperCase() === 'TEAM');
         setAllTeams(teams);
       }
 
@@ -249,77 +277,78 @@ export default function OrganizerTeams() {
             const nonAssociatedTournaments = organizerTournaments.filter(t => !associatedTournamentIds.includes(t.tournament_id));
 
             return (
-              <div key={team.user_id} className="bg-white rounded-2xl border border-[#e5e5e5] shadow-sm hover:shadow-md transition-shadow overflow-hidden group flex flex-col">
-                {/* Cover header */}
-                <div className="h-20 bg-gradient-to-r from-[#00382D] to-[#08733e]"></div>
+              <div key={team.user_id} className="bg-white rounded-2xl border border-[#e5e5e5] shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col hover:-translate-y-1">
+                {/* Modern Cover Header */}
+                <div className="h-24 bg-gradient-to-br from-[#00382D] via-[#08733e] to-[#04422e] relative overflow-hidden">
+                  <Trophy className="text-white/10 -right-4 -bottom-4 absolute w-24 h-24 rotate-12 pointer-events-none" />
+                </div>
                 
                 <div className="p-6 relative pt-0 flex-grow flex flex-col">
-                  {/* Avatar */}
-                  <div className="w-16 h-16 rounded-2xl bg-white p-1 absolute -top-8 left-6 shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
+                  {/* Avatar with Ring */}
+                  <div className="w-16 h-16 rounded-2xl bg-white p-1 absolute -top-8 left-6 shadow-md border-2 border-white flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform duration-300">
                     <img 
-                      src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.display_name)}`} 
+                      src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.display_name || 'Team')}`} 
                       alt={team.display_name} 
-                      className="w-full h-full object-cover rounded-xl"
+                      className="w-full h-full object-cover rounded-xl bg-emerald-50"
                     />
                   </div>
 
+                  {/* Active Status Badge */}
                   <div className="flex justify-end pt-3 mb-2">
-                    <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded-md flex items-center gap-1 border bg-[#f0fdf4] text-[#166534] border-[#bbf7d0]">
-                      <ShieldCheck size={12} /> Active Team
+                    <span className="px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg flex items-center gap-1.5 border bg-emerald-50 text-emerald-800 border-emerald-200/80 shadow-2xs">
+                      <ShieldCheck size={13} className="text-emerald-600" /> Active Team
                     </span>
                   </div>
 
-                  <div className="mt-2 mb-4">
-                    <h3 className="text-lg font-bold text-[#111111] leading-tight mb-1 group-hover:text-[#00382D] transition-colors">{team.display_name}</h3>
-                    <div className="flex items-center gap-3 text-xs text-gray-500 font-semibold mt-1">
-                      <span className="flex items-center gap-1">
-                        <MapPin size={13} className="text-gray-400" />
-                        {team.district || 'N/A'}
+                  {/* Team Details */}
+                  <div className="mt-2 mb-2">
+                    <h3 className="text-xl font-black text-gray-900 leading-tight mb-2 group-hover:text-[#08733e] transition-colors">{team.display_name}</h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100/90 text-gray-700 text-[11px] font-semibold border border-gray-200/60">
+                        <MapPin size={12} className="text-[#08733e]" />
+                        {team.district || 'Location N/A'}
                       </span>
-                      <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                      <span className="flex items-center gap-1" title={team.email}>
-                        <Inbox size={13} className="text-gray-400" />
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100/90 text-gray-700 text-[11px] font-semibold border border-gray-200/60 truncate max-w-[180px]" title={team.email}>
+                        <Inbox size={12} className="text-[#08733e]" />
                         {team.email}
                       </span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 mt-auto pt-4 border-t border-[#f4f4f4]">
-                    <div>
-                      <p className="text-[10px] text-[#888888] font-bold uppercase tracking-wider mb-0.5">Contact Number</p>
-                      <p className="font-bold text-[#333333] flex items-center gap-1.5 text-xs truncate">
-                        <Phone size={13} className="text-[#00382D] shrink-0" /> {team.contact_number || 'N/A'}
+                  {/* Key Stats Box */}
+                  <div className="bg-[#f9faf9] border border-[#e8efe9] rounded-xl p-3.5 grid grid-cols-2 gap-3 my-4 shadow-2xs">
+                    <div className="flex flex-col justify-center">
+                      <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mb-1">Contact Number</p>
+                      <p className="font-bold text-gray-800 flex items-center gap-1.5 text-xs truncate leading-none">
+                        <Phone size={13} className="text-[#08733e] shrink-0" /> {team.contact_number || 'N/A'}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-[10px] text-[#888888] font-bold uppercase tracking-wider mb-0.5">Rating</p>
-                      <p className="font-bold text-[#333333] flex items-center gap-1.5 text-sm">
-                        <Star size={16} className="text-[#f59e0b] fill-[#f59e0b]" /> {team.rating ? parseFloat(team.rating).toFixed(1) : '0.0'}
+                    <div className="flex flex-col justify-center">
+                      <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mb-1">Rating</p>
+                      <p className="font-black text-gray-900 flex items-center gap-1.5 text-xs leading-none">
+                        <Star size={13} className="text-amber-500 fill-amber-500 shrink-0" /> {team.rating ? parseFloat(team.rating).toFixed(1) : '0.0'}
                       </p>
                     </div>
                   </div>
 
                   {/* Actions buttons */}
-                  <div className="mt-4 pt-4 border-t border-[#f4f4f4] space-y-2">
+                  <div className="mt-auto space-y-2.5 pt-1">
                     <button 
                       onClick={() => handleViewRoster(team.user_id, team.display_name)}
-                      className="w-full py-2 bg-[#f8f7f4] hover:bg-[#e5e5e5] text-[#333333] rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2 group/btn border border-[#e5e5e5] shadow-sm cursor-pointer"
+                      className="w-full py-2.5 bg-white hover:bg-gray-50 text-gray-800 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border border-[#e2e8e4] shadow-2xs cursor-pointer group/btn"
                     >
-                      View Team Roster
-                      <ChevronRight size={14} className="text-[#888888] group-hover/btn:text-[#333333] transition-colors" />
+                      <Users size={14} className="text-[#08733e]" /> View Profile
                     </button>
 
-                    {nonAssociatedTournaments.length > 0 && (
-                      <button 
-                        onClick={() => {
-                          setSelectedTeamToInvite({ teamUserId: team.user_id, teamName: team.display_name });
-                          setShowInviteModal(true);
-                        }}
-                        className="w-full py-2 bg-[#00382D] hover:bg-[#002a22] text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
-                      >
-                        <Send size={12} /> Invite to Tournament
-                      </button>
-                    )}
+                    <button 
+                      onClick={() => {
+                        setSelectedTeamToInvite({ teamUserId: team.user_id, teamName: team.display_name });
+                        setShowInviteModal(true);
+                      }}
+                      className="w-full py-2.5 bg-gradient-to-r from-[#00382D] to-[#08733e] hover:from-[#002a22] hover:to-[#065c32] text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs hover:shadow-md cursor-pointer tracking-wide"
+                    >
+                      <Send size={13} /> Send Request for Tournament
+                    </button>
                   </div>
 
                 </div>

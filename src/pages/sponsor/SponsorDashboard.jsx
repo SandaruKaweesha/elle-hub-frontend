@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   TrendingUp, 
   Users, 
@@ -11,8 +11,43 @@ import {
   ChevronRight,
   ChevronLeft
 } from "lucide-react";
+import api from "../../services/api";
 
 function SponsorDashboard() {
+  const [requests, setRequests] = useState([]);
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  useEffect(() => {
+    if (user && user.user_id) {
+      loadRequests();
+    }
+  }, []);
+
+  const loadRequests = async () => {
+    try {
+      const res = await api.get(`/sponsor/${user.user_id}/requests`);
+      if (res.data && res.data.success) {
+        setRequests(res.data.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to load requests", err);
+    }
+  };
+
+  const handleRespond = async (tournamentId, status) => {
+    try {
+      const res = await api.post(`/tournament/${tournamentId}/sponsor-requests/respond`, {
+        sponsorUserId: user.user_id,
+        status
+      });
+      if (res.data && res.data.success) {
+        loadRequests();
+      }
+    } catch (err) {
+      console.error("Failed to respond", err);
+    }
+  };
+
   // Dummy data for presentation
   const analytics = {
     investment: "$245.8k",
@@ -20,10 +55,7 @@ function SponsorDashboard() {
     impressions: "8.4M"
   };
 
-  const requests = [
-    { id: 1, title: "Summer Elite League", type: "Tier 2 Sponsorship", amount: "$15,000", badge: "New" },
-    { id: 2, title: "Tri-City Invitational", type: "Court Branding", amount: "$8,500", badge: "" }
-  ];
+
 
   const sponsoredTournaments = [
     { id: 1, title: "Global Cup 2024", date: "June 15 - July 10", location: "International Arena", engagement: "450k Interactions", status: "92% Live", tag: "PRIME EVENT", bg: "bg-blue-900" },
@@ -91,28 +123,51 @@ function SponsorDashboard() {
           
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex-1 flex flex-col">
             <div className="p-4 space-y-4">
-              {requests.map(req => (
-                <div key={req.id} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                  <div className="flex gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#eaf1ec] flex items-center justify-center text-[#014731] shrink-0">
-                      <Trophy size={18} />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-sm font-bold text-[#111111] leading-tight">{req.title}</h4>
-                      <p className="text-xs text-gray-500 mt-0.5">{req.type} · <span className="font-semibold">{req.amount}</span></p>
-                      
-                      <div className="flex gap-2 mt-3">
-                        <button className="flex-1 bg-[#014731] text-white text-xs font-bold py-2 rounded hover:bg-[#023827] transition-colors">
-                          Accept
-                        </button>
-                        <button className="flex-1 bg-white border border-gray-200 text-gray-600 text-xs font-bold py-2 rounded hover:bg-gray-50 transition-colors">
-                          Reject
-                        </button>
+              {requests.length === 0 ? (
+                <div className="text-center text-xs text-gray-500 py-8">
+                  No incoming requests.
+                </div>
+              ) : (
+                requests.map(req => (
+                  <div key={req.tournament_id} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                    <div className="flex gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-[#eaf1ec] flex items-center justify-center text-[#014731] shrink-0">
+                        <Trophy size={18} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <h4 className="text-sm font-bold text-[#111111] leading-tight">{req.title}</h4>
+                          {req.status === 'PENDING' && (
+                            <span className="bg-amber-100 text-amber-800 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">New</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">{req.location} · <span className="font-semibold">{req.tournament_held_date}</span></p>
+                        
+                        {req.status === 'PENDING' ? (
+                          <div className="flex gap-2 mt-3">
+                            <button 
+                              onClick={() => handleRespond(req.tournament_id, 'ACCEPTED')}
+                              className="flex-1 bg-[#014731] text-white text-xs font-bold py-2 rounded hover:bg-[#023827] transition-colors"
+                            >
+                              Accept
+                            </button>
+                            <button 
+                              onClick={() => handleRespond(req.tournament_id, 'REJECTED')}
+                              className="flex-1 bg-white border border-gray-200 text-gray-600 text-xs font-bold py-2 rounded hover:bg-gray-50 transition-colors"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="mt-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                            Status: <span className={req.status === 'ACCEPTED' ? 'text-[#014731]' : 'text-red-500'}>{req.status}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
             
             <button className="w-full py-3 text-xs font-bold text-[#014731] border-t border-gray-100 hover:bg-gray-50 transition-colors mt-auto">

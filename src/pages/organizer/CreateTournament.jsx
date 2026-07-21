@@ -27,6 +27,7 @@ function CreateTournament() {
     tournament_held_date: "",
     end_date: "",
     maximum_team_limit: "",
+    maximum_referee_limit: "2",
     rules: "",
     prize_details: ""
   });
@@ -54,7 +55,7 @@ function CreateTournament() {
       // Get the currently logged-in user
       const userString = localStorage.getItem('user');
       const user = userString ? JSON.parse(userString) : null;
-      const organizerId = user?.userId || user?.id;
+      const organizerId = user?.userId || user?.user_id || user?.id || user?.organizer_id;
 
       if (!organizerId) {
         throw new Error("Organizer ID not found. Please log in again.");
@@ -70,6 +71,7 @@ function CreateTournament() {
         endDate: formData.end_date,
         tournamentHeldDate: formData.tournament_held_date,
         maximumTeamLimit: parseInt(formData.maximum_team_limit, 10),
+        maximumRefereeLimit: parseInt(formData.maximum_referee_limit || 2, 10),
         rules: formData.rules,
         prizeDetails: formData.prize_details
       };
@@ -250,26 +252,50 @@ function CreateTournament() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[13px] font-bold text-[#111111] mb-2">
-                  Maximum Team Limit <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Users size={18} className="text-[#888888]" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[13px] font-bold text-[#111111] mb-2">
+                    Maximum Team Limit <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Users size={18} className="text-[#888888]" />
+                    </div>
+                    <input
+                      type="number"
+                      name="maximum_team_limit"
+                      required
+                      min="2"
+                      value={formData.maximum_team_limit}
+                      onChange={handleChange}
+                      placeholder="e.g. 16"
+                      className="w-full h-12 pl-11 pr-4 bg-white border border-[#d6d8d4] rounded-lg text-sm text-[#111111] focus:ring-2 focus:ring-[#00382D]/20 focus:border-[#00382D] outline-none transition-all placeholder:text-[#888888]"
+                    />
                   </div>
-                  <input
-                    type="number"
-                    name="maximum_team_limit"
-                    required
-                    min="2"
-                    value={formData.maximum_team_limit}
-                    onChange={handleChange}
-                    placeholder="e.g. 16"
-                    className="w-full h-12 pl-11 pr-4 bg-white border border-[#d6d8d4] rounded-lg text-sm text-[#111111] focus:ring-2 focus:ring-[#00382D]/20 focus:border-[#00382D] outline-none transition-all placeholder:text-[#888888]"
-                  />
+                  <p className="text-xs text-[#888888] mt-2 font-medium">How many teams can participate in this tournament.</p>
                 </div>
-                <p className="text-xs text-[#888888] mt-2 font-medium">How many teams can participate in this tournament.</p>
+
+                <div>
+                  <label className="block text-[13px] font-bold text-[#111111] mb-2">
+                    Required Referees Count <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Users size={18} className="text-[#888888]" />
+                    </div>
+                    <input
+                      type="number"
+                      name="maximum_referee_limit"
+                      required
+                      min="1"
+                      value={formData.maximum_referee_limit}
+                      onChange={handleChange}
+                      placeholder="e.g. 2"
+                      className="w-full h-12 pl-11 pr-4 bg-white border border-[#d6d8d4] rounded-lg text-sm text-[#111111] focus:ring-2 focus:ring-[#00382D]/20 focus:border-[#00382D] outline-none transition-all placeholder:text-[#888888]"
+                    />
+                  </div>
+                  <p className="text-xs text-[#888888] mt-2 font-medium">How many referees are needed for this tournament.</p>
+                </div>
               </div>
             </div>
           </div>
