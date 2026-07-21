@@ -259,16 +259,6 @@ function OrganizerLayout() {
                   </>
                 )}
               </div>
-
-              {/* Settings Button */}
-              <div className="relative hidden sm:block">
-                <button 
-                  onClick={() => { navigate('/organizer/settings'); setShowNotifications(false); }}
-                  className="p-2 text-[#666666] hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <Settings size={20} />
-                </button>
-              </div>
             </div>
             
             <div className="w-[1px] h-8 bg-[#e5e5e5] hidden sm:block"></div>
