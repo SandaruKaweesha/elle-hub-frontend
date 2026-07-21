@@ -20,8 +20,8 @@ import {
 const SIDEBAR_LINKS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard, path: "/referee" },
   { id: "tournaments", label: "Tournaments", icon: Trophy, path: "/referee/tournaments" },
-  { id: "schedule", label: "My Schedule", icon: CalendarDays, path: "/referee/schedule" },
   { id: "requests", label: "Match Requests", icon: ClipboardList, path: "/referee/requests" },
+  { id: "schedule", label: "My Schedule", icon: CalendarDays, path: "/referee/schedule" },
   { id: "performance", label: "Performance", icon: Star, path: "/referee/performance" },
   { id: "log", label: "Tournament Log", icon: History, path: "/referee/log" },
 ];
