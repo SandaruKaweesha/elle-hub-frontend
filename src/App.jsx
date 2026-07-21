@@ -35,6 +35,7 @@ import ErrorBoundary from "./ErrorBoundary";
 import RefereeLayout from "./components/referee/RefereeLayout";
 import RefereeDashboard from "./pages/referee/RefereeDashboard";
 import RefereeSettings from "./pages/referee/RefereeSettings";
+import RefereeTournaments from "./pages/referee/RefereeTournaments";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminRequests from "./pages/admin/AdminRequests";
@@ -116,6 +117,7 @@ function App() {
      <Route path="/referee" element={<RefereeLayout />}>
        <Route index element={<RefereeDashboard />} />
        <Route path="dashboard" element={<RefereeDashboard />} />
+       <Route path="tournaments" element={<RefereeTournaments />} />
        <Route path="availability" element={<RefereeAvailability />} />
        <Route path="schedule" element={<RefereeSchedule />} />
        <Route path="requests" element={<RefereeRequests />} />
