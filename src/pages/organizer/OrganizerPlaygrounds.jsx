@@ -55,7 +55,10 @@ export default function OrganizerPlaygrounds() {
 
       if (usersRes.data && usersRes.data.success !== false) {
         const allUsers = usersRes.data.data || [];
-        const playgroundUsers = allUsers.filter(u => (u.role || '').toUpperCase() === 'PLAYGROUND');
+        const playgroundUsers = allUsers.filter(u => 
+          (u.role || '').toUpperCase() === 'PLAYGROUND' && 
+          Boolean(u.playground_name)
+        );
         setPlaygrounds(playgroundUsers);
       }
 

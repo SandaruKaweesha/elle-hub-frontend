@@ -55,7 +55,10 @@ export default function OrganizerSponsors() {
 
       if (usersRes.data && usersRes.data.success !== false) {
         const allUsers = usersRes.data.data || [];
-        const sponsorUsers = allUsers.filter(u => (u.role || '').toUpperCase() === 'SPONSOR');
+        const sponsorUsers = allUsers.filter(u => 
+          (u.role || '').toUpperCase() === 'SPONSOR' && 
+          Boolean(u.company_name)
+        );
         setSponsors(sponsorUsers);
       }
 

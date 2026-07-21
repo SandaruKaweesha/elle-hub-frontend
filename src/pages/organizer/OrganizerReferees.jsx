@@ -60,7 +60,11 @@ export default function OrganizerReferees() {
 
       if (usersRes.data && usersRes.data.success !== false) {
         const allUsers = usersRes.data.data || [];
-        const refereeUsers = allUsers.filter(u => (u.role || '').toUpperCase() === 'REFEREE');
+        // Only include referee accounts that have completed profile in referees table (referee_name / full_name exists)
+        const refereeUsers = allUsers.filter(u => 
+          (u.role || '').toUpperCase() === 'REFEREE' && 
+          Boolean(u.referee_name || u.full_name)
+        );
         setReferees(refereeUsers);
       }
 
