@@ -240,8 +240,9 @@ export default function RefereeTournaments() {
             const title = t.title || 'National Championship';
             const location = t.location || 'Sri Lanka';
             const organizer = t.organization_name || t.organizer_name || 'Elle Sports Association';
-            const startDate = t.start_date || 'TBD';
-            const endDate = t.end_date || 'TBD';
+            const contactNumber = t.contact_number || 'Available on Request';
+            const heldDate = t.tournament_held_date || t.start_date || 'TBD';
+            const deadline = t.end_date || 'TBD';
             const existingReqStatus = refereeRequestsMap[tournamentId];
 
             return (
@@ -279,7 +280,15 @@ export default function RefereeTournaments() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar size={14} className="text-[#00382D] shrink-0" />
-                        <span>Dates: <strong className="text-[#111111]">{startDate} - {endDate}</strong></span>
+                        <span>Held Date: <strong className="text-[#111111]">{heldDate}</strong></span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock size={14} className="text-[#00382D] shrink-0" />
+                        <span>Deadline: <strong className="text-[#111111]">{deadline}</strong></span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone size={14} className="text-[#00382D] shrink-0" />
+                        <span>Contact: <strong className="text-[#00382D]">{contactNumber}</strong></span>
                       </div>
                     </div>
 
@@ -358,7 +367,7 @@ export default function RefereeTournaments() {
               </div>
             </div>
 
-            {/* Simple Information Table List */}
+            {/* Structured Information List */}
             <div className="space-y-3 text-xs text-[#333333] mb-6">
               
               <div className="flex items-center justify-between py-1 border-b border-gray-50">
@@ -370,39 +379,48 @@ export default function RefereeTournaments() {
 
               <div className="flex items-center justify-between py-1 border-b border-gray-50">
                 <span className="text-[#888888] font-medium flex items-center gap-2">
-                  <Calendar size={14} className="text-[#00382D]" /> Tournament Dates:
+                  <Calendar size={14} className="text-[#00382D]" /> Held Date:
                 </span>
                 <span className="font-bold text-[#111111]">
-                  {selectedTournament.start_date || 'TBD'} {selectedTournament.end_date ? `to ${selectedTournament.end_date}` : ''}
+                  {selectedTournament.tournament_held_date || selectedTournament.start_date || 'TBD'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-gray-50">
                 <span className="text-[#888888] font-medium flex items-center gap-2">
-                  <Phone size={14} className="text-[#00382D]" /> Organizer Contact:
+                  <Clock size={14} className="text-[#00382D]" /> Registration Deadline:
+                </span>
+                <span className="font-bold text-[#111111]">
+                  {selectedTournament.end_date || 'TBD'}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between py-1 border-b border-gray-50">
+                <span className="text-[#888888] font-medium flex items-center gap-2">
+                  <Phone size={14} className="text-[#00382D]" /> Contact Number:
                 </span>
                 <span className="font-bold text-[#00382D]">{selectedTournament.contact_number || 'Available on Request'}</span>
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-gray-50">
                 <span className="text-[#888888] font-medium flex items-center gap-2">
-                  <Users size={14} className="text-[#00382D]" /> Participating Teams:
+                  <Users size={14} className="text-[#00382D]" /> No. of Teams:
                 </span>
                 <span className="font-bold text-[#111111]">
                   {modalDetailsLoading ? "Loading..." : participatingTeams.length > 0 
                     ? `${participatingTeams.length} Teams (${participatingTeams.map(t => t.team_name || t.name || 'Team').join(', ')})`
-                    : "No teams registered yet"}
+                    : "0 Teams registered"}
                 </span>
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-gray-50">
                 <span className="text-[#888888] font-medium flex items-center gap-2">
-                  <UserCheck size={14} className="text-[#00382D]" /> Assigned Referees:
+                  <UserCheck size={14} className="text-[#00382D]" /> No. of Referees:
                 </span>
                 <span className="font-bold text-[#111111]">
                   {modalDetailsLoading ? "Loading..." : assignedReferees.length > 0 
                     ? `${assignedReferees.length} Referees (${assignedReferees.map(r => r.full_name || r.referee_name || 'Referee').join(', ')})`
-                    : "No referees assigned yet"}
+                    : "0 Referees assigned"}
                 </span>
               </div>
 
