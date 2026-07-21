@@ -44,6 +44,7 @@ import SponsorDashboard from "./pages/sponsor/SponsorDashboard";
 import RefereeAvailability from "./pages/referee/RefereeAvailability";
 import RefereeSchedule from "./pages/referee/RefereeSchedule";
 import RefereeRequests from "./pages/referee/RefereeRequests";
+import RefereeTournamentLog from "./pages/referee/RefereeTournamentLog";
 import VerifyCertificate from "./pages/public/VerifyCertificate";
 
 function App() {
@@ -112,6 +113,7 @@ function App() {
        <Route path="availability" element={<RefereeAvailability />} />
        <Route path="schedule" element={<RefereeSchedule />} />
        <Route path="requests" element={<RefereeRequests />} />
+       <Route path="log" element={<RefereeTournamentLog />} />
      </Route>
 
      {/* Sponsor Routes */}
