@@ -41,7 +41,7 @@ const roleFields ={
     { label: "Playground Name", name: "playgroundName", type: "text", placeholder: "Enter playground name" },
     { label: "Location", name: "location", type: "text", placeholder: "Enter location" },
     { label: "Address", name: "address", type: "text", placeholder: "Enter address" },
-    { label: "Capacity", name: "capacity", type: "number", placeholder: "Enter capacity" },
+    { label: "Playground Area", name: "area", type: "text", placeholder: "e.g. 500 Sq. Ft or 2 Acres" },
     { label: "Contact Number", name: "contactNumber", type: "tel", placeholder: "+94 7X XXX XXXX" },
   ],
 
@@ -77,6 +77,7 @@ function RegisterForm({selectedRole}){
   contactPerson: "",
   experienceYears: "",
   location: "",
+  area: "",
   capacity: "",
   playgroundName: "",
   organizationName: "",

@@ -24,7 +24,7 @@ const SIDEBAR_LINKS = [
   { id: "requests", label: "Requests", icon: ClipboardList, path: "/playground/requests" },
   { id: "schedule", label: "Ground Schedule", icon: CalendarDays, path: "/playground/schedule" },
   { id: "availability", label: "Set Availability", icon: CalendarCheck, path: "/playground/availability" },
-  { id: "history", label: "Hosting History", icon: History, path: "/playground/history" },
+  { id: "history", label: "History", icon: History, path: "/playground/history" },
 ];
 
 export default function PlaygroundLayout() {

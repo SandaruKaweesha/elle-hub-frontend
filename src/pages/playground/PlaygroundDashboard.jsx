@@ -30,7 +30,8 @@ export default function PlaygroundDashboard() {
     location: "Badulla",
     address: "Lower Street, Badulla",
     contactNumber: "0771234567",
-    capacity: 500,
+    area: "500 Sq. Ft",
+    capacity: "500 Sq. Ft",
     availabilityStatus: "AVAILABLE"
   });
 
@@ -46,13 +47,15 @@ export default function PlaygroundDashboard() {
       const res = await api.get(`/user/${userId}`);
       if (res.data && res.data.success !== false) {
         const u = res.data.data;
+        const areaVal = u.area || u.playground_area || u.capacity || "500 Sq. Ft";
         setPlaygroundData({
           playgroundName: u.playground_name || u.playgroundName || u.display_name || "Badulla Ground",
           locatedDistrict: u.located_district || u.locatedDistrict || "Badulla",
           location: u.location || "Badulla",
           address: u.address || "Lower Street, Badulla",
           contactNumber: u.contact_number || "0771234567",
-          capacity: u.capacity || 500,
+          area: areaVal,
+          capacity: areaVal,
           availabilityStatus: u.availability_status || u.availabilityStatus || "AVAILABLE"
         });
       }
@@ -136,30 +139,39 @@ export default function PlaygroundDashboard() {
     );
   }
 
+  const formatAreaDisplay = (val) => {
+    if (!val) return "500 Acres";
+    const str = String(val).trim();
+    if (/^\d+$/.test(str)) {
+      return `${str} Acres`;
+    }
+    return str;
+  };
+
   return (
-    <div className="max-w-7xl mx-auto font-['Poppins'] space-y-6 pb-12 animate-in fade-in duration-300">
+    <div className="space-y-6 pb-12 font-['Poppins'] animate-in fade-in duration-300">
       
-      {/* Welcome Banner Header */}
-      <div className="bg-[#00382D] rounded-2xl p-6 md:p-8 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="relative z-10 space-y-2 max-w-xl">
-          <span className="px-3 py-1 bg-white/10 text-emerald-200 text-xs font-bold rounded-lg border border-white/10 uppercase tracking-wider inline-flex items-center gap-1.5">
-            <Building2 size={14} /> Official Tournament Venue
+      {/* Header Banner */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#00382D] to-[#08733e] rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="space-y-2 max-w-xl relative z-10">
+          <span className="px-3 py-1 bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-extrabold rounded-full tracking-wider uppercase inline-block">
+            Official Ground Venue Dashboard
           </span>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            {playgroundData.playgroundName}
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            Welcome, {playgroundData.playgroundName}!
           </h1>
-          <p className="text-emerald-100 text-xs md:text-sm font-medium flex items-center gap-2">
+          <p className="text-emerald-100/80 text-xs sm:text-sm font-medium flex items-center gap-1">
             <MapPin size={15} /> {playgroundData.address}, {playgroundData.locatedDistrict} District
           </p>
         </div>
 
         <div className="relative z-10 bg-white/10 backdrop-blur-xs p-4 rounded-xl border border-white/10 flex items-center gap-4 shrink-0">
           <div className="w-12 h-12 rounded-xl bg-white text-[#00382D] flex items-center justify-center font-extrabold text-xl shadow-xs">
-            <Users size={24} />
+            <Building2 size={24} />
           </div>
           <div>
-            <span className="text-[10px] text-emerald-200 font-bold uppercase tracking-wider block">Spectator Capacity</span>
-            <strong className="text-2xl font-black">{playgroundData.capacity} Seats</strong>
+            <span className="text-[10px] text-emerald-200 font-bold uppercase tracking-wider block">Playground Area</span>
+            <strong className="text-2xl font-black">{formatAreaDisplay(playgroundData.area || playgroundData.capacity)}</strong>
           </div>
         </div>
       </div>
@@ -223,19 +235,19 @@ export default function PlaygroundDashboard() {
           </div>
         </div>
 
-        {/* Capacity Card */}
+        {/* Area Card */}
         <div className="bg-white rounded-2xl p-5 border border-[#e5e5e5] shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
           <div className="flex justify-between items-start mb-4">
             <div className="w-11 h-11 rounded-xl bg-[#00382D]/10 text-[#00382D] flex items-center justify-center">
-              <Users size={22} />
+              <Building2 size={22} />
             </div>
             <span className="text-[10px] font-bold text-[#00382D] bg-[#00382D]/10 px-2.5 py-1 rounded-md uppercase tracking-wider">
               Verified
             </span>
           </div>
           <div>
-            <p className="text-xs text-[#888888] font-semibold uppercase tracking-wider mb-1">Seating Capacity</p>
-            <h3 className="text-2xl font-bold text-[#111111]">{playgroundData.capacity} Spectators</h3>
+            <p className="text-xs text-[#888888] font-semibold uppercase tracking-wider mb-1">Playground Area</p>
+            <h3 className="text-2xl font-bold text-[#111111]">{formatAreaDisplay(playgroundData.area || playgroundData.capacity)}</h3>
           </div>
         </div>
 
@@ -250,8 +262,8 @@ export default function PlaygroundDashboard() {
             </span>
           </div>
           <div>
-            <p className="text-xs text-[#888888] font-semibold uppercase tracking-wider mb-1">Located District</p>
-            <h3 className="text-xl font-bold text-[#111111] capitalize">{playgroundData.locatedDistrict}</h3>
+            <p className="text-xs text-[#888888] font-semibold uppercase tracking-wider mb-1">Located Town</p>
+            <h3 className="text-xl font-bold text-[#111111] capitalize">{playgroundData.location || playgroundData.locatedDistrict}</h3>
           </div>
         </div>
 

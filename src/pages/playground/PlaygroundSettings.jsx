@@ -21,7 +21,8 @@ export default function PlaygroundSettings() {
     location: "",
     address: "",
     contactNumber: "",
-    capacity: 500,
+    area: "500 Sq. Ft",
+    capacity: "500 Sq. Ft",
     email: "",
   });
   const [originalProfileData, setOriginalProfileData] = useState({});
@@ -42,13 +43,15 @@ export default function PlaygroundSettings() {
       const response = await api.get(`/user/${userId}`);
       if (response.data && response.data.success !== false) {
         const data = response.data.data;
+        const areaVal = data.area || data.playground_area || data.capacity || "500 Sq. Ft";
         const mappedData = {
           playgroundName: data.playground_name || data.playgroundName || data.display_name || "",
           locatedDistrict: data.located_district || data.locatedDistrict || "",
           location: data.location || "",
           address: data.address || "",
           contactNumber: data.contact_number || "",
-          capacity: data.capacity || 500,
+          area: areaVal,
+          capacity: areaVal,
           email: data.email || "",
         };
         setProfileData(mappedData);
@@ -58,8 +61,8 @@ export default function PlaygroundSettings() {
         setError(response.data.message || "Failed to load playground profile.");
       }
     } catch (err) {
-      console.error("Fetch playground profile error:", err);
-      setError("Unable to connect to the server to load profile details.");
+      console.error("Fetch profile error:", err);
+      setError("Could not load profile details.");
     } finally {
       setLoading(false);
     }
@@ -101,7 +104,8 @@ export default function PlaygroundSettings() {
         location: profileData.location,
         address: profileData.address,
         contactNumber: profileData.contactNumber,
-        capacity: Number(profileData.capacity),
+        area: profileData.area || profileData.capacity,
+        capacity: profileData.area || profileData.capacity,
       };
 
       const response = await api.put("/user/update", payload);
@@ -359,14 +363,15 @@ export default function PlaygroundSettings() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#333333] uppercase tracking-wider mb-2">Spectator Capacity</label>
+                  <label className="block text-xs font-bold text-[#333333] uppercase tracking-wider mb-2">Playground Area</label>
                   <div className="relative">
-                    <Users size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#888888]" />
+                    <Building2 size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#888888]" />
                     <input
-                      type="number"
+                      type="text"
                       disabled={!profileEditMode}
-                      value={profileData.capacity}
-                      onChange={(e) => setProfileData({ ...profileData, capacity: e.target.value })}
+                      value={profileData.area || profileData.capacity}
+                      onChange={(e) => setProfileData({ ...profileData, area: e.target.value, capacity: e.target.value })}
+                      placeholder="e.g. 500 Sq. Ft or 2 Acres"
                       className="w-full pl-11 pr-4 py-3 bg-[#f8f7f4] disabled:bg-[#f1f0ec] border border-[#e5e5e5] rounded-xl text-sm font-semibold text-[#111111] focus:outline-none focus:border-[#00382D]"
                       required
                     />

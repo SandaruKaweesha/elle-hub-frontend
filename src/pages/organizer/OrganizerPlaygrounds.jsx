@@ -224,7 +224,8 @@ export default function OrganizerPlaygrounds() {
             const rawDistrict = venue.located_district || venue.district || venue.playground_district || venue.location || 'Sri Lanka';
             const districtDisplay = rawDistrict.charAt(0).toUpperCase() + rawDistrict.slice(1);
             const phone = venue.contact_number || venue.phone || 'N/A';
-            const capacityDisplay = venue.playground_capacity || venue.capacity ? `${venue.playground_capacity || venue.capacity} Cap.` : 'N/A';
+            const areaVal = venue.playground_area || venue.area || venue.playground_capacity || venue.capacity;
+            const capacityDisplay = areaVal ? (/^\d+$/.test(String(areaVal).trim()) ? `${areaVal} Acres` : `${areaVal}`) : 'N/A';
             const initials = name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'PG';
 
             return (

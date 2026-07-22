@@ -30,7 +30,8 @@ export default function PlaygroundDetails() {
     location: "",
     address: "",
     contactNumber: "",
-    capacity: 500
+    area: "500 Sq. Ft",
+    capacity: "500 Sq. Ft"
   });
 
   const [originalData, setOriginalData] = useState({});
@@ -43,13 +44,15 @@ export default function PlaygroundDetails() {
       const res = await api.get(`/user/${userId}`);
       if (res.data && res.data.success !== false) {
         const u = res.data.data;
+        const areaVal = u.area || u.playground_area || u.capacity || "500 Sq. Ft";
         const mapped = {
           playgroundName: u.playground_name || u.playgroundName || u.display_name || "Badulla Ground",
           locatedDistrict: u.located_district || u.locatedDistrict || "Badulla",
           location: u.location || "Badulla",
           address: u.address || "Lower Street, Badulla",
           contactNumber: u.contact_number || "0771234567",
-          capacity: u.capacity || 500
+          area: areaVal,
+          capacity: areaVal
         };
         setFormData(mapped);
         setOriginalData(mapped);
@@ -83,7 +86,8 @@ export default function PlaygroundDetails() {
         location: formData.location,
         address: formData.address,
         contactNumber: formData.contactNumber,
-        capacity: Number(formData.capacity)
+        area: formData.area || formData.capacity,
+        capacity: formData.area || formData.capacity
       };
 
       const res = await api.put("/user/update", payload);
@@ -245,17 +249,17 @@ export default function PlaygroundDetails() {
               </div>
             </div>
 
-            {/* Seating Capacity */}
+            {/* Playground Area */}
             <div>
-              <label className="block text-xs font-bold text-[#333333] uppercase tracking-wider mb-2">Spectator Seating Capacity</label>
+              <label className="block text-xs font-bold text-[#333333] uppercase tracking-wider mb-2">Playground Area</label>
               <div className="relative">
-                <Users size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#888888]" />
+                <Building2 size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#888888]" />
                 <input
-                  type="number"
+                  type="text"
                   disabled={!editMode}
-                  value={formData.capacity}
-                  onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                  placeholder="e.g. 500"
+                  value={formData.area || formData.capacity}
+                  onChange={(e) => setFormData({ ...formData, area: e.target.value, capacity: e.target.value })}
+                  placeholder="e.g. 500 Sq. Ft or 2 Acres"
                   className="w-full pl-11 pr-4 py-3 bg-[#f8f7f4] disabled:bg-[#f1f0ec] border border-[#e5e5e5] rounded-xl text-sm font-semibold text-[#111111] focus:outline-none focus:border-[#00382D]"
                   required
                 />
