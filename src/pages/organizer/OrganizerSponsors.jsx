@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, CheckCircle2, AlertCircle, X, Send, Briefcase, DollarSign, Phone, Mail, User, ChevronRight, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, MapPin, CheckCircle2, AlertCircle, X, Send, Briefcase, DollarSign, Phone, Mail, User, ChevronRight, ExternalLink, MessageSquare } from 'lucide-react';
 import api from '../../services/api';
 
 export default function OrganizerSponsors() {
+  const navigate = useNavigate();
   const [sponsors, setSponsors] = useState([]);
   const [organizerTournaments, setOrganizerTournaments] = useState([]);
   
@@ -272,17 +274,27 @@ export default function OrganizerSponsors() {
 
                 {/* Actions */}
                 <div className="p-6 pt-0 space-y-2">
-                  <button 
-                    onClick={() => handleOpenProfile(sponsor)}
-                    className="w-full py-2.5 bg-[#f8f7f4] hover:bg-[#e5e5e5] text-[#333333] rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 border border-[#e5e5e5] shadow-sm"
-                  >
-                    View Details
-                    <ChevronRight size={14} className="text-[#888888]" />
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      onClick={() => handleOpenProfile(sponsor)}
+                      className="py-2.5 bg-[#f8f7f4] hover:bg-[#e5e5e5] text-[#333333] rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1 border border-[#e5e5e5] shadow-2xs cursor-pointer"
+                    >
+                      View Details
+                      <ChevronRight size={14} className="text-[#888888]" />
+                    </button>
+
+                    <button 
+                      onClick={() => navigate('/organizer/messages')}
+                      className="py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <MessageSquare size={13} className="text-emerald-700" />
+                      Message
+                    </button>
+                  </div>
 
                   <button 
                     onClick={() => handleOpenInviteModal(sponsor)}
-                    className="w-full py-2.5 bg-[#00382D] hover:bg-[#002b22] text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                    className="w-full py-2.5 bg-[#00382D] hover:bg-[#002b22] text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                   >
                     <Send size={13} />
                     Invite for Tournament
@@ -346,10 +358,10 @@ export default function OrganizerSponsors() {
               </div>
             </div>
 
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 grid grid-cols-3 gap-2">
               <button 
                 onClick={() => setShowProfileModal(false)}
-                className="w-1/2 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold text-xs transition-colors"
+                className="py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold text-xs transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -357,9 +369,19 @@ export default function OrganizerSponsors() {
               <button 
                 onClick={() => {
                   setShowProfileModal(false);
+                  navigate('/organizer/messages');
+                }}
+                className="py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer"
+              >
+                <MessageSquare size={13} /> Chat
+              </button>
+
+              <button 
+                onClick={() => {
+                  setShowProfileModal(false);
                   handleOpenInviteModal(selectedSponsorProfile);
                 }}
-                className="w-1/2 py-2.5 bg-[#00382D] hover:bg-[#002b22] text-white rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                className="py-2.5 bg-[#00382D] hover:bg-[#002b22] text-white rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
               >
                 <Send size={13} /> Invite
               </button>

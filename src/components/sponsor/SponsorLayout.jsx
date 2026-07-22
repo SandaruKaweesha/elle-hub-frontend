@@ -33,17 +33,20 @@ function SponsorLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [dbUser, setDbUser] = useState(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const userString = localStorage.getItem('user');
+  const localUser = userString ? JSON.parse(userString) : null;
+  const targetId = localUser?.userId || localUser?.user_id || localUser?.id;
 
   useEffect(() => {
-    const userString = localStorage.getItem('user');
     if (!userString) {
       navigate('/login');
       return;
     }
 
-    const localUser = JSON.parse(userString);
     const role = (localUser?.role || '').toString().trim().toUpperCase();
 
     if (role && role !== 'SPONSOR') {
@@ -56,7 +59,6 @@ function SponsorLayout() {
       return;
     }
 
-    const targetId = localUser.userId || localUser.user_id || localUser.id;
     if (targetId) {
       api.get(`/user/${targetId}`)
         .then(res => {
@@ -69,13 +71,34 @@ function SponsorLayout() {
     }
   }, [navigate]);
 
+  // Real-time unread messages count fetcher
+  useEffect(() => {
+    if (!targetId) return;
+
+    const fetchUnread = async () => {
+      try {
+        const res = await api.get(`/messages/contacts/${targetId}`);
+        if (res.data && res.data.success !== false) {
+          const rawData = res.data.data || res.data;
+          const contacts = Array.isArray(rawData) ? rawData : [];
+          const total = contacts.reduce((sum, c) => sum + (c?.unread_count || 0), 0);
+          setUnreadCount(total);
+        }
+      } catch (e) {
+        console.error("Unread count fetch error:", e);
+      }
+    };
+
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 3000);
+    return () => clearInterval(interval);
+  }, [targetId]);
+
   const handleLogout = () => {
     localStorage.removeItem('user');
     navigate('/login');
   };
 
-  const userString = localStorage.getItem('user');
-  const localUser = userString ? JSON.parse(userString) : null;
   const displayUser = dbUser || localUser || {};
 
   const userName = displayUser.fullName || displayUser.organizationName || 'Sponsor User';
@@ -119,15 +142,22 @@ function SponsorLayout() {
                 to={link.path}
                 onClick={() => setIsSidebarOpen(false)}
                 className={`
-                  flex items-center gap-3 px-4 py-3 rounded-l-lg rounded-r-none text-sm font-medium transition-colors
+                  flex items-center justify-between px-4 py-3 rounded-l-lg rounded-r-none text-sm font-medium transition-colors
                   ${isActive 
                     ? "bg-[#eaeaeb] text-[#111111] border-r-[4px] border-[#111111]" 
                     : "text-[#666666] border-transparent border-r-[4px] hover:bg-[#eaeaeb]/50 hover:text-[#111111]"
                   }
                 `}
               >
-                <Icon size={18} className={isActive ? "text-[#111111]" : "text-[#888888]"} />
-                {link.label}
+                <div className="flex items-center gap-3">
+                  <Icon size={18} className={isActive ? "text-[#111111]" : "text-[#888888]"} />
+                  {link.label}
+                </div>
+                {link.id === 'messages' && unreadCount > 0 && (
+                  <span className="px-2 py-0.5 text-[10px] font-extrabold bg-red-500 text-white rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -181,10 +211,14 @@ function SponsorLayout() {
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-4 sm:gap-6 shrink-0">
-            <button className="relative text-gray-500 hover:text-[#111111] transition-colors">
-              <Bell size={20} />
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
+            <Link to="/sponsor/messages" className="relative text-gray-500 hover:text-[#111111] transition-colors p-1 cursor-pointer">
+              <MessageSquare size={20} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">
+                  {unreadCount}
+                </span>
+              )}
+            </Link>
             
             <div className="w-[1px] h-8 bg-gray-200 hidden sm:block"></div>
             

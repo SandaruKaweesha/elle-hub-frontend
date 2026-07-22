@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 
-export default function SponsorMessages() {
+export default function OrganizerMessages() {
   const currentUser = JSON.parse(localStorage.getItem("user")) || {};
   const userId = currentUser.userId || currentUser.user_id || currentUser.id;
   const userRole = (currentUser.role || "").toString().trim().toUpperCase();
@@ -38,7 +38,7 @@ export default function SponsorMessages() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // 1. Fetch contacts list
+  // 1. Fetch contacts list (Sponsors for Organizer)
   const fetchContacts = async (silent = false) => {
     if (!userId) return;
     try {
@@ -136,7 +136,6 @@ export default function SponsorMessages() {
       });
 
       if (res.data && res.data.success !== false) {
-        // Refresh conversation & contacts list
         fetchConversation(selectedContact.user_id, true);
         fetchContacts(true);
       } else {
@@ -153,7 +152,7 @@ export default function SponsorMessages() {
   // Filter contacts by search
   const filteredContacts = contacts.filter((c) =>
     (c.display_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (c.organization_name || "").toLowerCase().includes(searchTerm.toLowerCase())
+    (c.contact_person || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -166,10 +165,10 @@ export default function SponsorMessages() {
             <span className="bg-[#00382D]/10 text-[#00382D] p-2 rounded-xl">
               <MessageSquare size={24} />
             </span>
-            <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">Direct Communications</h1>
+            <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">Sponsor Communications</h1>
           </div>
           <p className="text-[#666666] text-sm mt-1">
-            Private 1-on-1 messaging channel between Sponsors and Tournament Organizers.
+            Private 1-on-1 messaging channel with Tournament Sponsors.
           </p>
         </div>
 
@@ -206,7 +205,7 @@ export default function SponsorMessages() {
               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#888888]" />
               <input
                 type="text"
-                placeholder="Search organizers..."
+                placeholder="Search sponsors..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#e5e5e5] rounded-2xl text-xs font-semibold text-[#111111] focus:outline-none focus:border-[#00382D] transition-colors"
@@ -219,13 +218,13 @@ export default function SponsorMessages() {
             {loadingContacts ? (
               <div className="py-12 text-center">
                 <div className="w-8 h-8 border-3 border-[#00382D] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                <p className="text-xs text-[#666666] font-medium">Loading organizers...</p>
+                <p className="text-xs text-[#666666] font-medium">Loading sponsors...</p>
               </div>
             ) : filteredContacts.length === 0 ? (
               <div className="py-12 text-center px-4">
                 <Building2 size={36} className="mx-auto text-gray-300 mb-2" />
-                <p className="text-xs font-bold text-[#555555]">No Organizers Found</p>
-                <p className="text-[11px] text-[#888888] mt-1">Organizers will appear here when registered on the platform.</p>
+                <p className="text-xs font-bold text-[#555555]">No Sponsors Found</p>
+                <p className="text-[11px] text-[#888888] mt-1">Sponsors will appear here when registered on the platform.</p>
               </div>
             ) : (
               filteredContacts.map((contact) => {
@@ -271,9 +270,9 @@ export default function SponsorMessages() {
                         {contact.last_message}
                       </p>
 
-                      <div className="mt-1 flex items-center gap-1.5 text-[10px] text-emerald-800 font-bold uppercase tracking-wider">
-                        <ShieldCheck size={12} className="text-[#00382D]" />
-                        <span>Verified Organizer</span>
+                      <div className="mt-1 flex items-center gap-1.5 text-[10px] text-amber-700 font-bold uppercase tracking-wider">
+                        <ShieldCheck size={12} className="text-amber-600" />
+                        <span>Corporate Sponsor</span>
                       </div>
                     </div>
                   </div>
@@ -300,8 +299,8 @@ export default function SponsorMessages() {
                   <div>
                     <h3 className="text-sm font-extrabold text-[#111111]">{selectedContact.display_name}</h3>
                     <div className="flex items-center gap-3 text-[11px] text-[#666666] mt-0.5">
-                      <span className="flex items-center gap-1 text-emerald-700 font-bold">
-                        <ShieldCheck size={12} /> Tournament Organizer
+                      <span className="flex items-center gap-1 text-amber-700 font-bold">
+                        <ShieldCheck size={12} /> Verified Sponsor
                       </span>
                       <span>•</span>
                       <span className="flex items-center gap-1">
@@ -312,8 +311,8 @@ export default function SponsorMessages() {
                 </div>
 
                 <div className="hidden sm:flex items-center gap-2">
-                  <span className="px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-extrabold rounded-full uppercase tracking-wider">
-                    Official Communication Channel
+                  <span className="px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-extrabold rounded-full uppercase tracking-wider">
+                    Official Sponsor Communication
                   </span>
                 </div>
               </div>
@@ -330,7 +329,7 @@ export default function SponsorMessages() {
                     <Sparkles size={40} className="mx-auto text-[#00382D] mb-3 opacity-60" />
                     <h4 className="text-sm font-bold text-[#111111]">Start Sponsorship Discussion</h4>
                     <p className="text-xs text-[#666666] mt-1 leading-relaxed">
-                      Send a message to <strong>{selectedContact.display_name}</strong> regarding tournament sponsorships, branding requests, or proposal packages.
+                      Send a message to <strong>{selectedContact.display_name}</strong> to answer sponsorship queries or discuss proposal details.
                     </p>
                   </div>
                 ) : (
@@ -395,9 +394,9 @@ export default function SponsorMessages() {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#fbfbfa]">
               <MessageSquare size={56} className="text-gray-300 mb-3" />
-              <h3 className="text-base font-bold text-[#111111]">Select a Tournament Organizer</h3>
+              <h3 className="text-base font-bold text-[#111111]">Select a Sponsor Company</h3>
               <p className="text-xs text-[#666666] max-w-sm mt-1">
-                Choose an organizer from the list on the left to start or view sponsorship messages.
+                Choose a sponsor from the list on the left to start or view sponsorship messages.
               </p>
             </div>
           )}

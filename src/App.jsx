@@ -33,6 +33,7 @@ import MatchDraw from "./pages/organizer/MatchDraw";
 import UpdateResults from "./pages/organizer/UpdateResults";
 import LiveBroadcastHub from "./pages/organizer/LiveBroadcastHub";
 import CertificateQR from "./pages/organizer/CertificateQR";
+import OrganizerMessages from "./pages/organizer/OrganizerMessages";
 import ErrorBoundary from "./ErrorBoundary";
 
 import RefereeLayout from "./components/referee/RefereeLayout";
@@ -112,6 +113,7 @@ function App() {
         <Route path="referees" element={<OrganizerReferees />} />
         <Route path="playgrounds" element={<OrganizerPlaygrounds />} />
         <Route path="sponsors" element={<OrganizerSponsors />} />
+        <Route path="messages" element={<OrganizerMessages />} />
         <Route path="settings" element={<OrganizerSettings />} />
         <Route path="notifications" element={<OrganizerNotifications />} />
       </Route>
