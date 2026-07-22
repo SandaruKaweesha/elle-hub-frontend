@@ -57,6 +57,7 @@ export default function RefereeLayout() {
       else if (role === 'TEAM') navigate('/team');
       else if (role === 'ADMIN') navigate('/admin');
       else if (role === 'SPONSOR') navigate('/sponsor');
+      else if (role === 'PLAYGROUND') navigate('/playground');
       else navigate('/login');
       return;
     }

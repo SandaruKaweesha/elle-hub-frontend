@@ -405,7 +405,7 @@ export default function PlaygroundRequests() {
                       <Eye size={14} /> View Details
                     </button>
 
-                    {activeTab === "SENT" && isPending && (
+                    {activeTab === "SENT" && isPending && !((r.tournament_status || '').toUpperCase() === 'FINALIZED' || (r.tournament_status || '').toUpperCase() === 'ONGOING' || (r.tournament_status || '').toUpperCase() === 'COMPLETED') && (
                       <button
                         type="button"
                         disabled={isActioning}

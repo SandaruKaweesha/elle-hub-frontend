@@ -58,6 +58,7 @@ function OrganizerLayout() {
       else if (role === 'ADMIN') navigate('/admin');
       else if (role === 'REFEREE') navigate('/referee');
       else if (role === 'SPONSOR') navigate('/sponsor');
+      else if (role === 'PLAYGROUND') navigate('/playground');
       else navigate('/login');
       return;
     }

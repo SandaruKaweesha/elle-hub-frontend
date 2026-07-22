@@ -5,23 +5,27 @@ import {
   LayoutDashboard,
   BadgeDollarSign,
   Trophy,
-  LineChart,
-  Plus,
+  Calendar,
   History,
-  HelpCircle,
+  Settings,
   LogOut,
-  Search,
-  Bell,
   Menu,
   X,
+  Building2,
+  Phone,
+  Plus,
+  HelpCircle,
+  Search,
+  Bell,
+  User,
   MessageSquare
 } from "lucide-react";
 
 const SIDEBAR_LINKS = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/sponsor" },
-  { id: "sponsorships", label: "Sponsorships", icon: BadgeDollarSign, path: "/sponsor/sponsorships" },
+  { id: "dashboard", label: "Overview", icon: LayoutDashboard, path: "/sponsor/dashboard" },
   { id: "tournaments", label: "Tournaments", icon: Trophy, path: "/sponsor/tournaments" },
-  { id: "analytics", label: "Analytics", icon: LineChart, path: "/sponsor/analytics" },
+  { id: "requests", label: "Requests", icon: BadgeDollarSign, path: "/sponsor/requests" },
+  { id: "history", label: "History", icon: History, path: "/sponsor/history" },
   { id: "messages", label: "Messages", icon: MessageSquare, path: "/sponsor/messages" },
 ];
 
@@ -35,7 +39,7 @@ function SponsorLayout() {
   useEffect(() => {
     const userString = localStorage.getItem('user');
     if (!userString) {
-      window.location.href = '/login';
+      navigate('/login');
       return;
     }
 
@@ -43,11 +47,12 @@ function SponsorLayout() {
     const role = (localUser?.role || '').toString().trim().toUpperCase();
 
     if (role && role !== 'SPONSOR') {
-      if (role === 'ORGANIZER') window.location.href = '/organizer';
-      else if (role === 'TEAM') window.location.href = '/team';
-      else if (role === 'ADMIN') window.location.href = '/admin';
-      else if (role === 'REFEREE') window.location.href = '/referee';
-      else window.location.href = '/login';
+      if (role === 'ORGANIZER') navigate('/organizer');
+      else if (role === 'TEAM') navigate('/team');
+      else if (role === 'ADMIN') navigate('/admin');
+      else if (role === 'REFEREE') navigate('/referee');
+      else if (role === 'PLAYGROUND') navigate('/playground');
+      else navigate('/login');
       return;
     }
 
@@ -62,7 +67,7 @@ function SponsorLayout() {
         })
         .catch(err => console.error("Error fetching user data from DB:", err));
     }
-  }, []);
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -129,38 +134,23 @@ function SponsorLayout() {
         </nav>
 
         {/* Bottom Actions */}
-        <div className="p-4 border-t border-[#e5e5e5] space-y-1 mt-auto">
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-2">
-            <Plus size={18} />
-            New Request
-          </button>
-          
+        <div className="p-4 border-t border-[#e5e5e5] mt-auto space-y-1">
           <Link 
-            to="/sponsor/management"
+            to="/sponsor/settings"
             onClick={() => setIsSidebarOpen(false)}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-4"
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-[#00382D] text-white hover:bg-[#002a22] rounded-lg transition-colors mb-2 cursor-pointer"
           >
-            <BadgeDollarSign size={18} />
-            Management Tools
+            <User size={18} />
+            Sponsor Profile
           </Link>
-          
-          <div className="pt-2 space-y-1">
-            <Link to="/sponsor/history" className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:text-[#111111] hover:bg-[#eaeaeb]/50 rounded-lg transition-colors">
-              <History size={18} className="text-[#888888]" />
-              History
-            </Link>
-            <Link to="/sponsor/support" className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:text-[#111111] hover:bg-[#eaeaeb]/50 rounded-lg transition-colors">
-              <HelpCircle size={18} className="text-[#888888]" />
-              Help Center
-            </Link>
-            <button 
-              onClick={() => setShowLogoutConfirm(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <LogOut size={18} className="text-[#888888]" />
-              Logout
-            </button>
-          </div>
+
+          <button 
+            onClick={() => setShowLogoutConfirm(true)}
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#666666] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+          >
+            <LogOut size={18} className="text-[#888888]" />
+            Logout
+          </button>
         </div>
       </aside>
 
@@ -199,15 +189,18 @@ function SponsorLayout() {
             <div className="w-[1px] h-8 bg-gray-200 hidden sm:block"></div>
             
             {/* User Profile */}
-            <div className="flex items-center gap-3 cursor-pointer">
+            <Link 
+              to="/sponsor/settings"
+              className="flex items-center gap-3 cursor-pointer group hover:opacity-90 transition-opacity"
+            >
               <div className="hidden sm:flex flex-col items-end">
-                <span className="text-sm font-semibold text-[#111111]">{userName}</span>
+                <span className="text-sm font-semibold text-[#111111] group-hover:text-[#00382D] transition-colors">{userName}</span>
                 <span className="text-[11px] text-[#014731] font-semibold">{userRole}</span>
               </div>
-              <div className="w-9 h-9 rounded-full bg-white overflow-hidden shadow-sm flex items-center justify-center shrink-0 border border-gray-200">
+              <div className="w-9 h-9 rounded-full bg-white overflow-hidden shadow-sm flex items-center justify-center shrink-0 border border-gray-200 group-hover:border-[#00382D] transition-colors">
                  <img src={displayUser.profilePicture || displayUser.profile_picture || displayUser.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}&backgroundColor=eaf1ec`} alt="Avatar" className="w-full h-full object-cover" />
               </div>
-            </div>
+            </Link>
           </div>
         </header>
 
