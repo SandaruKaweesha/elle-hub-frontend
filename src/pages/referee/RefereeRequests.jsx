@@ -315,11 +315,6 @@ export default function RefereeRequests() {
             </div>
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-base">Organizer Invitations</h3>
-              {pendingReceivedCount > 0 && (
-                <span className="bg-emerald-400 text-emerald-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full animate-bounce">
-                  {pendingReceivedCount} Action Needed
-                </span>
-              )}
             </div>
           </div>
           <span className="font-extrabold text-lg">{receivedRequests.length}</span>

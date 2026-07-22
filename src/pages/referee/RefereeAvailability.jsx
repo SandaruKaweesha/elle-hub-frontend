@@ -85,7 +85,7 @@ function RefereeAvailability() {
     }
   }, [userId]);
 
-  const selectedDateStatus = availabilityByDate[selectedDateKey] || "UNSET";
+  const selectedDateStatus = availabilityByDate[selectedDateKey] || "AVAILABLE";
 
   const formattedDate = useMemo(() => {
     return format(selectedDate, "EEEE, MMMM d, yyyy");
@@ -185,18 +185,18 @@ function RefereeAvailability() {
 
           <div className="mb-5 flex flex-wrap gap-4 rounded-xl border border-[#dde2df] bg-[#fafbf9] px-4 py-3 text-xs text-[#444444]">
             <span className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-[#66f49a]" />
-              Available Date
-            </span>
-
-            <span className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full border border-[#00884a] bg-[#d9f8e5]" />
+              <span className="h-3 w-3 rounded-full border border-[#c9a227] bg-[#fff7d8]" />
               Selected Date
             </span>
 
             <span className="flex items-center gap-2">
+              <span className="h-3 w-3 rounded-full bg-red-500" />
+              Unavailable
+            </span>
+
+            <span className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-amber-500" />
-              Tournament Duty (Unavailable)
+              Tournament Duty
             </span>
           </div>
 
@@ -205,6 +205,8 @@ function RefereeAvailability() {
             currentMonth={currentMonth}
             selectedDate={selectedDate}
             availableDateKeys={availableDateKeys}
+            availabilityByDate={availabilityByDate}
+            assignedTournaments={assignedTournaments}
             onSelectDate={handleSelectDate}
             onPreviousMonth={handlePreviousMonth}
             onNextMonth={handleNextMonth}

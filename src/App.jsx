@@ -48,6 +48,15 @@ import RefereeSchedule from "./pages/referee/RefereeSchedule";
 import RefereeRequests from "./pages/referee/RefereeRequests";
 import RefereeHistory from "./pages/referee/RefereeHistory";
 import VerifyCertificate from "./pages/public/VerifyCertificate";
+import PlaygroundLayout from "./components/playground/PlaygroundLayout";
+import PlaygroundDashboard from "./pages/playground/PlaygroundDashboard";
+import PlaygroundTournaments from "./pages/playground/PlaygroundTournaments";
+import PlaygroundDetails from "./pages/playground/PlaygroundDetails";
+import PlaygroundSchedule from "./pages/playground/PlaygroundSchedule";
+import PlaygroundAvailability from "./pages/playground/PlaygroundAvailability";
+import PlaygroundRequests from "./pages/playground/PlaygroundRequests";
+import PlaygroundHistory from "./pages/playground/PlaygroundHistory";
+import PlaygroundSettings from "./pages/playground/PlaygroundSettings";
 
 function App() {
   return (
@@ -127,6 +136,19 @@ function App() {
        <Route path="history" element={<RefereeHistory />} />
        <Route path="log" element={<RefereeHistory />} />
        <Route path="settings" element={<RefereeSettings />} />
+     </Route>
+
+     {/* Playground Routes */}
+     <Route path="/playground" element={<PlaygroundLayout />}>
+       <Route index element={<PlaygroundDashboard />} />
+       <Route path="dashboard" element={<PlaygroundDashboard />} />
+       <Route path="tournaments" element={<PlaygroundTournaments />} />
+       <Route path="details" element={<PlaygroundDetails />} />
+       <Route path="schedule" element={<PlaygroundSchedule />} />
+       <Route path="availability" element={<PlaygroundAvailability />} />
+       <Route path="requests" element={<PlaygroundRequests />} />
+       <Route path="history" element={<PlaygroundHistory />} />
+       <Route path="settings" element={<PlaygroundSettings />} />
      </Route>
 
      {/* Sponsor Routes */}
