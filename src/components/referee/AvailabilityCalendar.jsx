@@ -1,12 +1,14 @@
-import { useMemo } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useMemo } from "react";
+import { ChevronLeft, ChevronRight, Trophy, Check, X } from "lucide-react";
 
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-function AvailabilityCalendar({
+export default function AvailabilityCalendar({
   currentMonth,
   selectedDate,
-  availableDateKeys,
+  availableDateKeys = [],
+  availabilityByDate = {},
+  assignedTournaments = [],
   onSelectDate,
   onPreviousMonth,
   onNextMonth,
@@ -43,13 +45,11 @@ function AvailabilityCalendar({
 
     // Fill remaining calendar cells to 42
     let nextMonthDay = 1;
-
     while (days.length < 42) {
       days.push({
         date: new Date(year, month + 1, nextMonthDay),
         isCurrentMonth: false,
       });
-
       nextMonthDay += 1;
     }
 
@@ -60,7 +60,6 @@ function AvailabilityCalendar({
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
-
     return `${year}-${month}-${day}`;
   }
 
@@ -82,7 +81,7 @@ function AvailabilityCalendar({
           type="button"
           onClick={onPreviousMonth}
           aria-label="Previous month"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d9dedb] bg-white text-[#333333] shadow-sm transition hover:bg-[#eef8f2] active:scale-95"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d9dedb] bg-white text-[#333333] shadow-sm transition hover:bg-[#eef8f2] active:scale-95 cursor-pointer"
         >
           <ChevronLeft size={20} />
         </button>
@@ -98,7 +97,7 @@ function AvailabilityCalendar({
           type="button"
           onClick={onNextMonth}
           aria-label="Next month"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d9dedb] bg-white text-[#333333] shadow-sm transition hover:bg-[#eef8f2] active:scale-95"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d9dedb] bg-white text-[#333333] shadow-sm transition hover:bg-[#eef8f2] active:scale-95 cursor-pointer"
         >
           <ChevronRight size={20} />
         </button>
@@ -122,7 +121,12 @@ function AvailabilityCalendar({
           const dateKey = getDateKey(date);
           const isSelected = isSameDay(date, selectedDate);
           const isToday = isSameDay(date, today);
-          const isAvailable = availableDateKeys.includes(dateKey);
+
+          // Check availability status and tournament assignments
+          const assigned = assignedTournaments.find(t => t.assigned_date === dateKey);
+          const rawStatus = availabilityByDate[dateKey];
+          const isAvailable = (rawStatus === 'AVAILABLE' || availableDateKeys.includes(dateKey)) && !assigned;
+          const isUnavailable = (rawStatus === 'UNAVAILABLE' || assigned) && !isAvailable;
 
           return (
             <button
@@ -131,18 +135,23 @@ function AvailabilityCalendar({
               onClick={() => onSelectDate(date)}
               className={`
                 relative
-                min-h-[70px]
+                min-h-[75px]
                 border-b
                 border-r
                 border-[#e5e9e6]
                 p-2
                 text-left
                 transition-all
-                sm:min-h-[92px]
+                sm:min-h-[95px]
                 sm:p-3
+                cursor-pointer
 
                 ${
-                  isCurrentMonth
+                  assigned
+                    ? "bg-amber-50/60 hover:bg-amber-100/70"
+                    : isUnavailable
+                    ? "bg-red-50/40 hover:bg-red-100/60"
+                    : isCurrentMonth
                     ? "bg-white text-[#222222] hover:bg-[#eef8f2]"
                     : "bg-[#fafbfa] text-[#bdc4c0] hover:bg-[#f4f6f5]"
                 }
@@ -154,39 +163,50 @@ function AvailabilityCalendar({
                 }
               `}
             >
-              <span
-                className={`
-                  inline-flex
-                  h-8
-                  min-w-8
-                  items-center
-                  justify-center
-                  rounded-full
-                  px-2
-                  text-sm
-                  font-semibold
+              <div className="flex justify-between items-start">
+                <span
+                  className={`
+                    inline-flex
+                    h-7
+                    w-7
+                    items-center
+                    justify-center
+                    rounded-full
+                    text-xs
+                    font-bold
 
-                  ${
-                    isToday
-                      ? "bg-[#00783f] text-white"
-                      : isSelected
+                    ${
+                      isToday
+                        ? "bg-[#00783f] text-white"
+                        : isSelected
                         ? "text-[#8a6900]"
-                        : ""
-                  }
-                `}
-              >
-                {date.getDate()}
-              </span>
-
-              {isAvailable && (
-                <span className="absolute bottom-3 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-[#00a85a]" />
-              )}
-
-              {isSelected && (
-                <span className="absolute bottom-2 right-2 rounded-full bg-[#c9a227] px-2 py-0.5 text-[8px] font-bold uppercase text-white sm:text-[9px]">
-                  Selected
+                        : "text-[#222222]"
+                    }
+                  `}
+                >
+                  {date.getDate()}
                 </span>
-              )}
+
+                {isSelected && (
+                  <span className="rounded-md bg-[#c9a227] px-1.5 py-0.5 text-[8px] font-bold uppercase text-white">
+                    Selected
+                  </span>
+                )}
+              </div>
+
+              {/* Status Badges on Calendar Day */}
+              <div className="mt-2">
+                {assigned ? (
+                  <span className="inline-flex items-center gap-1 w-full px-1.5 py-0.5 rounded bg-amber-500 text-white text-[9px] font-bold truncate shadow-2xs">
+                    <Trophy size={10} className="shrink-0" /> Reserved
+                  </span>
+                ) : isUnavailable ? (
+                  <span className="inline-flex items-center gap-1 w-full px-1.5 py-0.5 rounded bg-red-500 text-white text-[9px] font-bold truncate shadow-2xs">
+                    <X size={10} className="shrink-0" /> Unavailable
+                  </span>
+                ) : null}
+              </div>
+
             </button>
           );
         })}
@@ -194,5 +214,3 @@ function AvailabilityCalendar({
     </div>
   );
 }
-
-export default AvailabilityCalendar;

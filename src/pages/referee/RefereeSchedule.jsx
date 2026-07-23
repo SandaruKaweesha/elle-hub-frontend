@@ -17,10 +17,11 @@ import {
 import api from "../../services/api";
 
 const STATUS_STYLES = {
+  Active: "bg-[#d9f8e5] text-[#006b38] border border-[#a2ebd0]",
   Confirmed: "bg-[#d9f8e5] text-[#006b38] border border-[#a2ebd0]",
   Pending: "bg-[#fff3cd] text-[#876700] border border-[#ffe69c]",
+  Completed: "bg-blue-50 text-blue-700 border border-blue-200",
   Declined: "bg-[#fee2e2] text-[#b42318] border border-[#fecdcd]",
-  Completed: "bg-[#e9eceb] text-[#59625e] border border-[#d6dcd8]",
 };
 
 function RefereeSchedule() {
@@ -31,7 +32,7 @@ function RefereeSchedule() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("Active");
 
   // Selected Detail Modal
   const [selectedItem, setSelectedItem] = useState(null);
@@ -52,9 +53,13 @@ function RefereeSchedule() {
         // Map backend referee requests into clean schedule items
         const mapped = rawReqs.map(r => {
           const s = (r.status || '').toUpperCase();
+          const tStatus = (r.tournament_status || '').toUpperCase();
+
           let displayStatus = 'Pending';
-          if (s === 'APPROVED' || s === 'ACCEPTED') {
-            displayStatus = 'Confirmed';
+          if (tStatus === 'COMPLETED') {
+            displayStatus = 'Completed';
+          } else if (s === 'APPROVED' || s === 'ACCEPTED') {
+            displayStatus = 'Active';
           } else if (s === 'REJECTED' || s === 'DECLINED' || s === 'CANCELLED') {
             displayStatus = 'Declined';
           }
@@ -105,12 +110,16 @@ function RefereeSchedule() {
     });
   }, [scheduleItems, searchTerm, statusFilter]);
 
-  const confirmedCount = scheduleItems.filter(
-    (item) => item.status === "Confirmed"
+  const activeCount = scheduleItems.filter(
+    (item) => item.status === "Active" || item.status === "Confirmed"
   ).length;
 
   const pendingCount = scheduleItems.filter(
     (item) => item.status === "Pending"
+  ).length;
+
+  const completedCount = scheduleItems.filter(
+    (item) => item.status === "Completed"
   ).length;
 
   const declinedCount = scheduleItems.filter(
@@ -118,14 +127,14 @@ function RefereeSchedule() {
   ).length;
 
   return (
-    <div className="space-y-6 pb-10 font-['Poppins']">
-      {/* Heading */}
+    <div className="space-y-6 pb-12 font-['Poppins'] animate-in fade-in duration-300">
+      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-[#111111] sm:text-3xl">
-          My Officiating Schedule
+          Match Officiating Schedule
         </h1>
-        <p className="mt-1 text-sm text-[#777777]">
-          View your confirmed, pending, and completed tournament officiating assignments.
+        <p className="mt-1 text-xs text-[#666666]">
+          View your active, pending, and completed match officiating duties.
         </p>
       </div>
 
@@ -141,16 +150,23 @@ function RefereeSchedule() {
         </div>
       )}
 
-      {/* Summary cards */}
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-[#e2e6e3] bg-white p-5 shadow-sm">
+        <div
+          onClick={() => setStatusFilter(statusFilter === "Active" ? "All" : "Active")}
+          className={`cursor-pointer rounded-2xl border p-5 shadow-sm transition-all hover:shadow-md ${
+            statusFilter === "Active"
+              ? "border-[#00783f] bg-emerald-50/40 ring-2 ring-[#00783f]/20"
+              : "border-[#e2e6e3] bg-white hover:border-[#00783f]/40"
+          }`}
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-[#777777]">
-                Confirmed Officiating Duties
+                Active Matches
               </p>
               <h2 className="mt-2 text-3xl font-extrabold text-[#111111]">
-                {confirmedCount}
+                {activeCount}
               </h2>
             </div>
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#d9f8e5] text-[#00783f]">
@@ -159,7 +175,14 @@ function RefereeSchedule() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#e2e6e3] bg-white p-5 shadow-sm">
+        <div
+          onClick={() => setStatusFilter(statusFilter === "Pending" ? "All" : "Pending")}
+          className={`cursor-pointer rounded-2xl border p-5 shadow-sm transition-all hover:shadow-md ${
+            statusFilter === "Pending"
+              ? "border-amber-500 bg-amber-50/40 ring-2 ring-amber-500/20"
+              : "border-[#e2e6e3] bg-white hover:border-amber-400"
+          }`}
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-[#777777]">
@@ -175,49 +198,43 @@ function RefereeSchedule() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#e2e6e3] bg-white p-5 shadow-sm">
+        <div
+          onClick={() => setStatusFilter(statusFilter === "Completed" ? "All" : "Completed")}
+          className={`cursor-pointer rounded-2xl border p-5 shadow-sm transition-all hover:shadow-md ${
+            statusFilter === "Completed"
+              ? "border-blue-500 bg-blue-50/40 ring-2 ring-blue-500/20"
+              : "border-[#e2e6e3] bg-white hover:border-blue-400"
+          }`}
+        >
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-[#777777]">
-                Declined / Inactive
+                Completed
               </p>
               <h2 className="mt-2 text-3xl font-extrabold text-[#111111]">
-                {declinedCount}
+                {completedCount}
               </h2>
             </div>
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#fee2e2] text-[#b42318]">
-              <XCircle size={21} />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+              <CheckCircle2 size={21} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Search and filter */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-[#e2e6e3] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-[420px]">
-          <Search
-            size={18}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#888888]"
-          />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Search tournament, venue, or organizer"
-            className="h-11 w-full rounded-xl border border-[#d6dcd8] bg-[#f8f7f4] pl-10 pr-4 text-xs outline-none focus:border-[#00783f] focus:ring-2 focus:ring-[#00783f]/15"
-          />
-        </div>
-
+      {/* Status Filter Dropdown */}
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-2">
-          <SlidersHorizontal size={18} className="text-[#666666]" />
+          <SlidersHorizontal size={16} className="text-[#666666]" />
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="h-11 rounded-xl border border-[#d6dcd8] bg-white px-4 text-xs font-bold text-[#333333] outline-none focus:border-[#00783f]"
+            className="rounded-xl border border-[#d6dcd8] bg-white py-2 px-3 text-xs font-bold text-[#333333] outline-none focus:border-[#00783f] cursor-pointer shadow-xs"
           >
             <option value="All">All Statuses ({scheduleItems.length})</option>
-            <option value="Confirmed">Confirmed ({confirmedCount})</option>
+            <option value="Active">Active ({activeCount})</option>
             <option value="Pending">Pending ({pendingCount})</option>
+            <option value="Completed">Completed ({completedCount})</option>
             <option value="Declined">Declined ({declinedCount})</option>
           </select>
         </div>
@@ -305,7 +322,7 @@ function RefereeSchedule() {
                         STATUS_STYLES[item.status]
                       }`}
                     >
-                      {item.status}
+                      {(item.status || 'PENDING').toUpperCase()}
                     </span>
 
                     <button

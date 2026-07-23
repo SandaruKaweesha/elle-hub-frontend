@@ -3,32 +3,31 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import {
   LayoutDashboard,
+  Trophy,
   CalendarDays,
   ClipboardList,
-  Star,
   History,
   Bell,
   Menu,
   X,
   LogOut,
   User,
-  ShieldCheck,
   Search,
-  Trophy,
-  UserCheck,
-  Settings
+  MapPin,
+  Building2,
+  CalendarCheck
 } from "lucide-react";
 
 const SIDEBAR_LINKS = [
-  { id: "overview", label: "Overview", icon: LayoutDashboard, path: "/referee" },
-  { id: "tournaments", label: "Tournaments", icon: Trophy, path: "/referee/tournaments" },
-  { id: "requests", label: "Match Requests", icon: ClipboardList, path: "/referee/requests" },
-  { id: "schedule", label: "My Schedule", icon: CalendarDays, path: "/referee/schedule" },
-  { id: "availability", label: "Set Availability", icon: UserCheck, path: "/referee/availability" },
-  { id: "history", label: "History", icon: History, path: "/referee/history" },
+  { id: "overview", label: "Overview", icon: LayoutDashboard, path: "/playground" },
+  { id: "tournaments", label: "Tournaments", icon: Trophy, path: "/playground/tournaments" },
+  { id: "requests", label: "Requests", icon: ClipboardList, path: "/playground/requests" },
+  { id: "schedule", label: "Ground Schedule", icon: CalendarDays, path: "/playground/schedule" },
+  { id: "availability", label: "Set Availability", icon: CalendarCheck, path: "/playground/availability" },
+  { id: "history", label: "History", icon: History, path: "/playground/history" },
 ];
 
-export default function RefereeLayout() {
+export default function PlaygroundLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -52,12 +51,12 @@ export default function RefereeLayout() {
     const localUser = JSON.parse(userString);
     const role = (localUser?.role || '').toString().trim().toUpperCase();
 
-    if (role && role !== 'REFEREE') {
+    if (role && role !== 'PLAYGROUND') {
       if (role === 'ORGANIZER') navigate('/organizer');
       else if (role === 'TEAM') navigate('/team');
       else if (role === 'ADMIN') navigate('/admin');
+      else if (role === 'REFEREE') navigate('/referee');
       else if (role === 'SPONSOR') navigate('/sponsor');
-      else if (role === 'PLAYGROUND') navigate('/playground');
       else navigate('/login');
       return;
     }
@@ -79,9 +78,8 @@ export default function RefereeLayout() {
   const localUser = userString ? JSON.parse(userString) : null;
   const displayUser = dbUser || localUser || {};
 
-  const userName = displayUser.referee_name || displayUser.full_name || displayUser.organizationName || displayUser.display_name || 'Official Referee';
-  const userRole = displayUser.role || 'REFEREE';
-  const avatarSeed = userName.replace(/\s+/g, '');
+  const playgroundName = displayUser.playground_name || displayUser.playgroundName || displayUser.display_name || 'Badulla Ground';
+  const district = displayUser.located_district || displayUser.locatedDistrict || 'Badulla';
 
   return (
     <div className="flex h-screen w-full bg-[#f8f7f4] font-['Poppins'] text-[#111111]">
@@ -106,14 +104,14 @@ export default function RefereeLayout() {
         {/* Logo Section */}
         <div className="flex flex-col items-center pt-8 pb-10">
           <h1 className="text-2xl font-bold text-[#111111] tracking-tight">Elle Hub</h1>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-[#666666] mt-1 font-semibold">Referee Portal</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[#666666] mt-1 font-semibold">Playground Venue</p>
         </div>
 
         {/* Navigation Links */}
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
           {SIDEBAR_LINKS.map((link) => {
             const isActive = location.pathname === link.path || 
-                             (link.path !== "/referee" && location.pathname.startsWith(link.path));
+                             (link.path !== "/playground" && location.pathname.startsWith(link.path));
             const Icon = link.icon;
             return (
               <Link
@@ -138,15 +136,11 @@ export default function RefereeLayout() {
         {/* Bottom Actions */}
         <div className="p-4 border-t border-[#e5e5e5] space-y-1 mt-auto">
           <button 
-            onClick={() => navigate('/referee/settings')}
-            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors mb-2 cursor-pointer ${
-              location.pathname.startsWith('/referee/settings') 
-                ? 'bg-[#00382D] text-white hover:bg-[#002a22]' 
-                : 'bg-[#00382D] text-white hover:bg-[#002a22]'
-            }`}
+            onClick={() => navigate('/playground/settings')}
+            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors mb-2 cursor-pointer bg-[#00382D] text-white hover:bg-[#002a22]`}
           >
             <User size={18} />
-            Referee Profile
+            Playground Profile
           </button>
 
           <button 
@@ -159,31 +153,32 @@ export default function RefereeLayout() {
         </div>
       </aside>
 
-      {/* Main Content Wrapper */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         {/* Top Header */}
-        <header className="h-[72px] bg-white border-b border-[#e5e5e5] flex items-center justify-between px-4 lg:px-8 shrink-0">
+        <header className="h-16 lg:h-20 bg-white border-b border-[#e5e5e5] flex items-center justify-between px-4 lg:px-8 z-10 shrink-0">
           
-          <div className="flex items-center gap-4 flex-1">
+          <div className="flex items-center gap-3 flex-1">
             <button 
-              className="p-2 -ml-2 text-[#666666] lg:hidden hover:bg-gray-100 rounded-lg"
+              className="lg:hidden p-2 -ml-2 text-[#666666] hover:text-[#111111] rounded-lg hover:bg-gray-100"
               onClick={() => setIsSidebarOpen(true)}
             >
               <Menu size={24} />
             </button>
 
-            <div className="relative w-full max-w-md hidden md:block">
-              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#888888]" />
+            {/* Global Search */}
+            <div className="relative max-w-md w-full hidden md:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input 
                 type="text" 
-                placeholder="Search matches or tournaments..." 
-                className="w-full pl-10 pr-4 py-2 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#00382D] transition-all"
+                placeholder="Search ground schedules, tournaments..." 
+                className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 lg:gap-5 relative">
             
             {/* Notifications Dropdown */}
             <div className="relative">
@@ -198,13 +193,13 @@ export default function RefereeLayout() {
               {showNotifications && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}></div>
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-[#e5e5e5] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-[#e5e5e5] z-50 overflow-hidden animate-in fade-in">
                     <div className="p-4 border-b border-[#e5e5e5] flex items-center justify-between">
-                      <h3 className="font-bold text-[#111111]">Notifications</h3>
-                      <button className="text-xs text-[#08733e] font-medium hover:underline">Mark all read</button>
+                      <h3 className="font-bold text-xs text-[#111111]">Playground Notifications</h3>
+                      <button className="text-[11px] text-[#00382D] font-bold hover:underline">Mark all read</button>
                     </div>
                     <div className="p-4 text-center text-xs text-[#666666]">
-                      No new officiating notifications.
+                      No new venue requests.
                     </div>
                   </div>
                 </>
@@ -213,32 +208,31 @@ export default function RefereeLayout() {
 
             <div className="w-[1px] h-8 bg-[#e5e5e5] hidden sm:block"></div>
             
-            {/* User Profile Pill */}
+            {/* User Profile Pill -> Navigates to Settings */}
             <div 
               className="flex items-center gap-3 cursor-pointer select-none"
-              onClick={() => navigate('/referee/settings')}
+              onClick={() => navigate('/playground/settings')}
             >
-              <div className="hidden sm:flex flex-col items-end">
-                <span className="text-sm font-semibold text-[#111111]">{userName}</span>
-                <span className="text-xs text-[#666666] capitalize">{userRole.toLowerCase()}</span>
+              <div className="w-10 h-10 rounded-full bg-[#00382D] text-white flex items-center justify-center font-bold text-sm shadow-2xs">
+                <User size={20} />
               </div>
-              <div className="w-10 h-10 rounded-full bg-white overflow-hidden border-2 border-[#00382D] shadow-sm flex items-center justify-center shrink-0">
-                <img 
-                  src={displayUser.profilePicture || displayUser.profile_picture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}&backgroundColor=eaf1ec`} 
-                  alt="Avatar" 
-                  className="w-full h-full object-cover" 
-                />
+              <div className="hidden sm:block text-left">
+                <h4 className="text-sm font-semibold text-[#111111] leading-tight">
+                  {playgroundName}
+                </h4>
+                <p className="text-xs text-[#666666] flex items-center gap-1">
+                  <MapPin size={11} className="text-[#00382D]" /> {district} District
+                </p>
               </div>
             </div>
-
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-[#f8f7f4] p-4 lg:p-8">
+        {/* Page Content Body */}
+        <div className="flex-1 overflow-y-auto p-4 lg:p-8">
           <Outlet />
-        </main>
-      </div>
+        </div>
+      </main>
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
@@ -249,7 +243,7 @@ export default function RefereeLayout() {
             </div>
             <h3 className="text-xl font-bold text-[#111111] mb-2">Logout Confirmation</h3>
             <p className="text-[#666666] text-sm mb-6 leading-relaxed">
-              Are you sure you want to log out from the Referee Portal? You will need to log in again to access your dashboard.
+              Are you sure you want to log out from the Playground Portal? You will need to log in again to access your dashboard.
             </p>
             <div className="flex gap-3">
               <button 

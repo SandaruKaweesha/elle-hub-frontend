@@ -76,6 +76,8 @@ function Login() {
           navigate('/team');
         } else if (userRole === 'REFEREE') {
           navigate('/referee');
+        } else if (userRole === 'PLAYGROUND') {
+          navigate('/playground');
         } else if (userRole === 'SPONSOR') {
           navigate('/sponsor');
         } else {

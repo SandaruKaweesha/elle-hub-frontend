@@ -18,14 +18,14 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: "20px", background: "#fee2e2", color: "#991b1b", fontFamily: "monospace", minHeight: "100vh" }}>
-          <h1 style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "16px" }}>Something went wrong.</h1>
-          <details style={{ whiteSpace: "pre-wrap" }}>
-            <summary style={{ fontWeight: "bold", cursor: "pointer", marginBottom: "8px" }}>Show Error Details</summary>
-            {this.state.error && this.state.error.toString()}
-            <br />
-            {this.state.errorInfo && this.state.errorInfo.componentStack}
-          </details>
+        <div style={{ padding: "24px", background: "#fef2f2", color: "#991b1b", fontFamily: "sans-serif", minHeight: "100vh" }}>
+          <h1 style={{ fontSize: "22px", fontWeight: "bold", marginBottom: "12px" }}>Application Error Captured</h1>
+          <p style={{ fontWeight: "bold", color: "#dc2626", marginBottom: "12px" }}>
+            {this.state.error ? this.state.error.toString() : "Unknown Error"}
+          </p>
+          <pre style={{ background: "#18181b", color: "#f4f4f5", padding: "16px", borderRadius: "8px", overflowX: "auto", fontSize: "12px", lineHeight: "1.5" }}>
+            {this.state.errorInfo ? this.state.errorInfo.componentStack : (this.state.error?.stack || "No stack trace available.")}
+          </pre>
         </div>
       );
     }

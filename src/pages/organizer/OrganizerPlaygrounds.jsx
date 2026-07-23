@@ -19,11 +19,20 @@ export default function OrganizerPlaygrounds() {
   const [successMsg, setSuccessMsg] = useState(null);
   const [selectedDistrict, setSelectedDistrict] = useState('');
 
+  // Profile Modal state
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedVenueProfile, setSelectedVenueProfile] = useState(null);
+
   // Request Modal state
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [selectedVenue, setSelectedVenue] = useState(null);
   const [selectedTournamentId, setSelectedTournamentId] = useState('');
   const [requestLoading, setRequestLoading] = useState(false);
+
+  const handleOpenProfile = (venue) => {
+    setSelectedVenueProfile(venue);
+    setShowProfileModal(true);
+  };
 
   useEffect(() => {
     const loadPlaygroundData = async () => {
@@ -61,22 +70,27 @@ export default function OrganizerPlaygrounds() {
       const usersRes = results[0];
       const tournamentsRes = results[1];
 
-      if (usersRes.data && usersRes.data.success !== false) {
-        const allUsers = usersRes.data.data || [];
+      if (usersRes && usersRes.data && usersRes.data.success !== false) {
+        const rawData = usersRes.data.data || usersRes.data;
+        const allUsers = Array.isArray(rawData) ? rawData : [];
         const playgroundUsers = allUsers.filter(u => 
-          (u.role || '').toUpperCase() === 'PLAYGROUND' && 
-          Boolean(u.playground_name)
+          u && (u.role || '').toString().toUpperCase() === 'PLAYGROUND'
         );
         setPlaygrounds(playgroundUsers);
+      } else {
+        setPlaygrounds([]);
       }
 
       if (tournamentsRes && tournamentsRes.data && tournamentsRes.data.success !== false) {
-        const list = tournamentsRes.data.data || [];
+        const rawT = tournamentsRes.data.data || tournamentsRes.data;
+        const list = Array.isArray(rawT) ? rawT : [];
         const activeOnly = list.filter(t => 
-          (t.approval_status || '').toUpperCase() === 'APPROVED' && 
-          (t.status || '').toUpperCase() === 'ACTIVE'
+          t && (t.approval_status || '').toString().toUpperCase() === 'APPROVED' && 
+          (t.status || '').toString().toUpperCase() === 'ACTIVE'
         );
         setOrganizerTournaments(activeOnly);
+      } else {
+        setOrganizerTournaments([]);
       }
 
     } catch (err) {
@@ -128,15 +142,16 @@ export default function OrganizerPlaygrounds() {
     }
   };
 
-  const filteredPlaygrounds = playgrounds.filter(p => {
+  const filteredPlaygrounds = (Array.isArray(playgrounds) ? playgrounds : []).filter(p => {
+    if (!p) return false;
     if (!selectedDistrict) return true;
-    const distTarget = selectedDistrict.toLowerCase();
-    const locatedDistrict = (p.located_district || p.district || p.playground_district || p.playground_location || p.location || '').toLowerCase();
+    const distTarget = String(selectedDistrict).toLowerCase();
+    const locatedDistrict = String(p.located_district || p.district || p.playground_district || p.playground_location || p.location || '').toLowerCase();
     return locatedDistrict.includes(distTarget);
   });
 
   return (
-    <div className="max-w-7xl mx-auto font-[#Poppins'] animate-in fade-in duration-300">
+    <div className="max-w-7xl mx-auto font-sans animate-in fade-in duration-300">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
@@ -220,11 +235,12 @@ export default function OrganizerPlaygrounds() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPlaygrounds.map(venue => {
             const userId = venue.userId || venue.user_id || venue.id;
-            const name = venue.playground_name || venue.display_name || venue.email || 'Elle Ground';
-            const rawDistrict = venue.located_district || venue.district || venue.playground_district || venue.location || 'Sri Lanka';
-            const districtDisplay = rawDistrict.charAt(0).toUpperCase() + rawDistrict.slice(1);
-            const phone = venue.contact_number || venue.phone || 'N/A';
-            const capacityDisplay = venue.playground_capacity || venue.capacity ? `${venue.playground_capacity || venue.capacity} Cap.` : 'N/A';
+            const name = String(venue.playground_name || venue.display_name || venue.email || 'Elle Ground');
+            const rawDistrict = String(venue.located_district || venue.district || venue.playground_district || venue.location || 'Sri Lanka');
+            const districtDisplay = rawDistrict ? (rawDistrict.charAt(0).toUpperCase() + rawDistrict.slice(1)) : 'Sri Lanka';
+            const phone = String(venue.contact_number || venue.phone || 'N/A');
+            const areaVal = venue.playground_area || venue.area || venue.playground_capacity || venue.capacity;
+            const capacityDisplay = areaVal ? (/^\d+$/.test(String(areaVal).trim()) ? `${areaVal} Acres` : `${areaVal}`) : 'N/A';
             const initials = name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'PG';
 
             return (
@@ -271,13 +287,23 @@ export default function OrganizerPlaygrounds() {
 
                 {/* Actions */}
                 <div className="p-6 pt-0">
-                  <button 
-                    onClick={() => handleOpenInviteModal(venue)}
-                    className="w-full py-2.5 bg-[#00382D] hover:bg-[#002b22] text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm"
-                  >
-                    <Send size={13} />
-                    Request Venue Booking
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      onClick={() => handleOpenProfile(venue)}
+                      className="py-2.5 bg-[#f8f7f4] hover:bg-[#e5e5e5] text-[#333333] rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1 border border-[#e5e5e5] shadow-2xs cursor-pointer"
+                    >
+                      View Profile
+                      <ChevronRight size={14} className="text-[#888888]" />
+                    </button>
+
+                    <button 
+                      onClick={() => handleOpenInviteModal(venue)}
+                      className="py-2.5 bg-[#00382D] hover:bg-[#002b22] text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      <Send size={13} />
+                      Booking
+                    </button>
+                  </div>
                 </div>
 
               </div>
@@ -364,6 +390,85 @@ export default function OrganizerPlaygrounds() {
                     <Send size={14} /> Send Booking Request
                   </>
                 )}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* --- PLAYGROUND PROFILE DETAILS MODAL --- */}
+      {showProfileModal && selectedVenueProfile && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-[#e5e5e5] relative">
+            <button 
+              onClick={() => setShowProfileModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-[#00382D] text-white flex items-center justify-center font-bold text-xl shadow-md">
+                {String(selectedVenueProfile.playground_name || selectedVenueProfile.display_name || selectedVenueProfile.email || 'PG')[0].toUpperCase()}
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[#111111]">
+                  {selectedVenueProfile.playground_name || selectedVenueProfile.display_name || selectedVenueProfile.email || 'Playground Venue'}
+                </h3>
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-[#166534] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 mt-1">
+                  <CheckCircle2 size={12} /> Verified Playground Venue
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-4 border-t border-b border-gray-100 py-4 text-sm text-[#333333]">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500 font-medium flex items-center gap-2"><MapPin size={15} /> District:</span>
+                <span className="font-bold capitalize">{selectedVenueProfile.located_district || selectedVenueProfile.district || 'Sri Lanka'}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500 font-medium flex items-center gap-2"><Map size={15} /> Location / Address:</span>
+                <span className="font-bold">{selectedVenueProfile.playground_address || selectedVenueProfile.address || selectedVenueProfile.location || 'Badulla'}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500 font-medium flex items-center gap-2"><Building size={15} /> Ground Area / Size:</span>
+                <span className="font-bold">{selectedVenueProfile.playground_area || selectedVenueProfile.area || '500 Sq. Ft'}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500 font-medium flex items-center gap-2"><Phone size={15} /> Contact Number:</span>
+                <a href={`tel:${selectedVenueProfile.contact_number || selectedVenueProfile.phone}`} className="font-bold text-[#00382D] hover:underline">
+                  {selectedVenueProfile.contact_number || selectedVenueProfile.phone || 'N/A'}
+                </a>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500 font-medium flex items-center gap-2"><Building size={15} /> Account Email:</span>
+                <a href={`mailto:${selectedVenueProfile.email}`} className="font-bold text-[#00382D] hover:underline">
+                  {selectedVenueProfile.email || 'N/A'}
+                </a>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button 
+                onClick={() => setShowProfileModal(false)}
+                className="w-1/2 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+
+              <button 
+                onClick={() => {
+                  setShowProfileModal(false);
+                  handleOpenInviteModal(selectedVenueProfile);
+                }}
+                className="w-1/2 py-2.5 bg-[#00382D] hover:bg-[#002b22] text-white rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+              >
+                <Send size={13} /> Request Booking
               </button>
             </div>
 
