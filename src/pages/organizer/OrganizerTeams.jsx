@@ -71,11 +71,20 @@ export default function OrganizerTeams() {
       setLoading(true);
       setError(null);
 
-      // Fetch all three resources in parallel
+      // Fetch all three resources in parallel with fallback error catchers
       const [requestsRes, tournamentsRes, usersRes] = await Promise.all([
-        api.get(`/organizer/${targetOrganizerId}/team-requests`),
-        api.get(`/organizer/${targetOrganizerId}/tournaments`),
-        api.get('/user/getAllUsers')
+        api.get(`/organizer/${targetOrganizerId}/team-requests`).catch(err => {
+          console.warn("Failed fetching team requests:", err);
+          return { data: { success: false, data: [] } };
+        }),
+        api.get(`/organizer/${targetOrganizerId}/tournaments`).catch(err => {
+          console.warn("Failed fetching organizer tournaments:", err);
+          return { data: { success: false, data: [] } };
+        }),
+        api.get('/user/getAllUsers').catch(err => {
+          console.warn("Failed fetching users:", err);
+          return { data: { success: false, data: [] } };
+        })
       ]);
 
       if (requestsRes.data && requestsRes.data.success !== false) {
@@ -86,7 +95,7 @@ export default function OrganizerTeams() {
         const list = tournamentsRes.data.data || [];
         const activeOnly = list.filter(t => 
           (t.approval_status || '').toUpperCase() === 'APPROVED' && 
-          (t.status || '').toUpperCase() === 'ACTIVE'
+          ((t.status || '').toUpperCase() === 'ACTIVE' || (t.status || '').toUpperCase() === 'SETUP' || (t.status || '').toUpperCase() === 'ONGOING' || !t.status)
         );
         setOrganizerTournaments(activeOnly);
       }

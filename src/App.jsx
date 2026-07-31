@@ -97,6 +97,7 @@ function App() {
       }>
         <Route index element={<OrganizerDashboard />} />
         <Route path="dashboard" element={<OrganizerDashboard />} />
+        <Route path="draw" element={<MatchDraw />} />
         <Route path="requests" element={<OrganizerRequests />} />
         <Route path="tournaments/create" element={
           <ErrorBoundary>
