@@ -48,13 +48,25 @@ export default function OrganizerReferees() {
       setLoading(true);
       setError(null);
 
-      // Fetch users and tournaments
-      const requests = [api.get('/user/getAllUsers')];
-      if (targetOrganizerId) {
-        requests.push(api.get(`/organizer/${targetOrganizerId}/tournaments`));
+      if (!targetOrganizerId) {
+        try {
+          const profileRes = await api.get('/user/profile');
+          if (profileRes.data && profileRes.data.data) {
+            const p = profileRes.data.data;
+            targetOrganizerId = p.userId || p.user_id || p.id;
+          }
+        } catch (e) {
+          console.warn("Could not resolve profile:", e);
+        }
       }
 
-      const results = await Promise.all(requests);
+      const activeId = targetOrganizerId || 0;
+
+      // Fetch users and tournaments
+      const results = await Promise.all([
+        api.get('/user/getAllUsers'),
+        api.get(`/organizer/${activeId}/tournaments`)
+      ]);
       const usersRes = results[0];
       const tournamentsRes = results[1];
 
@@ -67,8 +79,10 @@ export default function OrganizerReferees() {
       if (tournamentsRes && tournamentsRes.data && tournamentsRes.data.success !== false) {
         const list = tournamentsRes.data.data || [];
         const activeOnly = list.filter(t => 
-          (t.approval_status || '').toUpperCase() === 'APPROVED' && 
-          (t.status || '').toUpperCase() === 'ACTIVE'
+          t && 
+          (t.approval_status || 'APPROVED').toString().toUpperCase() !== 'REJECTED' && 
+          (t.status || 'ACTIVE').toString().toUpperCase() !== 'COMPLETED' && 
+          (t.status || 'ACTIVE').toString().toUpperCase() !== 'CANCELLED'
         );
         setOrganizerTournaments(activeOnly);
       }

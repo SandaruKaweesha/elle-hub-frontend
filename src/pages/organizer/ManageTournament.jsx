@@ -4,7 +4,7 @@ import {
   Trophy, MapPin, Calendar, Users, Star, Shield, 
   BadgeDollarSign, Map, Save, CheckSquare, AlertCircle, 
   CheckCircle2, ArrowLeft, Lock, Info,
-  Zap, Edit, Radio, ChevronRight, FileText, Settings, QrCode, X, Award
+  Zap, Edit, Radio, ChevronRight, FileText, Settings, QrCode, X, Award, Send, Clock
 } from 'lucide-react';
 import api from '../../services/api';
 import KnockoutBracketDisplay from '../../components/organizer/KnockoutBracketDisplay';
@@ -24,10 +24,11 @@ export default function ManageTournament() {
   const [sponsors, setSponsors] = useState([]);
   const [referees, setReferees] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [playgrounds, setPlaygrounds] = useState([]);
+
   const [teamRequests, setTeamRequests] = useState([]);
   const [refereeRequests, setRefereeRequests] = useState([]);
-
-  // Advanced Playground Requests
+  const [sponsorRequests, setSponsorRequests] = useState([]);
   const [playgroundRequests, setPlaygroundRequests] = useState([]);
   const [playgroundDistrictFilter, setPlaygroundDistrictFilter] = useState('All');
 
@@ -37,7 +38,7 @@ export default function ManageTournament() {
 
   const [saving, setSaving] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
-  const [activeTab, setActiveTab] = useState('sponsor');
+  const [activeTab, setActiveTab] = useState('teams');
   const [drawDetails, setDrawDetails] = useState(null);
   const [showFinalizeSummaryModal, setShowFinalizeSummaryModal] = useState(false);
 
@@ -83,8 +84,10 @@ export default function ManageTournament() {
       // Parse system directory resources
       if (directoryRes.data && directoryRes.data.success) {
         const users = directoryRes.data.data || [];
-        setReferees(users.filter(u => u.role.toUpperCase() === 'REFEREE' && u.status.toUpperCase() === 'APPROVED'));
-        setTeams(users.filter(u => u.role.toUpperCase() === 'TEAM' && u.status.toUpperCase() === 'APPROVED'));
+        setReferees(users.filter(u => (u.role || '').toUpperCase() === 'REFEREE'));
+        setTeams(users.filter(u => (u.role || '').toUpperCase() === 'TEAM'));
+        setSponsors(users.filter(u => (u.role || '').toUpperCase() === 'SPONSOR'));
+        setPlaygrounds(users.filter(u => (u.role || '').toUpperCase() === 'PLAYGROUND' || (u.role || '').toUpperCase() === 'GROUND' || (u.role || '').toUpperCase() === 'VENUE'));
       }
 
       if (playgroundReqsRes.data && playgroundReqsRes.data.success) {
@@ -96,7 +99,7 @@ export default function ManageTournament() {
       }
 
       if (sponsorReqsRes.data && sponsorReqsRes.data.success) {
-        setSponsors(sponsorReqsRes.data.data || []);
+        setSponsorRequests(sponsorReqsRes.data.data || []);
       }
 
       if (teamReqsRes.data && teamReqsRes.data.success) {
@@ -282,11 +285,11 @@ export default function ManageTournament() {
     }
   };
 
-  const handleFinalizeTournament = async () => {
-    if (!window.confirm("Are you sure you want to finalize this tournament? Once finalized, resources are locked and tournament status becomes ONGOING.")) {
-      return;
-    }
+  const handleOpenFinalizeSummaryModal = () => {
+    setShowFinalizeSummaryModal(true);
+  };
 
+  const handleConfirmFinalizeAndGenerateDraw = async () => {
     try {
       setFinalizing(true);
       setError(null);
@@ -297,13 +300,13 @@ export default function ManageTournament() {
         refereeUserIds: selectedReferees.map(uid => parseInt(uid, 10)),
         teamUserIds: selectedTeams.map(uid => parseInt(uid, 10))
       };
-      await api.post(`/tournament/${id}/assignments`, payload);
+      await api.post(`/tournament/${id}/assignments`, payload).catch(() => {});
 
-      // Finalize
+      // Finalize & Generate Match Draw
       const response = await api.post(`/tournament/${id}/finalize`);
       if (response.data && response.data.success) {
-        setSuccessMsg("Tournament setup finalized successfully! Tournament is now ONGOING.");
-        setShowFinalizeSummaryModal(true);
+        setSuccessMsg("Tournament setup finalized successfully! Match draw generated.");
+        setShowFinalizeSummaryModal(false);
         await loadTournamentData();
       } else {
         throw new Error(response.data.message || "Failed to finalize tournament.");
@@ -423,7 +426,7 @@ export default function ManageTournament() {
         {/* Action Header Button */}
         {!isFinalized ? (
           <button
-            onClick={handleFinalizeTournament}
+            onClick={handleOpenFinalizeSummaryModal}
             disabled={finalizing}
             className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3.5 bg-[#08733e] hover:bg-[#065b31] text-white rounded-2xl text-xs font-extrabold uppercase tracking-wider transition-all shadow-md cursor-pointer disabled:opacity-50"
           >
@@ -519,94 +522,468 @@ export default function ManageTournament() {
 
           {/* SETUP TABS CONTENT BEFORE FINALIZATION */}
           {activeTab === 'sponsor' && (
-            <div className="bg-white border border-[#e5e5e5] rounded-3xl p-6 md:p-8 shadow-xs space-y-6">
-              <div className="border-b border-gray-100 pb-4">
-                <h3 className="text-lg font-bold text-gray-900">Sponsor Directory</h3>
-                <p className="text-xs text-gray-500">Send sponsorship invitations to partners</p>
+            <div className="bg-white border border-[#e5e5e5] rounded-3xl p-6 md:p-8 shadow-xs space-y-8">
+              
+              {/* 1. APPROVED OFFICIAL TOURNAMENT SPONSORS */}
+              <div className="space-y-4">
+                <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-extrabold text-gray-900 flex items-center gap-2">
+                      <Trophy size={20} className="text-[#08733e]" /> Approved Official Tournament Sponsors
+                    </h3>
+                    <p className="text-xs text-gray-500 font-medium">Corporate partners confirmed for this tournament</p>
+                  </div>
+                  <span className="bg-emerald-100 text-emerald-800 text-xs font-black px-3 py-1 rounded-full border border-emerald-200">
+                    {sponsorRequests.filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED').length} Official Sponsors
+                  </span>
+                </div>
+
+                {sponsorRequests.filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED').length === 0 ? (
+                  <div className="p-6 text-center bg-slate-50 border border-slate-200 rounded-2xl">
+                    <p className="text-xs font-bold text-gray-500">No Approved Sponsors Yet</p>
+                    <p className="text-[11px] text-gray-400 mt-1">Accept received requests below or invite sponsors from the directory to confirm partners.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {sponsorRequests
+                      .filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED')
+                      .map(s => {
+                        const sId = s.sponsor_user_id || s.user_id;
+                        return (
+                          <div key={sId} className="bg-emerald-50/60 border border-emerald-200 p-4 rounded-2xl flex items-center justify-between shadow-2xs">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-xl bg-[#08733e] text-white flex items-center justify-center font-extrabold text-xs">
+                                <BadgeDollarSign size={18} />
+                              </div>
+                              <div>
+                                <p className="font-extrabold text-sm text-gray-900">{s.company_name || s.display_name || s.email || 'Official Sponsor'}</p>
+                                <p className="text-xs text-gray-500 font-medium">{s.email || 'Corporate Partner'}</p>
+                              </div>
+                            </div>
+                            <span className="text-xs font-black text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-full flex items-center gap-1">
+                              <CheckCircle2 size={12} /> APPROVED SPONSOR
+                            </span>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {sponsors.map(s => (
-                  <div key={s.sponsor_user_id} className="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-sm text-gray-900">{s.display_name || s.company_name || 'Official Sponsor'}</p>
-                      <p className="text-xs text-gray-500">{s.email}</p>
-                    </div>
-                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
-                      {s.status || 'APPROVED'}
-                    </span>
+              {/* 2. RECEIVED REQUESTS FOR THE TOURNAMENT (ACCEPT / REJECT) */}
+              <div className="space-y-4 pt-4 border-t border-gray-100">
+                <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
+                      <BadgeDollarSign size={18} className="text-[#08733e]" /> Received Requests for the Tournament
+                    </h3>
+                    <p className="text-xs text-gray-500 font-medium">Review and Accept or Reject incoming sponsorship proposals for this tournament</p>
                   </div>
-                ))}
+                  <span className="bg-amber-100 text-amber-800 text-xs font-black px-3 py-1 rounded-full border border-amber-200">
+                    {sponsorRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'SPONSOR').length} Pending
+                  </span>
+                </div>
+
+                {sponsorRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'SPONSOR').length === 0 ? (
+                  <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
+                    <p className="text-xs font-bold text-gray-700">No Received Sponsorship Requests</p>
+                    <p className="text-[11px] text-gray-400">Proposals submitted by sponsors will appear here for your review.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {sponsorRequests
+                      .filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'SPONSOR')
+                      .map(s => {
+                        const sId = s.sponsor_user_id || s.user_id;
+                        return (
+                          <div key={sId} className="bg-white border-2 border-amber-200 p-5 rounded-2xl space-y-4 shadow-xs hover:shadow-md transition-all">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center font-black text-sm">
+                                  <BadgeDollarSign size={20} />
+                                </div>
+                                <div>
+                                  <h4 className="font-extrabold text-sm text-gray-900">{s.company_name || s.display_name || s.email || 'Official Sponsor'}</h4>
+                                  <p className="text-xs text-gray-500 font-medium">{s.email || 'Corporate Partner'}</p>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-black px-2.5 py-1 rounded-md uppercase border bg-amber-50 text-amber-700 border-amber-200">
+                                OFFER RECEIVED
+                              </span>
+                            </div>
+
+                            {/* Accept / Reject Action Buttons */}
+                            <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                              <button
+                                type="button"
+                                onClick={() => handleRespondToSponsor(sId, 'APPROVED')}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-[#08733e] hover:bg-[#065b31] text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer"
+                              >
+                                <CheckCircle2 size={14} /> Accept Sponsorship
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRespondToSponsor(sId, 'REJECTED')}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-slate-100 hover:bg-red-50 hover:text-red-700 text-gray-700 rounded-xl text-xs font-bold transition-all cursor-pointer border border-gray-200"
+                              >
+                                <X size={14} /> Reject Request
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
+
             </div>
           )}
 
           {activeTab === 'referees' && (
-            <div className="bg-white border border-[#e5e5e5] rounded-3xl p-6 md:p-8 shadow-xs space-y-6">
-              <div className="border-b border-gray-100 pb-4">
-                <h3 className="text-lg font-bold text-gray-900">Referees Directory</h3>
-                <p className="text-xs text-gray-500">Assign certified official referees to this tournament</p>
+            <div className="bg-white border border-[#e5e5e5] rounded-3xl p-6 md:p-8 shadow-xs space-y-8">
+              
+              {/* 1. APPROVED OFFICIAL TOURNAMENT REFEREES */}
+              <div className="space-y-4">
+                <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-extrabold text-gray-900 flex items-center gap-2">
+                      <Shield size={20} className="text-[#08733e]" /> Approved Official Tournament Referees
+                    </h3>
+                    <p className="text-xs text-gray-500 font-medium">Certified official referees confirmed for this tournament</p>
+                  </div>
+                  <span className="bg-emerald-100 text-emerald-800 text-xs font-black px-3 py-1 rounded-full border border-emerald-200">
+                    {refereeRequests.filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED').length} Official Referees
+                  </span>
+                </div>
+
+                {refereeRequests.filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED').length === 0 ? (
+                  <div className="p-6 text-center bg-slate-50 border border-slate-200 rounded-2xl">
+                    <p className="text-xs font-bold text-gray-500">No Assigned Referees Yet</p>
+                    <p className="text-[11px] text-gray-400 mt-1">Accept received requests below to confirm match officials.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {refereeRequests
+                      .filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED')
+                      .map(r => {
+                        const rId = r.referee_user_id || r.user_id;
+                        return (
+                          <div key={rId} className="bg-emerald-50/60 border border-emerald-200 p-4 rounded-2xl flex items-center justify-between shadow-2xs">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-xl bg-[#08733e] text-white flex items-center justify-center font-extrabold text-xs">
+                                <Shield size={18} />
+                              </div>
+                              <div>
+                                <p className="font-extrabold text-sm text-gray-900">{r.display_name || r.name || 'Official Referee'}</p>
+                                <p className="text-xs text-gray-500 font-medium">{r.email} • District: {r.district || 'Sri Lanka'}</p>
+                              </div>
+                            </div>
+                            <span className="text-xs font-black text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-full flex items-center gap-1">
+                              <CheckCircle2 size={12} /> ASSIGNED REFEREE
+                            </span>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {refereeRequests.map(r => (
-                  <div key={r.referee_user_id} className="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-sm text-gray-900">{r.display_name || r.name || 'Official Referee'}</p>
-                      <p className="text-xs text-gray-500">{r.email}</p>
-                    </div>
-                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
-                      {r.status || 'APPROVED'}
-                    </span>
+              {/* 2. RECEIVED REQUESTS FOR THE TOURNAMENT (ACCEPT / REJECT) */}
+              <div className="space-y-4 pt-4 border-t border-gray-100">
+                <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
+                      <Shield size={18} className="text-[#08733e]" /> Received Requests for the Tournament
+                    </h3>
+                    <p className="text-xs text-gray-500 font-medium">Review and Accept or Reject incoming referee applications for this tournament</p>
                   </div>
-                ))}
+                  <span className="bg-amber-100 text-amber-800 text-xs font-black px-3 py-1 rounded-full border border-amber-200">
+                    {refereeRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'REFEREE').length} Pending
+                  </span>
+                </div>
+
+                {refereeRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'REFEREE').length === 0 ? (
+                  <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
+                    <p className="text-xs font-bold text-gray-700">No Received Referee Requests</p>
+                    <p className="text-[11px] text-gray-400">Applications submitted by referees will appear here for your review.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {refereeRequests
+                      .filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'REFEREE')
+                      .map(r => {
+                        const rId = r.referee_user_id || r.user_id;
+                        return (
+                          <div key={rId} className="bg-white border-2 border-amber-200 p-5 rounded-2xl space-y-4 shadow-xs hover:shadow-md transition-all">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center font-black text-sm">
+                                  <Shield size={20} />
+                                </div>
+                                <div>
+                                  <h4 className="font-extrabold text-sm text-gray-900">{r.display_name || r.name || 'Official Referee'}</h4>
+                                  <p className="text-xs text-gray-500 font-medium">{r.email} • District: {r.district || 'Sri Lanka'}</p>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-black px-2.5 py-1 rounded-md uppercase border bg-amber-50 text-amber-700 border-amber-200">
+                                OFFER RECEIVED
+                              </span>
+                            </div>
+
+                            {/* Accept / Reject Action Buttons */}
+                            <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                              <button
+                                type="button"
+                                onClick={() => handleRespondToRefereeRequest(rId, 'APPROVED')}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-[#08733e] hover:bg-[#065b31] text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer"
+                              >
+                                <CheckCircle2 size={14} /> Accept Referee
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRespondToRefereeRequest(rId, 'REJECTED')}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-slate-100 hover:bg-red-50 hover:text-red-700 text-gray-700 rounded-xl text-xs font-bold transition-all cursor-pointer border border-gray-200"
+                              >
+                                <X size={14} /> Reject Request
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
+
             </div>
           )}
 
           {activeTab === 'teams' && (
-            <div className="bg-white border border-[#e5e5e5] rounded-3xl p-6 md:p-8 shadow-xs space-y-6">
-              <div className="border-b border-gray-100 pb-4">
-                <h3 className="text-lg font-bold text-gray-900">Participating Teams</h3>
-                <p className="text-xs text-gray-500">Approved teams roster for tournament match draw</p>
+            <div className="bg-white border border-[#e5e5e5] rounded-3xl p-6 md:p-8 shadow-xs space-y-8">
+              
+              {/* 1. PENDING USER ENTRY REQUESTS (ACCEPT / REJECT) */}
+              <div className="space-y-4">
+                <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-extrabold text-gray-900 flex items-center gap-2">
+                      <Users size={20} className="text-[#08733e]" /> Pending Team Entry Requests
+                    </h3>
+                    <p className="text-xs text-gray-500 font-medium">Review and Accept or Reject team registration requests for this tournament</p>
+                  </div>
+                  <span className="bg-amber-100 text-amber-800 text-xs font-black px-3 py-1 rounded-full border border-amber-200">
+                    {teamRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING').length} Pending
+                  </span>
+                </div>
+
+                {teamRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING').length === 0 ? (
+                  <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
+                    <p className="text-xs font-bold text-gray-700">No Pending Entry Requests</p>
+                    <p className="text-[11px] text-gray-400">Teams requesting to join this tournament will appear here for your review.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {teamRequests
+                      .filter(r => (r.status || '').toUpperCase() === 'PENDING')
+                      .map(t => (
+                        <div key={t.team_user_id} className="bg-white border-2 border-amber-200 p-5 rounded-2xl space-y-4 shadow-xs hover:shadow-md transition-all">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-[#08733e] text-white flex items-center justify-center font-black text-sm">
+                                {(t.team_name || 'T')[0].toUpperCase()}
+                              </div>
+                              <div>
+                                <h4 className="font-extrabold text-sm text-gray-900">{t.team_name || 'Team #' + t.team_user_id}</h4>
+                                <p className="text-xs text-gray-500 font-medium">District: {t.district || 'Western'} • {t.email || 'Team Captain'}</p>
+                              </div>
+                            </div>
+                            <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-black px-2.5 py-1 rounded-md uppercase">
+                              PENDING
+                            </span>
+                          </div>
+
+                          {/* Accept / Reject Action Buttons */}
+                          <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                            <button
+                              type="button"
+                              onClick={() => handleRespondToTeamRequest(t.team_user_id, 'APPROVED')}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-[#08733e] hover:bg-[#065b31] text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer"
+                            >
+                              <CheckCircle2 size={14} /> Accept Request
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRespondToTeamRequest(t.team_user_id, 'REJECTED')}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-slate-100 hover:bg-red-50 hover:text-red-700 text-gray-700 rounded-xl text-xs font-bold transition-all cursor-pointer border border-gray-200"
+                            >
+                              <X size={14} /> Reject Request
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {teamRequests.map(t => (
-                  <div key={t.team_user_id} className="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-sm text-gray-900">{t.team_name || 'Team #' + t.team_user_id}</p>
-                      <p className="text-xs text-gray-500">District: {t.district || 'Colombo'}</p>
-                    </div>
-                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
-                      {t.status || 'APPROVED'}
-                    </span>
+              {/* 2. APPROVED PARTICIPATING TEAMS ROSTER */}
+              <div className="space-y-4 pt-4 border-t border-gray-100">
+                <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
+                      <Trophy size={18} className="text-[#08733e]" /> Approved Participating Teams Roster
+                    </h3>
+                    <p className="text-xs text-gray-500 font-medium">Accepted teams roster ready for tournament match draw</p>
                   </div>
-                ))}
+                  <span className="bg-emerald-100 text-emerald-800 text-xs font-black px-3 py-1 rounded-full border border-emerald-200">
+                    {teamRequests.filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED').length} / {tournament.maximum_team_limit || 6} Teams
+                  </span>
+                </div>
+
+                {teamRequests.filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED').length === 0 ? (
+                  <div className="p-6 text-center bg-slate-50 border border-slate-200 rounded-2xl">
+                    <p className="text-xs font-bold text-gray-500">No Approved Teams Yet</p>
+                    <p className="text-[11px] text-gray-400 mt-1">Accept pending entry requests above to populate the tournament roster.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {teamRequests
+                      .filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED')
+                      .map(t => (
+                        <div key={t.team_user_id} className="bg-emerald-50/60 border border-emerald-200 p-4 rounded-2xl flex items-center justify-between shadow-2xs">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-[#08733e] text-white flex items-center justify-center font-extrabold text-xs">
+                              {(t.team_name || 'T')[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-extrabold text-sm text-gray-900">{t.team_name || 'Team #' + t.team_user_id}</p>
+                              <p className="text-xs text-gray-500 font-medium">District: {t.district || 'Colombo'}</p>
+                            </div>
+                          </div>
+                          <span className="text-xs font-black text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-full flex items-center gap-1">
+                            <CheckCircle2 size={12} /> APPROVED
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
+
             </div>
           )}
 
           {activeTab === 'playgrounds' && (
-            <div className="bg-white border border-[#e5e5e5] rounded-3xl p-6 md:p-8 shadow-xs space-y-6">
-              <div className="border-b border-gray-100 pb-4">
-                <h3 className="text-lg font-bold text-gray-900">Playground Venues</h3>
-                <p className="text-xs text-gray-500">Venue booking requests for this tournament</p>
+            <div className="bg-white border border-[#e5e5e5] rounded-3xl p-6 md:p-8 shadow-xs space-y-8">
+              
+              {/* 1. APPROVED OFFICIAL TOURNAMENT PLAYGROUND */}
+              <div className="space-y-4">
+                <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-extrabold text-gray-900 flex items-center gap-2">
+                      <MapPin size={20} className="text-[#08733e]" /> Approved Official Tournament Playground
+                    </h3>
+                    <p className="text-xs text-gray-500 font-medium">Confirmed playground venue for this tournament</p>
+                  </div>
+                  <span className="bg-emerald-100 text-emerald-800 text-xs font-black px-3 py-1 rounded-full border border-emerald-200">
+                    {playgroundRequests.filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED' || (r.status || '').toUpperCase() === 'BOOKED').length} Confirmed Venues
+                  </span>
+                </div>
+
+                {playgroundRequests.filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED' || (r.status || '').toUpperCase() === 'BOOKED').length === 0 ? (
+                  <div className="p-6 text-center bg-slate-50 border border-slate-200 rounded-2xl">
+                    <p className="text-xs font-bold text-gray-500">No Confirmed Playground Yet</p>
+                    <p className="text-[11px] text-gray-400 mt-1">Accept received requests below to confirm match venue.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {playgroundRequests
+                      .filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED' || (r.status || '').toUpperCase() === 'BOOKED')
+                      .map(p => {
+                        const pUserId = p.playground_user_id || p.user_id || p.id;
+                        return (
+                          <div key={pUserId} className="bg-emerald-50/60 border border-emerald-200 p-4 rounded-2xl flex items-center justify-between shadow-2xs">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-xl bg-[#08733e] text-white flex items-center justify-center font-extrabold text-xs">
+                                <MapPin size={18} />
+                              </div>
+                              <div>
+                                <p className="font-extrabold text-sm text-gray-900">{p.ground_name || p.display_name || p.name || 'Official Ground Venue'}</p>
+                                <p className="text-xs text-gray-500 font-medium">Location: {p.district || p.location || 'Badulla'} • Cap: {p.capacity || p.area || 500} spectators</p>
+                              </div>
+                            </div>
+                            <span className="text-xs font-black text-emerald-800 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-full flex items-center gap-1">
+                              <CheckCircle2 size={12} /> BOOKED VENUE
+                            </span>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                {playgroundRequests.map(p => (
-                  <div key={p.playground_user_id || p.id} className="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-sm text-gray-900">{p.ground_name || p.display_name || 'Official Ground Venue'}</p>
-                      <p className="text-xs text-gray-500">Location: {p.district || p.location || 'Badulla'} • Cap: {p.capacity || 500}</p>
-                    </div>
-                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
-                      {p.status || 'APPROVED'}
-                    </span>
+              {/* 2. RECEIVED REQUESTS FOR THE TOURNAMENT (ACCEPT / REJECT) */}
+              <div className="space-y-4 pt-4 border-t border-gray-100">
+                <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
+                      <MapPin size={18} className="text-[#08733e]" /> Received Requests for the Tournament
+                    </h3>
+                    <p className="text-xs text-gray-500 font-medium">Review and Accept or Reject incoming playground booking proposals for this tournament</p>
                   </div>
-                ))}
+                  <span className="bg-amber-100 text-amber-800 text-xs font-black px-3 py-1 rounded-full border border-amber-200">
+                    {playgroundRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'PLAYGROUND').length} Pending
+                  </span>
+                </div>
+
+                {playgroundRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'PLAYGROUND').length === 0 ? (
+                  <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
+                    <p className="text-xs font-bold text-gray-700">No Received Playground Requests</p>
+                    <p className="text-[11px] text-gray-400">Booking proposals submitted by venue owners will appear here for your review.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {playgroundRequests
+                      .filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'PLAYGROUND')
+                      .map(p => {
+                        const pUserId = p.playground_user_id || p.user_id || p.id;
+                        return (
+                          <div key={pUserId} className="bg-white border-2 border-amber-200 p-5 rounded-2xl space-y-4 shadow-xs hover:shadow-md transition-all">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center font-black text-sm">
+                                  <MapPin size={20} />
+                                </div>
+                                <div>
+                                  <h4 className="font-extrabold text-sm text-gray-900">{p.ground_name || p.display_name || p.name || 'Official Ground Venue'}</h4>
+                                  <p className="text-xs text-gray-500 font-medium">Location: {p.district || p.location || 'Badulla'} • Cap: {p.capacity || p.area || 500} spectators</p>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-black px-2.5 py-1 rounded-md uppercase border bg-amber-50 text-amber-700 border-amber-200">
+                                OFFER RECEIVED
+                              </span>
+                            </div>
+
+                            {/* Accept / Reject Action Buttons */}
+                            <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                              <button
+                                type="button"
+                                onClick={() => handleRespondToPlaygroundRequest(pUserId, 'APPROVED')}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-[#08733e] hover:bg-[#065b31] text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer"
+                              >
+                                <CheckCircle2 size={14} /> Accept Venue
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRespondToPlaygroundRequest(pUserId, 'REJECTED')}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-slate-100 hover:bg-red-50 hover:text-red-700 text-gray-700 rounded-xl text-xs font-bold transition-all cursor-pointer border border-gray-200"
+                              >
+                                <X size={14} /> Reject Request
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
+
             </div>
           )}
         </>
@@ -615,17 +992,17 @@ export default function ManageTournament() {
       {/* FINALIZED SUMMARY POP-UP MODAL CARD */}
       {showFinalizeSummaryModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl border border-[#e5e5e5] shadow-2xl max-w-2xl w-full p-6 md:p-8 space-y-6 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-[#e5e5e5] shadow-2xl max-w-3xl w-full p-6 md:p-8 space-y-6 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-[#08733e] flex items-center justify-center font-bold">
-                  <CheckCircle2 size={22} />
+                  <Trophy size={22} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-gray-900">Tournament Setup Finalized</h3>
-                  <p className="text-xs text-gray-500 font-medium">All required resources collected. Tournament status is now ONGOING.</p>
+                  <h3 className="text-lg font-extrabold text-gray-900">Tournament Overview & Resource Summary</h3>
+                  <p className="text-xs text-gray-500 font-medium">Review all tournament details and confirmed resources before generating the match draw.</p>
                 </div>
               </div>
               <button 
@@ -637,24 +1014,49 @@ export default function ManageTournament() {
             </div>
 
             {/* Modal Summary Grid */}
-            <div className="space-y-4">
-              {/* Venue */}
-              <div className="space-y-1.5">
-                <h4 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Official Playground Venue</h4>
-                <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-2xl flex items-center justify-between">
+            <div className="space-y-5">
+              {/* Tournament Details Banner */}
+              <div className="bg-gradient-to-r from-emerald-950 via-[#08733e] to-emerald-900 p-5 rounded-2xl text-white space-y-3 shadow-md">
+                <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-bold text-sm text-gray-900">Official Ground Venue</p>
-                    <p className="text-xs text-gray-600 mt-0.5">Location: Badulla • Capacity: 500</p>
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 px-2.5 py-0.5 rounded-full">Official Tournament</span>
+                    <h2 className="text-xl font-extrabold mt-1">{tournament.title || 'WASANA TOURNAMENT'}</h2>
                   </div>
-                  <span className="bg-[#08733e] text-white text-[10px] font-extrabold px-2.5 py-1 rounded-md uppercase">Official Venue</span>
+                  <span className="bg-amber-400 text-slate-950 font-black text-xs px-3 py-1 rounded-full uppercase">
+                    {tournament.status || 'SETUP'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 border-t border-white/10 text-xs font-medium text-emerald-100">
+                  <div>📍 Location: <span className="font-bold text-white">{tournament.location || 'Badulla'}</span></div>
+                  <div>📅 Date: <span className="font-bold text-white">{tournament.tournament_held_date || '2026-08-01'}</span></div>
+                  <div>👥 Max Capacity: <span className="font-bold text-white">{tournament.maximum_team_limit || 6} Teams</span></div>
                 </div>
               </div>
 
-              {/* Participating Teams */}
+              {/* Official Playground Venue */}
+              <div className="space-y-1.5">
+                <h4 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Official Ground / Venue</h4>
+                <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex items-center justify-between shadow-2xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#08733e] text-white flex items-center justify-center font-bold">
+                      <MapPin size={18} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-gray-900">
+                        {playgroundRequests.find(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED')?.ground_name || 'Official Ground Venue'}
+                      </p>
+                      <p className="text-xs text-gray-600">Location: {tournament.location || 'Badulla'} • Cap: 500 spectators</p>
+                    </div>
+                  </div>
+                  <span className="bg-[#08733e] text-white text-[10px] font-extrabold px-3 py-1 rounded-md uppercase">✔ BOOKED VENUE</span>
+                </div>
+              </div>
+
+              {/* Selected Teams Roster */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Selected Teams Roster</h4>
-                  <span className="bg-emerald-100 text-emerald-800 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">
+                  <h4 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Participating Teams Roster</h4>
+                  <span className="bg-emerald-100 text-emerald-800 text-[11px] font-extrabold px-3 py-0.5 rounded-full border border-emerald-200">
                     {teamRequests.filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED').length} Teams Participating
                   </span>
                 </div>
@@ -665,7 +1067,7 @@ export default function ManageTournament() {
                     .map(t => (
                       <div key={t.team_user_id} className="bg-slate-50 border border-slate-200 p-3 rounded-xl flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-[#08733e] text-white flex items-center justify-center font-bold text-xs">
+                          <div className="w-8 h-8 rounded-lg bg-[#08733e] text-white flex items-center justify-center font-extrabold text-xs">
                             {(t.team_name || 'T')[0].toUpperCase()}
                           </div>
                           <div>
@@ -673,6 +1075,7 @@ export default function ManageTournament() {
                             <p className="text-[10px] text-gray-500 font-medium">District: {t.district || 'Colombo'}</p>
                           </div>
                         </div>
+                        <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md uppercase">Approved</span>
                       </div>
                     ))}
                 </div>
@@ -693,7 +1096,7 @@ export default function ManageTournament() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <h4 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Assigned Sponsors</h4>
+                  <h4 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Official Sponsors</h4>
                   <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-1 text-xs font-bold text-gray-800">
                     {sponsors.filter(s => (s.status || '').toUpperCase() === 'APPROVED' || (s.status || '').toUpperCase() === 'ACCEPTED').map(s => (
                       <p key={s.sponsor_user_id}>• {s.display_name || s.company_name || 'Official Sponsor'}</p>
@@ -707,13 +1110,22 @@ export default function ManageTournament() {
             </div>
 
             {/* Modal Actions */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
               <button
                 type="button"
                 onClick={() => setShowFinalizeSummaryModal(false)}
-                className="px-6 py-3 bg-[#08733e] hover:bg-[#065b31] text-white rounded-2xl text-xs font-extrabold uppercase tracking-wider transition-all shadow-md cursor-pointer"
+                className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-gray-700 rounded-2xl text-xs font-bold transition-all cursor-pointer border border-gray-200"
               >
-                Proceed to Match Draw
+                Cancel / Edit Roster
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmFinalizeAndGenerateDraw}
+                disabled={finalizing}
+                className="px-6 py-3 bg-[#08733e] hover:bg-[#065b31] text-white rounded-2xl text-xs font-extrabold uppercase tracking-wider transition-all shadow-md cursor-pointer flex items-center gap-2 disabled:opacity-50"
+              >
+                <CheckCircle2 size={16} />
+                {finalizing ? "Generating Match Draw..." : "Confirm & Generate Match Draw"}
               </button>
             </div>
 

@@ -71,10 +71,30 @@ export default function SponsorTournaments() {
     fetchTournaments();
   }, [userId]);
 
-  const getSponsorshipStatus = (tId) => {
-    const existing = myRequests.find(r => r.tournament_id === tId);
-    if (!existing) return null;
-    return existing.status || 'PENDING';
+  const getSponsorshipRequestObj = (tId) => {
+    return myRequests.find(r => String(r.tournament_id) === String(tId));
+  };
+
+  const handleRespondToInvitation = async (tId, status) => {
+    try {
+      setActionLoading(tId);
+      setError(null);
+      const res = await api.post(`/tournament/${tId}/sponsor-requests/respond`, {
+        sponsorUserId: userId,
+        status: status
+      });
+      if (res.data && res.data.success !== false) {
+        if (showModal) setShowModal(false);
+        fetchTournaments();
+      } else {
+        throw new Error(res.data.message || "Failed to update invitation status.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Failed to update invitation status.");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleOfferSponsorship = async (tId) => {
@@ -170,7 +190,9 @@ export default function SponsorTournaments() {
             const location = t.location || 'Sri Lanka';
             const organizer = t.organizer_name || t.organization_name || 'Elle Sports Association';
             const heldDate = t.tournament_held_date || t.start_date || 'TBD';
-            const status = getSponsorshipStatus(tId);
+            const reqObj = getSponsorshipRequestObj(tId);
+            const status = reqObj ? reqObj.status : null;
+            const initiatedBy = reqObj ? (reqObj.initiated_by || '').toUpperCase() : '';
             const isPending = (status || '').toUpperCase() === 'PENDING';
             const isApproved = ['APPROVED', 'ACCEPTED'].includes((status || '').toUpperCase());
 
@@ -190,9 +212,11 @@ export default function SponsorTournaments() {
                       <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-md border backdrop-blur-md ${
                         isApproved 
                           ? 'bg-emerald-600 text-white border-emerald-400'
+                          : initiatedBy === 'ORGANIZER' && isPending
+                          ? 'bg-blue-600 text-white border-blue-400 animate-pulse'
                           : 'bg-amber-600 text-white border-amber-400'
                       }`}>
-                        {isApproved ? 'SPONSORED' : 'REQUEST PENDING'}
+                        {isApproved ? 'SPONSORED' : initiatedBy === 'ORGANIZER' && isPending ? 'INVITATION RECEIVED' : 'REQUEST PENDING'}
                       </span>
                     )}
                   </div>
@@ -222,16 +246,16 @@ export default function SponsorTournaments() {
                 </div>
 
                 {/* Card Actions */}
-                <div className="p-4 bg-[#f8f7f4] border-t border-[#e5e5e5] flex items-center gap-3">
+                <div className="p-4 bg-[#f8f7f4] border-t border-[#e5e5e5] flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => {
                       setSelectedTourney(t);
                       setShowModal(true);
                     }}
-                    className="flex-1 py-2.5 bg-white border border-[#e5e5e5] text-[#111111] font-bold text-xs rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                    className="py-2.5 px-3 bg-white border border-[#e5e5e5] text-[#111111] font-bold text-xs rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
                   >
-                    <Eye size={15} /> View Details
+                    <Eye size={15} /> Details
                   </button>
 
                   {!status ? (
@@ -242,6 +266,23 @@ export default function SponsorTournaments() {
                     >
                       <Handshake size={15} /> Offer Sponsorship
                     </button>
+                  ) : isPending && initiatedBy === 'ORGANIZER' ? (
+                    <div className="flex-1 flex items-center gap-1.5">
+                      <button
+                        disabled={actionLoading === tId}
+                        onClick={() => handleRespondToInvitation(tId, 'APPROVED')}
+                        className="flex-1 py-2 bg-[#08733e] hover:bg-[#065b31] text-white text-[11px] font-extrabold rounded-xl shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        <CheckCircle2 size={13} /> Accept
+                      </button>
+                      <button
+                        disabled={actionLoading === tId}
+                        onClick={() => handleRespondToInvitation(tId, 'REJECTED')}
+                        className="flex-1 py-2 bg-white border border-red-200 hover:bg-red-50 text-red-600 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        <X size={13} /> Reject
+                      </button>
+                    </div>
                   ) : isPending ? (
                     <div className="flex-1 py-2.5 bg-[#fffbeb] text-[#b45309] border border-[#fde68a] font-bold text-xs rounded-xl flex items-center justify-center gap-1.5">
                       <Clock size={15} /> Requested

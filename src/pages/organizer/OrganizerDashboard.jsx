@@ -52,26 +52,31 @@ function OrganizerDashboard() {
         console.error("Error reading user from localStorage:", e);
       }
 
-      if (organizerId) {
-        await fetchTournaments(organizerId);
-      } else {
-        setLoading(false);
+      if (!organizerId) {
+        try {
+          const profileRes = await api.get('/user/profile');
+          if (profileRes.data && profileRes.data.data) {
+            const pData = profileRes.data.data;
+            organizerId = pData.userId || pData.user_id || pData.id;
+          }
+        } catch (e) {
+          console.warn("Could not fetch profile fallback:", e);
+        }
       }
+
+      await fetchTournaments(organizerId);
     };
 
     loadDashboard();
   }, []);
 
   const fetchTournaments = async (targetOrganizerId) => {
-    if (!targetOrganizerId) {
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get(`/organizer/${targetOrganizerId}/tournaments`);
+      
+      const endpoint = targetOrganizerId ? `/organizer/${targetOrganizerId}/tournaments` : `/organizer/tournaments`;
+      const response = await api.get(endpoint);
       if (response.data && response.data.success !== false) {
         setTournaments(response.data.data || []);
       } else {
