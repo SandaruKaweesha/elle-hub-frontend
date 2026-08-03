@@ -207,16 +207,6 @@ function OrganizerLayout() {
             >
               <Menu size={24} />
             </button>
-            
-            {/* Search Bar */}
-            <div className="relative max-w-md w-full hidden sm:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#888888]" size={16} />
-              <input 
-                type="text" 
-                placeholder="Search tournament!" 
-                className="w-full h-10 pl-10 pr-4 bg-[#f4f4f4] border-none rounded-full text-sm outline-none focus:ring-2 focus:ring-[#00382D]/20 transition-all placeholder:text-[#888888]"
-              />
-            </div>
           </div>
 
           {/* Right Header Actions */}

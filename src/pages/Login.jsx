@@ -16,10 +16,25 @@ function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Clear previous session when on login page
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-  }, []);
+    // If user is already logged in, redirect directly to their role dashboard
+    const userString = localStorage.getItem('user');
+    const tokenString = localStorage.getItem('token');
+    if (userString && tokenString) {
+      try {
+        const u = JSON.parse(userString);
+        const r = String(u?.role || u?.user_role || '').trim().toUpperCase();
+        if (r.includes('ADMIN')) { navigate('/admin'); return; }
+        if (r.includes('ORGANIZ')) { navigate('/organizer'); return; }
+        if (r.includes('TEAM')) { navigate('/team'); return; }
+        if (r.includes('REF')) { navigate('/referee'); return; }
+        if (r.includes('PLAY') || r.includes('GROUND')) { navigate('/playground'); return; }
+        if (r.includes('SPONSOR')) { navigate('/sponsor'); return; }
+      } catch (e) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
+    }
+  }, [navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -44,7 +59,59 @@ function Login() {
       if (response.data && response.data.success !== false) {
         const rawUserData = response.data.user || response.data.data || response.data;
         const targetId = rawUserData.userId || rawUserData.user_id || rawUserData.id;
-        const userRole = String(rawUserData.role || '').trim().toUpperCase();
+        
+        // 1. Extract role from user object
+        let extractedRole = '';
+        if (response.data.user && response.data.user.role) {
+          extractedRole = response.data.user.role;
+        } else if (response.data.data && response.data.data.role) {
+          extractedRole = response.data.data.role;
+        } else if (response.data.role) {
+          extractedRole = response.data.role;
+        } else if (rawUserData && rawUserData.role) {
+          extractedRole = rawUserData.role;
+        }
+
+        // 2. Decode JWT Token as fallback (with base64url support)
+        if (!extractedRole && response.data.token) {
+          try {
+            const base64Url = response.data.token.split('.')[1];
+            if (base64Url) {
+              const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+              const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+              const tokenPayload = JSON.parse(jsonPayload);
+              extractedRole = tokenPayload.role || tokenPayload.user_role || '';
+            }
+          } catch (e) {
+            console.error("Token decode error:", e);
+          }
+        }
+
+        // 3. Query DB endpoint as ultimate fallback
+        if (!extractedRole && targetId) {
+          try {
+            const dbUserRes = await api.get(`/user/${targetId}`);
+            if (dbUserRes.data && (dbUserRes.data.data || dbUserRes.data)) {
+              const dbObj = dbUserRes.data.data || dbUserRes.data;
+              extractedRole = dbObj.role || dbObj.user_role || '';
+            }
+          } catch (e) {
+            console.error("DB fallback role fetch error:", e);
+          }
+        }
+
+        const rawRoleStr = String(extractedRole || '').trim().toUpperCase();
+        let userRole = '';
+
+        if (rawRoleStr.includes('ADMIN')) userRole = 'ADMIN';
+        else if (rawRoleStr.includes('ORGANIZ')) userRole = 'ORGANIZER';
+        else if (rawRoleStr.includes('TEAM')) userRole = 'TEAM';
+        else if (rawRoleStr.includes('REF')) userRole = 'REFEREE';
+        else if (rawRoleStr.includes('PLAY') || rawRoleStr.includes('GROUND')) userRole = 'PLAYGROUND';
+        else if (rawRoleStr.includes('SPONSOR')) userRole = 'SPONSOR';
+        else userRole = rawRoleStr;
+
+        console.log("Extracted and normalized user role:", userRole, "from raw:", rawRoleStr);
 
         const userData = {
           userId: targetId,
@@ -81,7 +148,7 @@ function Login() {
         } else if (userRole === 'SPONSOR') {
           navigate('/sponsor');
         } else {
-          navigate('/');
+          setError(`User role '${rawRoleStr || 'Unknown'}' not recognized. Please contact administrator.`);
         }
       } else {
         throw new Error(response.data.message || "Invalid email or password.");
