@@ -18,7 +18,8 @@ import {
   Users,
   Shield,
   Medal,
-  FileText
+  FileText,
+  History
 } from "lucide-react";
 
 const SIDEBAR_LINKS = [
@@ -27,7 +28,9 @@ const SIDEBAR_LINKS = [
   { id: "requests", label: "Requests", icon: FileText, path: "/team/requests" },
   { id: "matches", label: "Matches", icon: Calendar, path: "/team/matches" },
   { id: "results", label: "Results", icon: Medal, path: "/team/results" },
+  { id: "history", label: "History", icon: History, path: "/team/history" },
 ];
+
 
 export default function TeamLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
