@@ -4,10 +4,12 @@ import {
   Trophy, MapPin, Calendar, Users, Star, Shield, 
   BadgeDollarSign, Map, Save, CheckSquare, AlertCircle, 
   CheckCircle2, ArrowLeft, Lock, Info,
-  Zap, Edit, Radio, ChevronRight, FileText, Settings, QrCode, X, Award, Send, Clock
+  Zap, Edit, Radio, ChevronRight, FileText, Settings, QrCode, X, Award, Send, Clock,
+  Shuffle, Dice5, RefreshCw, RotateCcw
 } from 'lucide-react';
 import api from '../../services/api';
 import KnockoutBracketDisplay from '../../components/organizer/KnockoutBracketDisplay';
+
 
 export default function ManageTournament() {
   const { id } = useParams();
@@ -42,7 +44,63 @@ export default function ManageTournament() {
   const [drawDetails, setDrawDetails] = useState(null);
   const [showFinalizeSummaryModal, setShowFinalizeSummaryModal] = useState(false);
 
+  const isDrawFinalized = (tournament?.is_draw_finalized ?? 0) === 1;
+
+  const handleShuffle = async (mode = 'RANDOM') => {
+    if (isDrawFinalized) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await api.post(`/tournament/${id}/draw/shuffle`, { mode });
+      if (res.data && res.data.success) {
+        setSuccessMsg(res.data.message || `Match draw shuffled using ${mode} mode!`);
+        if (res.data.data && res.data.data.drawData) {
+          setDrawDetails(prev => ({
+            ...prev,
+            drawData: res.data.data.drawData,
+            teams: res.data.data.teams || prev?.teams
+          }));
+        } else {
+          await loadTournamentData();
+        }
+        setTimeout(() => setSuccessMsg(null), 4000);
+      } else {
+        setError(res.data.message || "Failed to shuffle match draw.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error shuffling match draw.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const handleSaveAndFixShuffle = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await api.post(`/tournament/${id}/draw`, {
+        drawData: drawDetails?.drawData || {},
+        isFix: true
+      });
+      if (res.data && res.data.success) {
+        setSuccessMsg("Match draw saved and permanently LOCKED! 🔒 Shuffle controls disabled.");
+        await loadTournamentData();
+        setTimeout(() => setSuccessMsg(null), 5000);
+      } else {
+        setError(res.data.message || "Failed to save & fix match draw.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error saving & fixing match draw.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
+
     if (id) {
       loadTournamentData();
     }
@@ -463,8 +521,90 @@ export default function ManageTournament() {
           <Outlet context={{ tournament }} />
         </div>
       ) : isFinalized ? (
-        /* --- ONGOING TOURNAMENT: MATCH DRAW VIEW ONLY --- */
+        /* --- ONGOING TOURNAMENT: MATCH DRAW VIEW WITH SHUFFLE CONTROLS --- */
         <div className="space-y-6 animate-in fade-in duration-300">
+          
+          {/* SHUFFLE & LOCK CONTROL BAR */}
+          <div className="bg-white p-5 rounded-3xl border border-[#e5e5e5] shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#08733e] flex items-center justify-center font-black">
+                <Shuffle size={20} />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-sm text-gray-900">Match Draw Shuffling Controls</h3>
+                <p className="text-xs text-gray-500 font-medium">
+                  {isDrawFinalized 
+                    ? "Match schedule is permanently FIXED & LOCKED. Shuffling is disabled." 
+                    : "Select a shuffling mode below to randomize team pairings, then Save & Lock."}
+                </p>
+              </div>
+            </div>
+
+            {!isDrawFinalized ? (
+              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                {/* Mode 1: Random Shuffle */}
+                <button
+                  type="button"
+                  onClick={() => handleShuffle('RANDOM')}
+                  className="flex-1 md:flex-initial px-3.5 py-2 bg-slate-100 hover:bg-emerald-50 hover:text-[#08733e] text-gray-700 rounded-xl text-xs font-bold transition-all border border-gray-200 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Mode 1: Pure Random Shuffle"
+                >
+                  <Dice5 size={14} /> Mode 1: Random
+                </button>
+
+                {/* Mode 2: Alternate Swap */}
+                <button
+                  type="button"
+                  onClick={() => handleShuffle('ALTERNATE')}
+                  className="flex-1 md:flex-initial px-3.5 py-2 bg-slate-100 hover:bg-emerald-50 hover:text-[#08733e] text-gray-700 rounded-xl text-xs font-bold transition-all border border-gray-200 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Mode 2: Cross Swap Pairs"
+                >
+                  <RefreshCw size={14} /> Mode 2: Alternate
+                </button>
+
+                {/* Mode 3: Reverse Order */}
+                <button
+                  type="button"
+                  onClick={() => handleShuffle('REVERSE')}
+                  className="flex-1 md:flex-initial px-3.5 py-2 bg-slate-100 hover:bg-emerald-50 hover:text-[#08733e] text-gray-700 rounded-xl text-xs font-bold transition-all border border-gray-200 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Mode 3: Reverse Lineup"
+                >
+                  <RotateCcw size={14} /> Mode 3: Reverse
+                </button>
+
+                {/* Save & Fix Button */}
+                <button
+                  type="button"
+                  onClick={handleSaveAndFixShuffle}
+                  className="flex-1 md:flex-initial px-4 py-2 bg-[#08733e] hover:bg-[#065b31] text-white rounded-xl text-xs font-extrabold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Lock size={14} /> Save & Fix Draw
+                </button>
+              </div>
+            ) : (
+              <div className="bg-emerald-50 border border-emerald-200 text-[#08733e] px-4 py-2 rounded-2xl text-xs font-black flex items-center gap-2">
+                <Lock size={14} /> MATCH SCHEDULE FIXED & LOCKED
+              </div>
+            )}
+          </div>
+
+          {/* VISUAL SHUFFLED TEAM LINEUP SUMMARY */}
+          {((drawDetails?.drawData?.teams || drawDetails?.teams || []).length > 0) && (
+            <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-2xl flex flex-wrap items-center gap-2 shadow-2xs">
+              <span className="text-xs font-black text-emerald-800 uppercase tracking-wider flex items-center gap-1.5 mr-2">
+                <Trophy size={14} /> Shuffled Team Lineup Order:
+              </span>
+              {(drawDetails?.drawData?.teams || drawDetails?.teams || []).map((t, idx) => {
+                const name = typeof t === 'string' ? t : (t.team_name || t.name || t.email || 'Team');
+                return (
+                  <span key={idx} className="bg-white text-gray-800 border border-emerald-300 text-xs font-extrabold px-3 py-1 rounded-xl shadow-2xs flex items-center gap-1">
+                    <span className="text-emerald-700 font-black">#{idx + 1}</span> {name}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
           <KnockoutBracketDisplay 
             tournamentTitle={tournament.title?.toUpperCase() || 'TOURNAMENT MATCH DRAW'} 
             teams={drawDetails?.teams || []} 
@@ -474,7 +614,9 @@ export default function ManageTournament() {
             isTournamentCompleted={isCompleted}
           />
         </div>
-      ) : (
+
+      )
+ : (
         <>
           {/* Tab Navigation for Setup */}
           <div className="flex flex-wrap items-center gap-2 mb-8 border-b border-gray-100 pb-3">
@@ -580,21 +722,22 @@ export default function ManageTournament() {
                     <p className="text-xs text-gray-500 font-medium">Review and Accept or Reject incoming sponsorship proposals for this tournament</p>
                   </div>
                   <span className="bg-amber-100 text-amber-800 text-xs font-black px-3 py-1 rounded-full border border-amber-200">
-                    {sponsorRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'SPONSOR').length} Pending
+                    {sponsorRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING').length} Pending
                   </span>
                 </div>
 
-                {sponsorRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'SPONSOR').length === 0 ? (
+                {sponsorRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING').length === 0 ? (
                   <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
-                    <p className="text-xs font-bold text-gray-700">No Received Sponsorship Requests</p>
-                    <p className="text-[11px] text-gray-400">Proposals submitted by sponsors will appear here for your review.</p>
+                    <p className="text-xs font-bold text-gray-700">No Pending Sponsorship Requests</p>
+                    <p className="text-[11px] text-gray-400">Proposals submitted by sponsors or sent invitations will appear here for your review.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {sponsorRequests
-                      .filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'SPONSOR')
+                      .filter(r => (r.status || '').toUpperCase() === 'PENDING')
                       .map(s => {
                         const sId = s.sponsor_user_id || s.user_id;
+                        const isOrganizerInit = (s.initiated_by || '').toUpperCase() === 'ORGANIZER';
                         return (
                           <div key={sId} className="bg-white border-2 border-amber-200 p-5 rounded-2xl space-y-4 shadow-xs hover:shadow-md transition-all">
                             <div className="flex items-start justify-between gap-3">
@@ -608,7 +751,7 @@ export default function ManageTournament() {
                                 </div>
                               </div>
                               <span className="text-[10px] font-black px-2.5 py-1 rounded-md uppercase border bg-amber-50 text-amber-700 border-amber-200">
-                                OFFER RECEIVED
+                                {isOrganizerInit ? 'INVITATION SENT' : 'OFFER RECEIVED'}
                               </span>
                             </div>
 
@@ -626,7 +769,7 @@ export default function ManageTournament() {
                                 onClick={() => handleRespondToSponsor(sId, 'REJECTED')}
                                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-slate-100 hover:bg-red-50 hover:text-red-700 text-gray-700 rounded-xl text-xs font-bold transition-all cursor-pointer border border-gray-200"
                               >
-                                <X size={14} /> Reject Request
+                                <X size={14} /> Reject / Cancel
                               </button>
                             </div>
                           </div>
@@ -634,6 +777,7 @@ export default function ManageTournament() {
                       })}
                   </div>
                 )}
+
               </div>
 
             </div>
@@ -698,21 +842,22 @@ export default function ManageTournament() {
                     <p className="text-xs text-gray-500 font-medium">Review and Accept or Reject incoming referee applications for this tournament</p>
                   </div>
                   <span className="bg-amber-100 text-amber-800 text-xs font-black px-3 py-1 rounded-full border border-amber-200">
-                    {refereeRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'REFEREE').length} Pending
+                    {refereeRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING').length} Pending
                   </span>
                 </div>
 
-                {refereeRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'REFEREE').length === 0 ? (
+                {refereeRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING').length === 0 ? (
                   <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
-                    <p className="text-xs font-bold text-gray-700">No Received Referee Requests</p>
-                    <p className="text-[11px] text-gray-400">Applications submitted by referees will appear here for your review.</p>
+                    <p className="text-xs font-bold text-gray-700">No Pending Referee Requests</p>
+                    <p className="text-[11px] text-gray-400">Applications submitted by referees or sent invitations will appear here for your review.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {refereeRequests
-                      .filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'REFEREE')
+                      .filter(r => (r.status || '').toUpperCase() === 'PENDING')
                       .map(r => {
                         const rId = r.referee_user_id || r.user_id;
+                        const isOrganizerInit = (r.initiated_by || '').toUpperCase() === 'ORGANIZER';
                         return (
                           <div key={rId} className="bg-white border-2 border-amber-200 p-5 rounded-2xl space-y-4 shadow-xs hover:shadow-md transition-all">
                             <div className="flex items-start justify-between gap-3">
@@ -722,11 +867,11 @@ export default function ManageTournament() {
                                 </div>
                                 <div>
                                   <h4 className="font-extrabold text-sm text-gray-900">{r.display_name || r.name || 'Official Referee'}</h4>
-                                  <p className="text-xs text-gray-500 font-medium">{r.email} • District: {r.district || 'Sri Lanka'}</p>
+                                  <p className="text-xs text-gray-500 font-medium">{r.email || r.phone} • District: {r.district || 'Sri Lanka'}</p>
                                 </div>
                               </div>
                               <span className="text-[10px] font-black px-2.5 py-1 rounded-md uppercase border bg-amber-50 text-amber-700 border-amber-200">
-                                OFFER RECEIVED
+                                {isOrganizerInit ? 'INVITATION SENT' : 'OFFER RECEIVED'}
                               </span>
                             </div>
 
@@ -744,7 +889,7 @@ export default function ManageTournament() {
                                 onClick={() => handleRespondToRefereeRequest(rId, 'REJECTED')}
                                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-slate-100 hover:bg-red-50 hover:text-red-700 text-gray-700 rounded-xl text-xs font-bold transition-all cursor-pointer border border-gray-200"
                               >
-                                <X size={14} /> Reject Request
+                                <X size={14} /> Reject / Cancel
                               </button>
                             </div>
                           </div>
@@ -752,6 +897,7 @@ export default function ManageTournament() {
                       })}
                   </div>
                 )}
+
               </div>
 
             </div>
@@ -928,21 +1074,22 @@ export default function ManageTournament() {
                     <p className="text-xs text-gray-500 font-medium">Review and Accept or Reject incoming playground booking proposals for this tournament</p>
                   </div>
                   <span className="bg-amber-100 text-amber-800 text-xs font-black px-3 py-1 rounded-full border border-amber-200">
-                    {playgroundRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'PLAYGROUND').length} Pending
+                    {playgroundRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING').length} Pending
                   </span>
                 </div>
 
-                {playgroundRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'PLAYGROUND').length === 0 ? (
+                {playgroundRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING').length === 0 ? (
                   <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
-                    <p className="text-xs font-bold text-gray-700">No Received Playground Requests</p>
-                    <p className="text-[11px] text-gray-400">Booking proposals submitted by venue owners will appear here for your review.</p>
+                    <p className="text-xs font-bold text-gray-700">No Pending Playground Requests</p>
+                    <p className="text-[11px] text-gray-400">Booking proposals submitted by venue owners or sent invitations will appear here for your review.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {playgroundRequests
-                      .filter(r => (r.status || '').toUpperCase() === 'PENDING' && (r.initiated_by || '').toUpperCase() === 'PLAYGROUND')
+                      .filter(r => (r.status || '').toUpperCase() === 'PENDING')
                       .map(p => {
                         const pUserId = p.playground_user_id || p.user_id || p.id;
+                        const isOrganizerInit = (p.initiated_by || '').toUpperCase() === 'ORGANIZER';
                         return (
                           <div key={pUserId} className="bg-white border-2 border-amber-200 p-5 rounded-2xl space-y-4 shadow-xs hover:shadow-md transition-all">
                             <div className="flex items-start justify-between gap-3">
@@ -951,12 +1098,12 @@ export default function ManageTournament() {
                                   <MapPin size={20} />
                                 </div>
                                 <div>
-                                  <h4 className="font-extrabold text-sm text-gray-900">{p.ground_name || p.display_name || p.name || 'Official Ground Venue'}</h4>
+                                  <h4 className="font-extrabold text-sm text-gray-900">{p.ground_name || p.playground_name || p.display_name || p.name || 'Official Ground Venue'}</h4>
                                   <p className="text-xs text-gray-500 font-medium">Location: {p.district || p.location || 'Badulla'} • Cap: {p.capacity || p.area || 500} spectators</p>
                                 </div>
                               </div>
                               <span className="text-[10px] font-black px-2.5 py-1 rounded-md uppercase border bg-amber-50 text-amber-700 border-amber-200">
-                                OFFER RECEIVED
+                                {isOrganizerInit ? 'INVITATION SENT' : 'OFFER RECEIVED'}
                               </span>
                             </div>
 
@@ -967,14 +1114,14 @@ export default function ManageTournament() {
                                 onClick={() => handleRespondToPlaygroundRequest(pUserId, 'APPROVED')}
                                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-[#08733e] hover:bg-[#065b31] text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer"
                               >
-                                <CheckCircle2 size={14} /> Accept Venue
+                                <CheckCircle2 size={14} /> Approve Venue
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleRespondToPlaygroundRequest(pUserId, 'REJECTED')}
                                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-slate-100 hover:bg-red-50 hover:text-red-700 text-gray-700 rounded-xl text-xs font-bold transition-all cursor-pointer border border-gray-200"
                               >
-                                <X size={14} /> Reject Request
+                                <X size={14} /> Reject / Cancel
                               </button>
                             </div>
                           </div>
