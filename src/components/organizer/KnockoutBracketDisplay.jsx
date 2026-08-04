@@ -70,8 +70,12 @@ export default function KnockoutBracketDisplay({
     }
   }, [drawData]);
 
-  // Filter out real participating teams (excluding any old TBD placeholders)
-  const realTeams = teams.map(t => ({
+  // Filter out real participating teams (preferring drawData.teams if shuffled)
+  const effectiveTeams = (drawData && Array.isArray(drawData.teams) && drawData.teams.length > 0)
+    ? drawData.teams
+    : teams;
+
+  const realTeams = effectiveTeams.map(t => ({
     name: getTeamName(t),
     district: getTeamDistrict(t)
   })).filter(t => t.name && !t.name.includes('TBD') && !t.name.includes('Bye'));
@@ -82,6 +86,7 @@ export default function KnockoutBracketDisplay({
   const half = Math.ceil(realTeams.length / 2);
   const groupATeams = realTeams.slice(0, half);
   const groupBTeams = realTeams.slice(half);
+
 
   // Dynamic Group A Quarter-Final Pairs & BYE handling
   const groupAQF = [];
