@@ -17,6 +17,8 @@ import TeamProfile from "./pages/team/TeamProfile";
 import TeamTournaments from "./pages/team/TeamTournaments";
 import TeamRequests from "./pages/team/TeamRequests";
 import TeamMatches from "./pages/team/TeamMatches";
+import TeamHistory from "./pages/team/TeamHistory";
+import TeamResults from "./pages/team/TeamResults";
 
 import OrganizerLayout from "./components/organizer/OrganizerLayout";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
@@ -29,7 +31,9 @@ import ManageTournament from "./pages/organizer/ManageTournament";
 import OrganizerReferees from "./pages/organizer/OrganizerReferees";
 import OrganizerPlaygrounds from "./pages/organizer/OrganizerPlaygrounds";
 import OrganizerSponsors from "./pages/organizer/OrganizerSponsors";
+import OrganizerHistory from "./pages/organizer/OrganizerHistory";
 import MatchDraw from "./pages/organizer/MatchDraw";
+
 import UpdateResults from "./pages/organizer/UpdateResults";
 import LiveBroadcastHub from "./pages/organizer/LiveBroadcastHub";
 import CertificateQR from "./pages/organizer/CertificateQR";
@@ -115,6 +119,7 @@ function App() {
         <Route path="playgrounds" element={<OrganizerPlaygrounds />} />
         <Route path="sponsors" element={<OrganizerSponsors />} />
         <Route path="messages" element={<OrganizerMessages />} />
+        <Route path="history" element={<OrganizerHistory />} />
         <Route path="settings" element={<OrganizerSettings />} />
         <Route path="notifications" element={<OrganizerNotifications />} />
       </Route>
@@ -135,6 +140,8 @@ function App() {
         <Route path="tournaments" element={<TeamTournaments />} />
         <Route path="requests" element={<TeamRequests />} />
         <Route path="matches" element={<TeamMatches />} />
+        <Route path="results" element={<TeamResults />} />
+        <Route path="history" element={<TeamHistory />} />
         <Route path="join-tournament/:id" element={<JoinTournamentRequest />} />
         <Route path="settings" element={<TeamSettings />} />
         <Route path="notifications" element={<TeamNotifications />} />

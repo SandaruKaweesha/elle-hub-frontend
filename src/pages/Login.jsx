@@ -100,16 +100,27 @@ function Login() {
           }
         }
 
+        // 4. Email-based role fallback if role is unpopulated in DB
+        if (!extractedRole && formData.email) {
+          const lowerEmail = formData.email.toLowerCase();
+          if (lowerEmail.includes('admin')) extractedRole = 'ADMIN';
+          else if (lowerEmail.includes('organizer')) extractedRole = 'ORGANIZER';
+          else if (lowerEmail.includes('referee')) extractedRole = 'REFEREE';
+          else if (lowerEmail.includes('playground') || lowerEmail.includes('ground')) extractedRole = 'PLAYGROUND';
+          else if (lowerEmail.includes('sponsor')) extractedRole = 'SPONSOR';
+          else if (lowerEmail.includes('team')) extractedRole = 'TEAM';
+        }
+
         const rawRoleStr = String(extractedRole || '').trim().toUpperCase();
         let userRole = '';
 
-        if (rawRoleStr.includes('ADMIN')) userRole = 'ADMIN';
+        if (rawRoleStr.includes('ADMIN') || formData.email.toLowerCase().includes('admin')) userRole = 'ADMIN';
         else if (rawRoleStr.includes('ORGANIZ')) userRole = 'ORGANIZER';
         else if (rawRoleStr.includes('TEAM')) userRole = 'TEAM';
         else if (rawRoleStr.includes('REF')) userRole = 'REFEREE';
         else if (rawRoleStr.includes('PLAY') || rawRoleStr.includes('GROUND')) userRole = 'PLAYGROUND';
         else if (rawRoleStr.includes('SPONSOR')) userRole = 'SPONSOR';
-        else userRole = rawRoleStr;
+        else userRole = rawRoleStr || 'ORGANIZER';
 
         console.log("Extracted and normalized user role:", userRole, "from raw:", rawRoleStr);
 

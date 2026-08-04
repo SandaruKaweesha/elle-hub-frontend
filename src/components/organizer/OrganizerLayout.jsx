@@ -21,7 +21,8 @@ import {
   Radio,
   ChevronRight,
   FileText,
-  MessageSquare
+  MessageSquare,
+  History
 } from "lucide-react";
 
 const SIDEBAR_LINKS = [
@@ -32,7 +33,9 @@ const SIDEBAR_LINKS = [
   { id: "playgrounds", label: "Playgrounds", icon: Map, path: "/organizer/playgrounds" },
   { id: "sponsors", label: "Sponsors", icon: BadgeDollarSign, path: "/organizer/sponsors" },
   { id: "messages", label: "Messages", icon: MessageSquare, path: "/organizer/messages" },
+  { id: "history", label: "History", icon: History, path: "/organizer/history" },
 ];
+
 
 function OrganizerLayout() {
   const location = useLocation();

@@ -44,23 +44,19 @@ export default function OrganizerTeams() {
         console.error("Session parse error:", e);
       }
 
-      if (targetId) {
-        await loadAllData(targetId);
-      } else {
-        // Fetch public users list if organizer ID not found
+      if (!targetId) {
         try {
-          const usersRes = await api.get('/user/getAllUsers');
-          if (usersRes.data && usersRes.data.success !== false) {
-            const allUsers = usersRes.data.data || [];
-            const teams = allUsers.filter(u => (u.role || '').toUpperCase() === 'TEAM');
-            setAllRegisteredTeams(teams);
+          const profileRes = await api.get('/user/profile');
+          if (profileRes.data && profileRes.data.data) {
+            const p = profileRes.data.data;
+            targetId = p.userId || p.user_id || p.id;
           }
-        } catch (err) {
-          console.error("Error fetching users:", err);
-        } finally {
-          setLoading(false);
+        } catch (e) {
+          console.warn("Could not resolve profile:", e);
         }
       }
+
+      await loadAllData(targetId || 0);
     };
 
     loadTeamsData();
@@ -94,8 +90,10 @@ export default function OrganizerTeams() {
       if (tournamentsRes.data && tournamentsRes.data.success !== false) {
         const list = tournamentsRes.data.data || [];
         const activeOnly = list.filter(t => 
-          (t.approval_status || '').toUpperCase() === 'APPROVED' && 
-          ((t.status || '').toUpperCase() === 'ACTIVE' || (t.status || '').toUpperCase() === 'SETUP' || (t.status || '').toUpperCase() === 'ONGOING' || !t.status)
+          t && 
+          (t.approval_status || 'APPROVED').toString().toUpperCase() !== 'REJECTED' && 
+          (t.status || 'ACTIVE').toString().toUpperCase() !== 'COMPLETED' && 
+          (t.status || 'ACTIVE').toString().toUpperCase() !== 'CANCELLED'
         );
         setOrganizerTournaments(activeOnly);
       }
