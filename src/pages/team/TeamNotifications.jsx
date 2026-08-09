@@ -13,42 +13,22 @@ function TeamNotifications() {
     const fetchNotifications = async () => {
       try {
         setLoading(true);
-        // Using tournaments as mock notifications based on the current implementation
-        const response = await api.get('/tournaments');
-        if (response.data.success) {
-          const tournaments = response.data.data.slice(0, 5);
-          
-          const formatted = tournaments.map((t, index) => ({
-            id: t.tournament_id || index,
-            title: `New tournament ${t.title} was added to the portal.`,
-            type: 'tournament',
-            date: t.created_at || 'Recently Added',
-            isRead: index > 1,
-            link: `/tournaments/${t.tournament_id || t.id}`,
-          }));
-          
-          // Add some mock team-specific notifications
-          formatted.push({
-            id: 'n1',
-            title: 'Roster Updated: Marcus V. has been added to the starting lineup.',
-            type: 'team',
-            date: '2 hours ago',
-            isRead: false,
-            link: '/team/settings',
-          });
-          
-          formatted.push({
-            id: 'n2',
-            title: 'Match Confirmed: Zenith Titans match scheduled on North Field.',
-            type: 'match',
-            date: '5 hours ago',
-            isRead: true,
-            link: '/team',
-          });
+        const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+        const userId = currentUser.userId || currentUser.user_id || currentUser.id;
 
-          // Sort so unread is on top
-          formatted.sort((a, b) => (a.isRead === b.isRead ? 0 : a.isRead ? 1 : -1));
-          
+        if (!userId) return;
+
+        const response = await api.get(`/user/${userId}/notifications`);
+        if (response.data && response.data.success !== false) {
+          const list = response.data.data || [];
+          const formatted = list.map(item => ({
+            id: item.notification_id,
+            title: item.title,
+            message: item.message,
+            type: (item.type || 'SYSTEM').toLowerCase(),
+            date: item.created_at || item.received_at || 'Recently',
+            isRead: Number(item.is_read) === 1
+          }));
           setNotifications(formatted);
         }
       } catch (error) {
@@ -60,9 +40,35 @@ function TeamNotifications() {
     fetchNotifications();
   }, []);
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+  const markAllAsRead = async () => {
+    try {
+      const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+      const userId = currentUser.userId || currentUser.user_id || currentUser.id;
+      if (userId) {
+        await api.put(`/user/${userId}/notifications/read-all`);
+      }
+      setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.error(err);
+    }
   };
+
+  const handleSelectNotification = async (notif) => {
+    setSelectedNotification(notif);
+    if (!notif.isRead) {
+      try {
+        const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+        const userId = currentUser.userId || currentUser.user_id || currentUser.id;
+        if (userId) {
+          await api.put(`/user/${userId}/notifications/${notif.id}/read`);
+        }
+        setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
 
   const getIcon = (type) => {
     switch(type) {
@@ -130,13 +136,14 @@ function TeamNotifications() {
             notifications.map((notification) => (
               <button
                 key={notification.id}
-                onClick={() => setSelectedNotification(notification)}
+                onClick={() => handleSelectNotification(notification)}
                 className={`w-full text-left p-4 md:p-6 transition-colors flex gap-4 ${
                   notification.isRead 
                     ? 'hover:bg-[#f8f7f4] opacity-80' 
                     : 'bg-[#98F5E1]/10 hover:bg-[#98F5E1]/20'
                 }`}
               >
+
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${getIconBg(notification.type)}`}>
                   {getIcon(notification.type)}
                 </div>

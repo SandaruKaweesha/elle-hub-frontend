@@ -37,9 +37,53 @@ function SponsorLayout() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+
   const userString = localStorage.getItem('user');
   const localUser = userString ? JSON.parse(userString) : null;
   const targetId = localUser?.userId || localUser?.user_id || localUser?.id;
+
+  const fetchNotifications = async () => {
+    if (!targetId) return;
+    try {
+      const res = await api.get(`/user/${targetId}/notifications`);
+      if (res.data && res.data.success !== false) {
+        setNotifications(res.data.data || []);
+      }
+    } catch (err) {
+      console.error("Sponsor notification fetch error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 8000);
+    return () => clearInterval(interval);
+  }, [targetId]);
+
+  const notifUnreadCount = notifications.filter(n => Number(n.is_read) === 0).length;
+
+  const markAllNotifsRead = async () => {
+    if (!targetId) return;
+    try {
+      await api.put(`/user/${targetId}/notifications/read-all`);
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: 1 })));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const markSingleNotifRead = async (notifId) => {
+    if (!targetId) return;
+    try {
+      await api.put(`/user/${targetId}/notifications/${notifId}/read`);
+      setNotifications(prev => prev.map(n => n.notification_id === notifId ? { ...n, is_read: 1 } : n));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
 
   useEffect(() => {
     if (!userString) {
@@ -211,7 +255,7 @@ function SponsorLayout() {
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-4 sm:gap-6 shrink-0">
-            <Link to="/sponsor/messages" className="relative text-gray-500 hover:text-[#111111] transition-colors p-1 cursor-pointer">
+            <Link to="/sponsor/messages" className="relative text-gray-500 hover:text-[#111111] transition-colors p-1 cursor-pointer" title="Messages">
               <MessageSquare size={20} />
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">
@@ -219,6 +263,94 @@ function SponsorLayout() {
                 </span>
               )}
             </Link>
+
+            {/* Notification Bell Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifDropdown(!showNotifDropdown)}
+                className="p-1 text-gray-500 hover:text-[#111111] transition-colors relative cursor-pointer flex items-center justify-center"
+                title="Sponsor Notifications"
+              >
+                <Bell size={20} />
+                {notifUnreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white animate-pulse">
+                    {notifUnreadCount > 99 ? '99+' : notifUnreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Popover Dropdown Modal */}
+              {showNotifDropdown && (
+                <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                  <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Bell size={18} className="text-[#08733e]" />
+                      <h3 className="font-extrabold text-sm text-gray-900">Notifications</h3>
+                      {notifUnreadCount > 0 && (
+                        <span className="bg-emerald-100 text-[#08733e] text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          {notifUnreadCount} new
+                        </span>
+                      )}
+                    </div>
+                    {notifUnreadCount > 0 && (
+                      <button 
+                        onClick={markAllNotifsRead} 
+                        className="text-[11px] font-bold text-[#08733e] hover:underline cursor-pointer"
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
+                    {notifications.length === 0 ? (
+                      <div className="p-6 text-center text-gray-400 space-y-1">
+                        <Bell size={28} className="mx-auto text-gray-300 mb-2" />
+                        <p className="text-xs font-bold text-gray-700">No Notifications Yet</p>
+                        <p className="text-[11px]">Sponsorship & tournament alerts will show here.</p>
+                      </div>
+                    ) : (
+                      notifications.map(n => {
+                        const isUnread = Number(n.is_read) === 0;
+                        return (
+                          <div 
+                            key={n.notification_id}
+                            onClick={() => markSingleNotifRead(n.notification_id)}
+                            className={`p-3.5 hover:bg-gray-50 transition-colors cursor-pointer text-left ${isUnread ? 'bg-emerald-50/50' : 'opacity-75'}`}
+                          >
+                            <div className="flex justify-between items-start gap-2">
+                              <h4 className={`text-xs ${isUnread ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
+                                {n.title}
+                              </h4>
+                              {isUnread && (
+                                <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0 mt-1"></span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-gray-600 mt-1 line-clamp-2">{n.message}</p>
+                            <span className="text-[9px] text-gray-400 mt-1.5 block font-mono">
+                              {n.created_at || n.received_at}
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  <div className="p-2.5 bg-gray-50 border-t border-gray-200 text-center">
+                    <button 
+                      onClick={() => {
+                        setShowNotifDropdown(false);
+                        navigate('/sponsor/notifications');
+                      }} 
+                      className="text-xs font-extrabold text-[#08733e] hover:underline cursor-pointer"
+                    >
+                      View All Notifications Feed →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             
             <div className="w-[1px] h-8 bg-gray-200 hidden sm:block"></div>
             
