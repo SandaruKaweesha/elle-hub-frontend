@@ -48,12 +48,16 @@ import RefereeAvailability from "./pages/referee/RefereeAvailability";
 import RefereeSchedule from "./pages/referee/RefereeSchedule";
 import RefereeRequests from "./pages/referee/RefereeRequests";
 import RefereeHistory from "./pages/referee/RefereeHistory";
+import RefereeNotifications from "./pages/referee/RefereeNotifications";
+
 
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminRequests from "./pages/admin/AdminRequests";
 import AdminTournaments from "./pages/admin/AdminTournaments";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminNotifications from "./pages/admin/AdminNotifications";
+
 
 import PlaygroundLayout from "./components/playground/PlaygroundLayout";
 import PlaygroundDashboard from "./pages/playground/PlaygroundDashboard";
@@ -73,6 +77,8 @@ import SponsorSchedule from "./pages/sponsor/SponsorSchedule";
 import SponsorHistory from "./pages/sponsor/SponsorHistory";
 import SponsorSettings from "./pages/sponsor/SponsorSettings";
 import SponsorMessages from "./pages/sponsor/SponsorMessages";
+import SponsorNotifications from "./pages/sponsor/SponsorNotifications";
+
 
 import VerifyCertificate from "./pages/public/VerifyCertificate";
 
@@ -133,7 +139,9 @@ function App() {
         <Route path="requests" element={<AdminRequests />} />
         <Route path="tournaments" element={<AdminTournaments />} />
         <Route path="users" element={<AdminUsers />} />
+        <Route path="notifications" element={<AdminNotifications />} />
       </Route>
+
 
       {/* Team Routes */}
       <Route path="/team" element={<TeamLayout />}>
@@ -161,7 +169,9 @@ function App() {
         <Route path="history" element={<RefereeHistory />} />
         <Route path="log" element={<RefereeHistory />} />
         <Route path="settings" element={<RefereeSettings />} />
+        <Route path="notifications" element={<RefereeNotifications />} />
       </Route>
+
 
       {/* Playground Routes */}
       <Route path="/playground" element={<PlaygroundLayout />}>
@@ -186,7 +196,9 @@ function App() {
         <Route path="history" element={<SponsorHistory />} />
         <Route path="messages" element={<SponsorMessages />} />
         <Route path="settings" element={<SponsorSettings />} />
+        <Route path="notifications" element={<SponsorNotifications />} />
       </Route>
+
     </Routes>
   );
 }

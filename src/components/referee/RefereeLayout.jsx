@@ -35,6 +35,52 @@ export default function RefereeLayout() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [dbUser, setDbUser] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+
+  const userString = localStorage.getItem('user');
+  const localUser = userString ? JSON.parse(userString) : null;
+  const targetId = localUser?.userId || localUser?.user_id || localUser?.id;
+
+  const fetchNotifications = async () => {
+    if (!targetId) return;
+    try {
+      const res = await api.get(`/user/${targetId}/notifications`);
+      if (res.data && res.data.success !== false) {
+        setNotifications(res.data.data || []);
+      }
+    } catch (err) {
+      console.error("Referee notification fetch error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 8000);
+    return () => clearInterval(interval);
+  }, [targetId]);
+
+  const unreadNotifCount = notifications.filter(n => Number(n.is_read) === 0).length;
+
+  const markAllRead = async () => {
+    if (!targetId) return;
+    try {
+      await api.put(`/user/${targetId}/notifications/read-all`);
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: 1 })));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const markSingleRead = async (notifId) => {
+    if (!targetId) return;
+    try {
+      await api.put(`/user/${targetId}/notifications/${notifId}/read`);
+      setNotifications(prev => prev.map(n => n.notification_id === notifId ? { ...n, is_read: 1 } : n));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -75,9 +121,8 @@ export default function RefereeLayout() {
     }
   }, [navigate]);
 
-  const userString = localStorage.getItem('user');
-  const localUser = userString ? JSON.parse(userString) : null;
   const displayUser = dbUser || localUser || {};
+
 
   const userName = displayUser.referee_name || displayUser.full_name || displayUser.organizationName || displayUser.display_name || 'Official Referee';
   const userRole = displayUser.role || 'REFEREE';
@@ -189,27 +234,91 @@ export default function RefereeLayout() {
             <div className="relative">
               <button 
                 onClick={() => setShowNotifications(!showNotifications)}
-                className={`relative p-2 text-[#666666] hover:bg-gray-100 rounded-full transition-colors ${showNotifications ? 'bg-gray-100' : ''}`}
+                className={`relative p-2 text-[#666666] hover:bg-gray-100 rounded-full transition-colors cursor-pointer ${showNotifications ? 'bg-gray-100' : ''}`}
+                title="Referee Notifications"
               >
                 <Bell size={20} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                {unreadNotifCount > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[16px] h-[16px] bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-0.5 border border-white animate-pulse">
+                    {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                  </span>
+                )}
               </button>
 
               {showNotifications && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}></div>
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-[#e5e5e5] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                    <div className="p-4 border-b border-[#e5e5e5] flex items-center justify-between">
-                      <h3 className="font-bold text-[#111111]">Notifications</h3>
-                      <button className="text-xs text-[#08733e] font-medium hover:underline">Mark all read</button>
+                  <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-[#e5e5e5] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="p-4 bg-gray-50 border-b border-[#e5e5e5] flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Bell size={18} className="text-[#08733e]" />
+                        <h3 className="font-extrabold text-sm text-gray-900">Officiating Alerts</h3>
+                        {unreadNotifCount > 0 && (
+                          <span className="bg-emerald-100 text-[#08733e] text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            {unreadNotifCount} new
+                          </span>
+                        )}
+                      </div>
+                      {unreadNotifCount > 0 && (
+                        <button 
+                          onClick={markAllRead}
+                          className="text-[11px] font-bold text-[#08733e] hover:underline cursor-pointer"
+                        >
+                          Mark all read
+                        </button>
+                      )}
                     </div>
-                    <div className="p-4 text-center text-xs text-[#666666]">
-                      No new officiating notifications.
+
+                    <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
+                      {notifications.length === 0 ? (
+                        <div className="p-6 text-center text-gray-400 space-y-1">
+                          <Bell size={28} className="mx-auto text-gray-300 mb-2" />
+                          <p className="text-xs font-bold text-gray-700">No Officiating Alerts</p>
+                          <p className="text-[11px]">Match requests & referee updates will show here.</p>
+                        </div>
+                      ) : (
+                        notifications.map(n => {
+                          const isUnread = Number(n.is_read) === 0;
+                          return (
+                            <div 
+                              key={n.notification_id}
+                              onClick={() => markSingleRead(n.notification_id)}
+                              className={`p-3.5 hover:bg-gray-50 transition-colors cursor-pointer text-left ${isUnread ? 'bg-emerald-50/50' : 'opacity-75'}`}
+                            >
+                              <div className="flex justify-between items-start gap-2">
+                                <h4 className={`text-xs ${isUnread ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
+                                  {n.title}
+                                </h4>
+                                {isUnread && (
+                                  <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0 mt-1"></span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-gray-600 mt-1 line-clamp-2">{n.message}</p>
+                              <span className="text-[9px] text-gray-400 mt-1.5 block font-mono">
+                                {n.created_at || n.received_at}
+                              </span>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    <div className="p-2.5 bg-gray-50 border-t border-gray-200 text-center">
+                      <button 
+                        onClick={() => {
+                          setShowNotifications(false);
+                          navigate('/referee/notifications');
+                        }} 
+                        className="text-xs font-extrabold text-[#08733e] hover:underline cursor-pointer"
+                      >
+                        View All Officiating Feed →
+                      </button>
                     </div>
                   </div>
                 </>
               )}
             </div>
+
 
             <div className="w-[1px] h-8 bg-[#e5e5e5] hidden sm:block"></div>
             
