@@ -1,17 +1,15 @@
 import axios from 'axios';
 
-// Create an Axios instance
+// Create an Axios instance for XAMPP / PHP backend
 const api = axios.create({
-  // Use the environment variable for the base URL.
-  // Fallback to localhost if not defined.
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  timeout: 30000, // 30 seconds timeout to handle Azure Serverless DB delays
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost/elle-hub-backend',
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Optional: Add a request interceptor to include auth tokens
+// Add request interceptor to include auth tokens
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -25,28 +23,22 @@ api.interceptors.request.use(
   }
 );
 
-// Optional: Add a response interceptor to handle common errors (e.g., 401 Unauthorized)
+// Add response interceptor for handling common errors
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    // if (error.response && error.response.status === 401) {
-    //   // Handle logout or token refresh
-    // }
-    return Promise.reject(error);
-  }
+  (response) => response,
+  (error) => Promise.reject(error)
 );
 
 export const certificateAPI = {
-  generate: (data) => api.post('/certificates', data),
+  generate: (tournamentId) => api.post(`/tournament/${tournamentId}/certificates/generate`),
+  getTournamentCertificates: (tournamentId) => api.get(`/tournament/${tournamentId}/certificates`),
   getHistory: () => api.get('/certificates/history'),
-  verify: (id) => api.get(`/certificates/verify/${id}`)
+  verify: (token) => api.get(`/api/certificates/verify/${token}`)
 };
 
 export const tournamentResultsAPI = {
-  saveResults: (tournamentId, results) => api.post(`/tournaments/${tournamentId}/results`, { results }),
-  getResults: (tournamentId) => api.get(`/tournaments/${tournamentId}/results`)
+  saveResults: (tournamentId, results) => api.post(`/tournament/${tournamentId}/results`, { results }),
+  getResults: (tournamentId) => api.get(`/tournament/${tournamentId}/results`)
 };
 
 export default api;

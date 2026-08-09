@@ -92,6 +92,8 @@ function App() {
         </ErrorBoundary>
       }/>
       <Route path="/verify/:id" element={<VerifyCertificate/>}/>
+      <Route path="/verify-certificate/:token" element={<VerifyCertificate/>}/>
+
       
       {/* Organizer Routes */}
       <Route path="/organizer" element={

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, Calendar, MapPin, ArrowRight, Loader2, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Trophy, Calendar, MapPin, ArrowRight, Loader2, ShieldCheck, AlertCircle, Users, Swords, CheckCircle2 } from 'lucide-react';
 import api from '../../services/api';
+import KnockoutBracketDisplay from '../../components/organizer/KnockoutBracketDisplay';
 
 export default function TeamMatches() {
   const navigate = useNavigate();
@@ -9,6 +10,10 @@ export default function TeamMatches() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedMatch, setSelectedMatch] = useState(null);
+
+  // Match Draw state for selected tournament
+  const [drawDetails, setDrawDetails] = useState(null);
+  const [loadingDraw, setLoadingDraw] = useState(false);
 
   const currentUser = JSON.parse(localStorage.getItem('user')) || {};
   const teamUserId = currentUser.userId || currentUser.user_id;
@@ -34,8 +39,11 @@ export default function TeamMatches() {
 
       if (requestsRes.data && requestsRes.data.success !== false) {
         const allRequests = requestsRes.data.data || [];
-        // Filter only APPROVED tournaments
-        const approved = allRequests.filter(r => (r.status || '').toUpperCase() === 'APPROVED');
+        // Filter APPROVED or ACCEPTED tournaments
+        const approved = allRequests.filter(r => {
+          const s = (r.status || '').toUpperCase();
+          return s === 'APPROVED' || s === 'ACCEPTED';
+        });
         
         const allTournamentsList = tournamentsRes.data?.data || [];
         
@@ -58,8 +66,24 @@ export default function TeamMatches() {
     } catch (err) {
       console.error("Error fetching approved matches:", err);
       setError(err.message || "An error occurred while fetching your matches.");
-    } fontally: {
+    } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSelectTournament = async (tournament) => {
+    setSelectedMatch(tournament);
+    setDrawDetails(null);
+    try {
+      setLoadingDraw(true);
+      const res = await api.get(`/tournament/${tournament.tournament_id}/draw`);
+      if (res.data && res.data.success !== false) {
+        setDrawDetails(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error loading draw details:", err);
+    } finally {
+      setLoadingDraw(false);
     }
   };
 
@@ -90,9 +114,9 @@ export default function TeamMatches() {
       
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-black text-[#111111] tracking-tight">Team Matches & Joined Tournaments</h1>
+        <h1 className="text-3xl font-black text-[#111111] tracking-tight">Team Matches & Tournament Draw</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Tournaments approved by organizers where your team is officially qualified to participate.
+          View official match pairings, team brackets, and fixture schedules for tournaments your team has joined.
         </p>
       </div>
 
@@ -118,47 +142,75 @@ export default function TeamMatches() {
           </p>
           <button
             onClick={() => navigate('/team/tournaments')}
-            className="mt-6 inline-flex items-center gap-2 bg-[#08733e] text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-[#065b31] transition-all shadow-sm"
+            className="mt-6 inline-flex items-center gap-2 bg-[#08733e] text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-[#065b31] transition-all shadow-sm cursor-pointer"
           >
             Browse Tournaments <ArrowRight size={14} />
           </button>
         </div>
       ) : selectedMatch ? (
-        /* Single Tournament Match Detail View (Placeholder for Draw & Teams) */
-        <div className="bg-white rounded-3xl border border-[#e5e5e5] overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-[#e5e5e5] flex items-center justify-between bg-[#f8f7f4]">
+        /* Single Tournament Match Detail View (Renders Match Draw & Fixtures) */
+        <div className="bg-white rounded-3xl border border-[#e5e5e5] overflow-hidden shadow-sm space-y-6 p-6">
+          <div className="flex items-center justify-between border-b border-[#e5e5e5] pb-4">
             <button 
               onClick={() => setSelectedMatch(null)}
-              className="flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-[#111111] bg-white border border-[#e5e5e5] px-4 py-2 rounded-xl transition-all"
+              className="flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-[#111111] bg-slate-100 border border-gray-200 px-4 py-2 rounded-xl transition-all cursor-pointer"
             >
               ← Back to Joined Matches
             </button>
             <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border bg-emerald-50 text-emerald-700 border-emerald-200">
-              OFFICIALLY REGISTERED
+              OFFICIALLY REGISTERED TEAM
             </span>
           </div>
 
-          <div className="p-6 md:p-8 space-y-6">
-            <div>
-              <h2 className="text-2xl font-black text-[#111111]">{selectedMatch.tournament_title}</h2>
-              <div className="flex items-center gap-4 text-xs font-semibold text-gray-500 mt-2">
-                <span className="flex items-center gap-1"><MapPin size={14} /> {selectedMatch.location}</span>
-                <span>•</span>
-                <span className="flex items-center gap-1"><Calendar size={14} /> Held Date: {formatDate(selectedMatch.tournament_held_date)}</span>
-              </div>
-            </div>
-
-            {/* Match Draw / Fixtures Placeholder */}
-            <div className="bg-[#f8f7f4] border border-[#e5e5e5] rounded-2xl p-6 text-center space-y-3">
-              <div className="w-12 h-12 bg-white rounded-xl mx-auto flex items-center justify-center text-[#08733e] shadow-xs border border-gray-200">
-                <ShieldCheck size={24} />
-              </div>
-              <h3 className="text-base font-bold text-[#111111]">Tournament Draw & Fixtures</h3>
-              <p className="text-gray-500 text-xs max-w-md mx-auto">
-                Match pairings, brackets, and opponent information for this tournament will be displayed here once published by the organizer.
-              </p>
+          <div className="space-y-4">
+            <h2 className="text-2xl font-black text-[#111111] uppercase tracking-wide flex items-center gap-2">
+              <Trophy className="text-[#08733e]" size={24} />
+              {selectedMatch.tournament_title}
+            </h2>
+            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-gray-500">
+              <span className="flex items-center gap-1"><MapPin size={14} className="text-[#08733e]" /> {selectedMatch.location}</span>
+              <span>•</span>
+              <span className="flex items-center gap-1"><Calendar size={14} className="text-[#08733e]" /> Held Date: {formatDate(selectedMatch.tournament_held_date)}</span>
             </div>
           </div>
+
+          {/* Match Draw Bracket Section */}
+          {loadingDraw ? (
+            <div className="py-16 text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-[#08733e] mx-auto mb-2" />
+              <p className="text-xs text-gray-500 font-bold">Loading match bracket draw...</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              
+              {/* Fixture Schedule Summary Card */}
+              {drawDetails && (
+                <div className="bg-emerald-50/60 border border-emerald-200 p-5 rounded-2xl space-y-3">
+                  <h3 className="text-xs font-black text-emerald-900 uppercase tracking-wider flex items-center gap-2">
+                    <Swords size={16} /> Scheduled Participating Teams ({drawDetails.teams?.length || 0} Teams):
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {(drawDetails.teams || []).map((tm, i) => {
+                      const tName = tm.team_name || tm.name || tm.email || 'Team';
+                      return (
+                        <span key={i} className="bg-white text-gray-800 border border-emerald-300 text-xs font-extrabold px-3 py-1.5 rounded-xl shadow-2xs flex items-center gap-1">
+                          <span className="text-emerald-700 font-black">#{i + 1}</span> {tName}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* RENDER MATCH BRACKET DRAW */}
+              <KnockoutBracketDisplay 
+                tournamentTitle={selectedMatch.tournament_title?.toUpperCase() || 'MATCH BRACKET DRAW'} 
+                teams={drawDetails?.teams || []} 
+                drawData={drawDetails?.drawData}
+                readOnly={true}
+              />
+            </div>
+          )}
         </div>
       ) : (
         /* Grid of Approved Tournament Cards */
@@ -166,7 +218,7 @@ export default function TeamMatches() {
           {approvedTournaments.map((t, idx) => (
             <div 
               key={t.tournament_id || idx}
-              onClick={() => setSelectedMatch(t)}
+              onClick={() => handleSelectTournament(t)}
               className="bg-white rounded-2xl border border-[#e5e5e5] overflow-hidden shadow-sm flex flex-col group hover:shadow-md hover:border-[#08733e]/50 transition-all duration-300 cursor-pointer relative"
             >
               <div className="relative h-36 w-full bg-[#002c21] overflow-hidden">

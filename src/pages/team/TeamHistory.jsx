@@ -19,7 +19,8 @@ import {
   Swords
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import api from "../../services/api";
+import api, { certificateAPI } from "../../services/api";
+import CertificateModal from "../../components/common/CertificateModal";
 
 export default function TeamHistory() {
   const navigate = useNavigate();
@@ -37,6 +38,33 @@ export default function TeamHistory() {
   const [modalTab, setModalTab] = useState("overview"); // "overview" | "results"
   const [officialResults, setOfficialResults] = useState([]);
   const [loadingResults, setLoadingResults] = useState(false);
+
+  const [selectedCert, setSelectedCert] = useState(null);
+  const [certLoading, setCertLoading] = useState(false);
+
+  const handleOpenCertificate = async (tournamentId) => {
+    try {
+      setCertLoading(true);
+      let res = await certificateAPI.getTournamentCertificates(tournamentId);
+      if (!res.data?.data || res.data.data.length === 0) {
+        await certificateAPI.generate(tournamentId);
+        res = await certificateAPI.getTournamentCertificates(tournamentId);
+      }
+      const certs = res.data?.data || [];
+      if (certs.length > 0) {
+        const teamCert = certs.find(c => c.player_id == userId || c.recipient_user_id == userId) || certs[0];
+        setSelectedCert(teamCert);
+      } else {
+        alert("No certificate generated for this tournament yet.");
+      }
+    } catch (err) {
+      console.error("Certificate error:", err);
+      alert("Error opening certificate.");
+    } finally {
+      setCertLoading(false);
+    }
+  };
+
 
   const fetchHistory = async () => {
     try {
@@ -263,18 +291,28 @@ export default function TeamHistory() {
                 </div>
 
                 {/* Card Footer */}
-                <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
+                <div className="pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs">
                   <span className="text-emerald-800 font-bold flex items-center gap-1.5">
                     <ShieldCheck size={15} className="text-emerald-600" /> Official Participation Verified
                   </span>
 
-                  <button 
-                    onClick={() => handleOpenModal(item, "results")}
-                    className="text-[#00382D] hover:text-[#002a22] font-bold flex items-center gap-1.5 cursor-pointer hover:underline"
-                  >
-                    <Medal size={15} className="text-[#00382D]" /> View Match Results & Scores
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => handleOpenCertificate(item.tournament_id)}
+                      className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer transition-all"
+                    >
+                      <Award size={15} /> View E-Certificate
+                    </button>
+
+                    <button 
+                      onClick={() => handleOpenModal(item, "results")}
+                      className="text-[#00382D] hover:text-[#002a22] font-bold flex items-center gap-1.5 cursor-pointer hover:underline"
+                    >
+                      <Medal size={15} className="text-[#00382D]" /> View Results
+                    </button>
+                  </div>
                 </div>
+
 
               </div>
             );
@@ -506,6 +544,15 @@ export default function TeamHistory() {
         </div>
       )}
 
+      {selectedCert && (
+        <CertificateModal 
+          certificate={selectedCert} 
+          onClose={() => setSelectedCert(null)} 
+        />
+      )}
+
     </div>
   );
 }
+
+

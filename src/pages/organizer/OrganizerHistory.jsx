@@ -18,7 +18,8 @@ import {
   Sparkles
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import api from "../../services/api";
+import api, { certificateAPI } from "../../services/api";
+import CertificateModal from "../../components/common/CertificateModal";
 
 export default function OrganizerHistory() {
   const navigate = useNavigate();
@@ -33,6 +34,30 @@ export default function OrganizerHistory() {
   // Details Modal State
   const [selectedItem, setSelectedItem] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [selectedCert, setSelectedCert] = useState(null);
+
+  const handleOpenCertificate = async (tournamentId) => {
+    try {
+      setLoading(true);
+      let res = await certificateAPI.getTournamentCertificates(tournamentId);
+      if (!res.data?.data || res.data.data.length === 0) {
+        await certificateAPI.generate(tournamentId);
+        res = await certificateAPI.getTournamentCertificates(tournamentId);
+      }
+      const certs = res.data?.data || [];
+      if (certs.length > 0) {
+        setSelectedCert(certs[0]);
+      } else {
+        alert("No certificates available yet.");
+      }
+    } catch (err) {
+      console.error("Certificate error:", err);
+      alert("Error opening certificate.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const fetchHistory = async () => {
     try {
@@ -331,6 +356,14 @@ export default function OrganizerHistory() {
         </div>
       )}
 
+      {selectedCert && (
+        <CertificateModal 
+          certificate={selectedCert} 
+          onClose={() => setSelectedCert(null)} 
+        />
+      )}
+
     </div>
   );
 }
+
