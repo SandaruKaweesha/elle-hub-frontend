@@ -478,35 +478,6 @@ export default function RefereeRequests() {
                   </div>
                 </div>
 
-                {/* VISUAL STAGE STEPPER TIMELINE FOR MY SENT APPLICATIONS */}
-                {activeTab === "SENT" && (
-                  <div className="pt-2">
-                    <div className="flex items-center justify-between text-xs font-bold mb-1.5">
-                      <span className="text-[#333333]">Application Review Timeline</span>
-                      <span className={stageInfo.text}>{stageInfo.label}</span>
-                    </div>
-
-                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-2">
-                      <div 
-                        className={`h-full transition-all duration-500 ${stageInfo.bg}`} 
-                        style={{ width: `${(stageInfo.step / 3) * 100}%` }}
-                      ></div>
-                    </div>
-
-                    <div className="grid grid-cols-3 text-[11px] font-semibold text-center text-gray-500">
-                      <div className="text-emerald-700 flex items-center justify-start gap-1 font-bold">
-                        <CheckCircle2 size={12} /> 1. Request Sent
-                      </div>
-                      <div className={`flex items-center justify-center gap-1 ${stageInfo.step >= 2 ? "text-emerald-700 font-bold" : "text-gray-400"}`}>
-                        {stageInfo.step >= 2 ? <CheckCircle2 size={12} /> : <Clock size={12} />} 2. Organizer Review
-                      </div>
-                      <div className={`flex items-center justify-end gap-1 ${stageInfo.step === 3 ? (statusUpper === 'REJECTED' ? "text-red-600 font-bold" : "text-emerald-700 font-bold") : "text-gray-400"}`}>
-                        {stageInfo.step === 3 ? (statusUpper === 'REJECTED' ? <XCircle size={12} /> : <CheckCircle2 size={12} />) : <Award size={12} />} 3. Final Decision
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {/* Section Specific Action Footers */}
                 <div className="pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <span className="text-xs text-gray-400 font-medium">
