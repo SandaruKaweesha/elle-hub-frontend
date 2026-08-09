@@ -26,8 +26,15 @@ export default function TeamTournaments() {
         ]);
         
         if (tournamentsRes.data.success) {
-          setTournaments(tournamentsRes.data.data || []);
+          const raw = tournamentsRes.data.data || [];
+          const activeOnly = raw.filter(t => {
+            const s = (t.status || '').toUpperCase();
+            const appS = (t.approval_status || '').toUpperCase();
+            return appS !== 'REJECTED' && s !== 'COMPLETED' && s !== 'FINISHED';
+          });
+          setTournaments(activeOnly);
         } else {
+
           setError(tournamentsRes.data.message || "Failed to load tournaments");
         }
 

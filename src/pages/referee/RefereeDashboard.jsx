@@ -89,9 +89,14 @@ export default function RefereeDashboard() {
         const reqRes = await api.get(`/referee/${userId}/requests`);
         if (reqRes.data && reqRes.data.success !== false) {
           const allReqs = reqRes.data.data || [];
-          setPendingRequests(allReqs.filter(r => (r.status || '').toUpperCase() === 'PENDING'));
-          setAssignedTournaments(allReqs.filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED'));
+          const activeOnlyReqs = allReqs.filter(r => {
+            const tStatus = (r.tournament_status || r.status_tournament || r.t_status || '').toUpperCase();
+            return tStatus !== 'COMPLETED' && tStatus !== 'FINISHED';
+          });
+          setPendingRequests(activeOnlyReqs.filter(r => (r.status || '').toUpperCase() === 'PENDING'));
+          setAssignedTournaments(activeOnlyReqs.filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED'));
         }
+
       } catch (e) {
         console.warn("Could not fetch referee requests:", e);
       }

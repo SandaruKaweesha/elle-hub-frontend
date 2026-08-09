@@ -54,9 +54,10 @@ export default function PlaygroundTournaments() {
         const activeOnly = list.filter(t => {
           const s = (t.status || '').toUpperCase();
           const appS = (t.approval_status || '').toUpperCase();
-          return appS === 'APPROVED' || s === 'ACTIVE' || s === 'ONGOING';
+          return appS !== 'REJECTED' && s !== 'COMPLETED' && s !== 'FINISHED';
         });
         setTournaments(activeOnly);
+
       }
 
       if (myRequestsRes && myRequestsRes.data && myRequestsRes.data.success !== false) {

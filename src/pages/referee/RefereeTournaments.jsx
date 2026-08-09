@@ -53,12 +53,14 @@ export default function RefereeTournaments() {
 
       if (tournamentsRes.data && tournamentsRes.data.success !== false) {
         const list = tournamentsRes.data.data || [];
-        const activeOnly = list.filter(t => 
-          (t.approval_status || '').toUpperCase() === 'APPROVED' && 
-          (t.status || '').toUpperCase() === 'ACTIVE'
-        );
+        const activeOnly = list.filter(t => {
+          const s = (t.status || '').toUpperCase();
+          const appS = (t.approval_status || '').toUpperCase();
+          return appS !== 'REJECTED' && s !== 'COMPLETED' && s !== 'FINISHED';
+        });
         setTournaments(activeOnly);
       }
+
 
       if (myRequestsRes && myRequestsRes.data && myRequestsRes.data.success !== false) {
         const myReqs = myRequestsRes.data.data || [];

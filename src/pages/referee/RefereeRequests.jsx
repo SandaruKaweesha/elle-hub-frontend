@@ -67,13 +67,21 @@ export default function RefereeRequests() {
   }, [userId]);
 
   // Separate requests into SENT (initiated by REFEREE or default) and RECEIVED (initiated by ORGANIZER)
-  const sentRequests = useMemo(() => {
-    return requests.filter(r => (r.initiated_by || '').toUpperCase() !== 'ORGANIZER');
+  const activeTournamentRequests = useMemo(() => {
+    return requests.filter(r => {
+      const tStatus = (r.tournament_status || r.status_tournament || r.t_status || '').toUpperCase();
+      return tStatus !== 'COMPLETED' && tStatus !== 'FINISHED';
+    });
   }, [requests]);
 
+  const sentRequests = useMemo(() => {
+    return activeTournamentRequests.filter(r => (r.initiated_by || '').toUpperCase() !== 'ORGANIZER');
+  }, [activeTournamentRequests]);
+
   const receivedRequests = useMemo(() => {
-    return requests.filter(r => (r.initiated_by || '').toUpperCase() === 'ORGANIZER');
-  }, [requests]);
+    return activeTournamentRequests.filter(r => (r.initiated_by || '').toUpperCase() === 'ORGANIZER');
+  }, [activeTournamentRequests]);
+
 
   const currentTabRequests = activeTab === "SENT" ? sentRequests : receivedRequests;
 
