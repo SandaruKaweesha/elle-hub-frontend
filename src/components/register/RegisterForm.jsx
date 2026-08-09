@@ -39,11 +39,13 @@ const roleFields ={
     { label: "Password", name: "password", type: "password", placeholder: "Enter password" },
     { label: "Profile Picture", name: "profilePicture", type: "file" },
     { label: "Playground Name", name: "playgroundName", type: "text", placeholder: "Enter playground name" },
-    { label: "Location", name: "location", type: "text", placeholder: "Enter location" },
+    { label: "District", name: "district", type: "text", placeholder: "Enter district (e.g. Badulla, Colombo)" },
+    { label: "Location", name: "location", type: "text", placeholder: "Enter location / city" },
     { label: "Address", name: "address", type: "text", placeholder: "Enter address" },
     { label: "Playground Area", name: "area", type: "text", placeholder: "e.g. 500 Sq. Ft or 2 Acres" },
     { label: "Contact Number", name: "contactNumber", type: "tel", placeholder: "+94 7X XXX XXXX" },
   ],
+
 
   Organizer: [
     { label: "Full Name", name: "fullName", type: "text", placeholder: "Enter full name" },

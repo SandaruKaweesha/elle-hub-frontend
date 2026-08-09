@@ -15,8 +15,15 @@ function Tournaments() {
         setLoading(true);
         const response = await api.get('/tournaments');
         if (response.data.success) {
-          setTournaments(response.data.data);
+          const raw = response.data.data || [];
+          const activeOnly = raw.filter(t => {
+            const s = (t.status || '').toUpperCase();
+            const appS = (t.approval_status || '').toUpperCase();
+            return appS !== 'REJECTED' && s !== 'COMPLETED' && s !== 'FINISHED';
+          });
+          setTournaments(activeOnly);
         } else {
+
           setError(response.data.message || "Failed to load tournaments");
         }
       } catch (err) {

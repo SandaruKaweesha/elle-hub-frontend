@@ -45,8 +45,14 @@ export default function SponsorTournaments() {
       const resT = await api.get("/tournaments");
       let allTourneys = [];
       if (resT.data && resT.data.success !== false) {
-        allTourneys = resT.data.data || resT.data || [];
+        const raw = resT.data.data || resT.data || [];
+        allTourneys = raw.filter(t => {
+          const s = (t.status || '').toUpperCase();
+          const appS = (t.approval_status || '').toUpperCase();
+          return appS !== 'REJECTED' && s !== 'COMPLETED' && s !== 'FINISHED';
+        });
       }
+
 
       // Fetch my sponsor requests
       let reqs = [];
