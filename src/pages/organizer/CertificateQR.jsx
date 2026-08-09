@@ -324,12 +324,13 @@ export default function CertificateQR() {
                   <div className="w-56 h-56 bg-white p-4 rounded-xl shadow-lg border border-[#e5e5e5] flex items-center justify-center relative">
                      <QRCodeCanvas 
                         id="certificate-qr-code" 
-                        value={generatedLink} 
+                        value={`🏆 OFFICIAL ELLE HUB E-CERTIFICATE\n==================\nRecipient: ${recipient}\nAward: ${certType}\nTournament: ${tournament}\nToken: ${generatedId}\n==================\nStatus: 100% Genuine & Verified by Elle Hub`} 
                         size={192} 
-                        level="H" 
+                        level="M" 
                         includeMargin={false}
                      />
                   </div>
+
                   <div className="absolute -top-3 -right-3 text-[#166534] bg-[#f0fdf4] p-1.5 rounded-full shadow-md animate-in zoom-in delay-150 border border-[#bbf7d0]">
                     <CheckCircle2 size={24} />
                   </div>
