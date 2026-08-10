@@ -97,10 +97,22 @@ function RegisterForm({selectedRole}){
   }
 
   if (type === "file") {
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: files[0],
-    }));
+    const file = files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prevData) => ({
+          ...prevData,
+          [name]: reader.result,
+        }));
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: null,
+      }));
+    }
   } else {
     setFormData((prevData) => ({
       ...prevData,

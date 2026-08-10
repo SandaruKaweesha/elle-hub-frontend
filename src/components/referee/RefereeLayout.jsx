@@ -38,7 +38,12 @@ export default function RefereeLayout() {
   const [notifications, setNotifications] = useState([]);
 
   const userString = localStorage.getItem('user');
-  const localUser = userString ? JSON.parse(userString) : null;
+  let localUser = null;
+  try {
+    localUser = userString && userString !== 'undefined' ? JSON.parse(userString) : null;
+  } catch (e) {
+    localUser = null;
+  }
   const targetId = localUser?.userId || localUser?.user_id || localUser?.id;
 
   const fetchNotifications = async () => {

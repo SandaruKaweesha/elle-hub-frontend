@@ -43,12 +43,18 @@ export default function PlaygroundLayout() {
 
   useEffect(() => {
     const userString = localStorage.getItem('user');
-    if (!userString) {
+    if (!userString || userString === 'undefined') {
       navigate('/login');
       return;
     }
 
-    const localUser = JSON.parse(userString);
+    let localUser = null;
+    try {
+      localUser = JSON.parse(userString);
+    } catch (e) {
+      navigate('/login');
+      return;
+    }
     const role = (localUser?.role || '').toString().trim().toUpperCase();
 
     if (role && role !== 'PLAYGROUND') {
@@ -61,7 +67,7 @@ export default function PlaygroundLayout() {
       return;
     }
 
-    const targetId = localUser.userId || localUser.user_id || localUser.id;
+    const targetId = localUser?.userId || localUser?.user_id || localUser?.id;
     if (targetId) {
       api.get(`/user/${targetId}`)
         .then(res => {
@@ -75,7 +81,12 @@ export default function PlaygroundLayout() {
   }, [navigate]);
 
   const userString = localStorage.getItem('user');
-  const localUser = userString ? JSON.parse(userString) : null;
+  let localUser = null;
+  try {
+    localUser = userString && userString !== 'undefined' ? JSON.parse(userString) : null;
+  } catch (e) {
+    localUser = null;
+  }
   const displayUser = dbUser || localUser || {};
 
   const playgroundName = displayUser.playground_name || displayUser.playgroundName || displayUser.display_name || 'Badulla Ground';
@@ -213,8 +224,8 @@ export default function PlaygroundLayout() {
               className="flex items-center gap-3 cursor-pointer select-none"
               onClick={() => navigate('/playground/settings')}
             >
-              <div className="w-10 h-10 rounded-full bg-[#00382D] text-white flex items-center justify-center font-bold text-sm shadow-2xs">
-                <User size={20} />
+              <div className="w-10 h-10 rounded-full bg-white overflow-hidden shadow-sm flex items-center justify-center shrink-0 border border-gray-200 transition-colors">
+                <img src={displayUser.profilePicture || displayUser.profile_picture || displayUser.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${playgroundName.replace(/\s+/g, '')}&backgroundColor=eaf1ec`} alt="Avatar" className="w-full h-full object-cover" />
               </div>
               <div className="hidden sm:block text-left">
                 <h4 className="text-sm font-semibold text-[#111111] leading-tight">

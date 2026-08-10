@@ -140,7 +140,12 @@ function AdminLayout() {
   };
 
   const userString = localStorage.getItem('user');
-  const localUser = userString ? JSON.parse(userString) : null;
+  let localUser = null;
+  try {
+    localUser = userString && userString !== 'undefined' ? JSON.parse(userString) : null;
+  } catch (e) {
+    localUser = null;
+  }
   const displayUser = dbUser || localUser || {};
 
   const userName = displayUser.fullName || 'Admin User';
