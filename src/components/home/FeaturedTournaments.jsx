@@ -5,7 +5,7 @@ import TournamentCard from "./TournamentCard";
 function FeaturedTournaments() {
   const tournaments = [
     {
-      image: "/images/tournament-1.png",
+      image: "/images/elle1.jpeg",
       imagePosition: "center 42%",
       title: "Grand Premier Cup",
       date: "Started July 12, 2026",
@@ -14,7 +14,7 @@ function FeaturedTournaments() {
       buttonText: "Watch Stream",
     },
     {
-      image: "/images/tournament-2.png",
+      image: "/images/elle2.jpeg",
       imagePosition: "center 38%",
       title: "Elite Masters 2026",
       date: "Nov 05, 2026",
@@ -23,7 +23,7 @@ function FeaturedTournaments() {
       buttonText: "Register Team",
     },
     {
-      image: "/images/tournament-3.png",
+      image: "/images/elle3.jpeg",
       imagePosition: "center 45%",
       title: "Regional Open III",
       date: "Dec 18, 2026",

@@ -116,6 +116,11 @@ function App() {
             <CreateTournament />
           </ErrorBoundary>
         } />
+        <Route path="create-tournament" element={
+          <ErrorBoundary>
+            <CreateTournament />
+          </ErrorBoundary>
+        } />
         <Route path="tournaments/manage/:id" element={<ManageTournament />}>
           <Route path="draw" element={<MatchDraw />} />
           <Route path="results" element={<UpdateResults />} />
