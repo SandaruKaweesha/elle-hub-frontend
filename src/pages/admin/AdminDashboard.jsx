@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { 
   Calendar,
@@ -16,10 +17,16 @@ import {
   Sparkles,
   Maximize2,
   FileBarChart,
-  Settings
+  Settings,
+  CheckCircle2,
+  X,
+  Loader2,
+  Check,
+  Eye
 } from "lucide-react";
 
 function AdminDashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     TOTAL: 0,
     TEAM: 0,
@@ -27,6 +34,16 @@ function AdminDashboard() {
     SPONSOR: 0,
     PLAYGROUND: 0
   });
+
+  const [pendingItems, setPendingItems] = useState([
+    { id: 'sample_1', type: 'TOURNAMENT', name: 'Emerald Elite Open', subtitle: 'Regional Elle Championship - Tier 1', date: 'Oct 12, 2026', status: 'Needs Review', statusColor: 'text-red-600 bg-red-600', isApproved: false },
+    { id: 'sample_2', type: 'USER', name: 'Marcus Sterling', subtitle: 'Certified Referee Application', date: 'Oct 11, 2026', status: 'In Queue', statusColor: 'text-gray-500 bg-gray-400', isApproved: false },
+    { id: 'sample_3', type: 'TOURNAMENT', name: "Coastal Masters '26", subtitle: 'Elle Charity Championship Event', date: 'Oct 10, 2026', status: 'Urgent', statusColor: 'text-orange-500 bg-orange-500', isApproved: false }
+  ]);
+
+  const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+  const [selectedViewItem, setSelectedViewItem] = useState(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -39,12 +56,111 @@ function AdminDashboard() {
         console.error("Failed to fetch user stats", error);
       }
     };
+
+    const fetchPending = async () => {
+      try {
+        const [tourneysRes, usersRes] = await Promise.allSettled([
+          api.get('/admin/tournaments/pending'),
+          api.get('/user/getAllUsers')
+        ]);
+
+        let realItems = [];
+
+        if (tourneysRes.status === 'fulfilled' && tourneysRes.value.data?.data?.length > 0) {
+          tourneysRes.value.data.data.slice(0, 3).forEach(t => {
+            realItems.push({
+              id: `t_${t.tournament_id || t.id}`,
+              realId: t.tournament_id || t.id,
+              type: 'TOURNAMENT',
+              name: t.title || 'Untitled Tournament',
+              subtitle: `${t.location || 'Sri Lanka'} • ${t.teams_limit || 16} Max Teams`,
+              date: t.created_at ? new Date(t.created_at).toLocaleDateString() : 'Recent',
+              status: 'Needs Review',
+              statusColor: 'text-red-600 bg-red-600',
+              isApproved: false,
+              raw: t
+            });
+          });
+        }
+
+        if (usersRes.status === 'fulfilled' && usersRes.value.data?.data?.length > 0) {
+          const pendingUsers = usersRes.value.data.data.filter(u => (u.status || '').toUpperCase() === 'PENDING' || u.is_approved === 0);
+          pendingUsers.slice(0, 3).forEach(u => {
+            realItems.push({
+              id: `u_${u.user_id || u.id}`,
+              realId: u.user_id || u.id,
+              type: 'USER',
+              name: u.fullName || u.username || 'New Applicant',
+              subtitle: `${u.role || 'USER'} Account Verification`,
+              date: u.created_at ? new Date(u.created_at).toLocaleDateString() : 'Recent',
+              status: 'In Queue',
+              statusColor: 'text-gray-500 bg-gray-400',
+              isApproved: false,
+              raw: u
+            });
+          });
+        }
+
+        if (realItems.length > 0) {
+          setPendingItems(realItems.slice(0, 5));
+        }
+      } catch (err) {
+        console.error("Pending approvals fetch error:", err);
+      }
+    };
+
     fetchStats();
+    fetchPending();
   }, []);
 
+  const triggerToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleApprove = async (item) => {
+    try {
+      setActionLoadingId(item.id);
+
+      if (item.realId) {
+        if (item.type === 'TOURNAMENT') {
+          const userString = localStorage.getItem('user');
+          const user = userString ? JSON.parse(userString) : null;
+          const adminId = user?.userId || user?.id || 1;
+          await api.put(`/admin/tournament/${item.realId}/approvalStatus`, {
+            approvalStatus: 'APPROVED',
+            adminId: parseInt(adminId, 10)
+          });
+        } else if (item.type === 'USER') {
+          await api.post(`/user/approve/${item.realId}`);
+        }
+      }
+
+      setPendingItems(prev => prev.map(p => p.id === item.id ? { ...p, isApproved: true, status: 'Approved', statusColor: 'text-emerald-600 bg-emerald-600' } : p));
+      triggerToast(`Approved ${item.name} successfully!`);
+    } catch (err) {
+      console.error("Approval error:", err);
+      triggerToast(`Failed to approve ${item.name}`);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleView = (item) => {
+    setSelectedViewItem(item);
+  };
+
   return (
-    <div className="max-w-7xl mx-auto font-['Inter',sans-serif]">
+    <div className="max-w-7xl mx-auto font-['Inter',sans-serif] relative">
       
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 bg-[#014731] text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-xl flex items-center gap-2 border border-emerald-500/30 animate-bounce">
+          <Check size={16} className="text-emerald-300" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
@@ -56,7 +172,10 @@ function AdminDashboard() {
             <Calendar size={16} className="text-gray-500" />
             Sept 15 - Oct 15
           </button>
-          <button className="flex items-center gap-2 bg-[#014731] text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-[#023827] transition-colors shadow-sm">
+          <button 
+            onClick={() => navigate('/admin/reports')}
+            className="flex items-center gap-2 bg-[#014731] text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-[#023827] transition-colors shadow-sm cursor-pointer"
+          >
             <Download size={16} />
             Export Data
           </button>
@@ -102,12 +221,12 @@ function AdminDashboard() {
             <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Referees</p>
             <h3 className="text-4xl font-extrabold text-[#111111] mt-1">{stats.REFEREE}</h3>
           </div>
-          <div className="relative z-10 flex items-center gap-1.5 text-[#014731] font-medium text-xs mt-2">
-            <Users size={14} />
-            <span>Up to date</span>
+          <div className="relative z-10 flex items-center gap-1.5 text-gray-400 font-medium text-xs mt-2">
+            <UserPlus size={14} />
+            <span>Verified officials</span>
           </div>
           <div className="absolute -right-4 -bottom-4 text-gray-50 opacity-60 z-0 pointer-events-none">
-            <Shield size={110} strokeWidth={1.5} />
+            <Users size={110} strokeWidth={1.5} />
           </div>
         </div>
 
@@ -117,12 +236,12 @@ function AdminDashboard() {
             <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Sponsors</p>
             <h3 className="text-4xl font-extrabold text-[#111111] mt-1">{stats.SPONSOR}</h3>
           </div>
-          <div className="relative z-10 flex items-center gap-1.5 text-gray-400 font-medium text-xs mt-2">
+          <div className="relative z-10 flex items-center gap-1.5 text-[#014731] font-medium text-xs mt-2">
             <BadgeDollarSign size={14} />
-            <span>Stable growth</span>
+            <span>Corporate partners</span>
           </div>
           <div className="absolute -right-4 -bottom-4 text-gray-50 opacity-60 z-0 pointer-events-none">
-            <BadgeDollarSign size={110} strokeWidth={1.5} />
+            <DollarSign size={110} strokeWidth={1.5} />
           </div>
         </div>
 
@@ -133,24 +252,25 @@ function AdminDashboard() {
             <h3 className="text-4xl font-extrabold text-[#111111] mt-1">{stats.PLAYGROUND}</h3>
           </div>
           <div className="relative z-10 flex items-center gap-1.5 text-gray-400 font-medium text-xs mt-2">
-            <ClipboardList size={14} />
-            <span>Verified venues</span>
+            <Clock size={14} />
+            <span>Registered grounds</span>
           </div>
           <div className="absolute -right-4 -bottom-4 text-gray-50 opacity-60 z-0 pointer-events-none">
-            <ClipboardList size={110} strokeWidth={1.5} />
+            <Shield size={110} strokeWidth={1.5} />
           </div>
         </div>
 
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      {/* Main Grid: Charts & System Alerts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         
-        {/* Left Column (Span 2) */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
+        {/* Left Column (2 Cols) */}
+        <div className="lg:col-span-2 flex flex-col gap-8">
           
           {/* Tournament Growth Chart */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-            <div className="flex items-start justify-between mb-8">
+            <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-lg font-bold text-[#111111]">Tournament Growth</h2>
                 <p className="text-sm text-gray-500 mt-1">Participation trends over the last 6 months</p>
@@ -160,12 +280,12 @@ function AdminDashboard() {
               </button>
             </div>
             
-            {/* Chart Placeholder */}
+            {/* Chart Bars */}
             <div className="h-[240px] w-full flex items-end justify-between gap-2 px-2">
               {[40, 50, 45, 75, 48, 65, 55, 58, 45, 80, 75, 85].map((height, i) => (
                 <div key={i} className="w-full relative flex justify-center group">
                   <div 
-                    className={`w-full rounded-t-sm transition-all duration-300 ${i === 3 ? 'bg-[#059669]' : 'bg-gray-200 group-hover:bg-gray-300'}`}
+                    className={`w-full rounded-t-sm transition-all duration-300 ${i === 3 ? 'bg-[#014731]' : 'bg-gray-200 group-hover:bg-gray-300'}`}
                     style={{ height: `${height}%` }}
                   ></div>
                 </div>
@@ -180,7 +300,12 @@ function AdminDashboard() {
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-lg font-bold text-[#111111]">Pending Approvals</h2>
-              <button className="text-sm font-medium text-[#059669] hover:text-[#047857]">View All</button>
+              <button 
+                onClick={() => navigate('/admin/requests')} 
+                className="text-sm font-semibold text-[#014731] hover:underline cursor-pointer"
+              >
+                View All →
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -194,79 +319,60 @@ function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
-                  
-                  {/* Row 1 */}
-                  <tr className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <span className="px-2.5 py-1 bg-green-100 text-green-700 text-xs font-bold rounded uppercase tracking-wider">Tournament</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-[#111111]">Emerald Elite Open</div>
-                      <div className="text-xs text-gray-500 mt-0.5">Regional Soccer - Tier 1</div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">Oct 12, 2023</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 text-red-600 font-medium text-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
-                        Needs Review
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <button className="text-[#059669] font-semibold text-sm hover:underline">View</button>
-                        <button className="bg-[#111111] text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-black/80 transition-colors">Approve</button>
-                      </div>
-                    </td>
-                  </tr>
+                  {pendingItems.map((item) => (
+                    <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-1 text-xs font-bold rounded uppercase tracking-wider ${
+                          item.type === 'TOURNAMENT' ? 'bg-emerald-100 text-emerald-800' : 'bg-teal-100 text-teal-800'
+                        }`}>
+                          {item.type}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-[#111111]">{item.name}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{item.subtitle}</div>
+                      </td>
+                      <td className="px-6 py-4 text-gray-600 font-mono text-xs">{item.date}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold">
+                          <span className={`w-2 h-2 rounded-full ${item.isApproved ? 'bg-emerald-600' : (item.type === 'TOURNAMENT' ? 'bg-red-600' : 'bg-amber-500')}`}></span>
+                          <span className={item.isApproved ? 'text-emerald-700 font-bold' : 'text-gray-700'}>{item.status}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-3">
+                          <button 
+                            onClick={() => handleView(item)}
+                            className="text-[#014731] font-bold text-xs hover:underline cursor-pointer flex items-center gap-1"
+                          >
+                            <Eye size={13} />
+                            View
+                          </button>
 
-                  {/* Row 2 */}
-                  <tr className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <span className="px-2.5 py-1 bg-teal-100 text-teal-700 text-xs font-bold rounded uppercase tracking-wider">User</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-[#111111]">Marcus Sterling</div>
-                      <div className="text-xs text-gray-500 mt-0.5">Certified Referee Application</div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">Oct 11, 2023</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 text-gray-500 font-medium text-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                        In Queue
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <button className="text-[#059669] font-semibold text-sm hover:underline">View</button>
-                        <button className="bg-[#111111] text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-black/80 transition-colors">Approve</button>
-                      </div>
-                    </td>
-                  </tr>
-
-                  {/* Row 3 */}
-                  <tr className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <span className="px-2.5 py-1 bg-green-100 text-green-700 text-xs font-bold rounded uppercase tracking-wider">Tournament</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-[#111111]">Coastal Masters '23</div>
-                      <div className="text-xs text-gray-500 mt-0.5">Basketball Charity Event</div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">Oct 10, 2023</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 text-orange-500 font-medium text-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
-                        Urgent
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <button className="text-[#059669] font-semibold text-sm hover:underline">View</button>
-                        <button className="bg-[#111111] text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-black/80 transition-colors">Approve</button>
-                      </div>
-                    </td>
-                  </tr>
-
+                          {item.isApproved ? (
+                            <span className="bg-emerald-100 text-[#014731] px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1">
+                              <CheckCircle2 size={13} /> Approved
+                            </span>
+                          ) : (
+                            <button 
+                              onClick={() => handleApprove(item)}
+                              disabled={actionLoadingId === item.id}
+                              className="bg-[#111111] hover:bg-black/80 text-white px-4 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+                            >
+                              {actionLoadingId === item.id ? (
+                                <>
+                                  <Loader2 size={13} className="animate-spin" />
+                                  <span>Approving...</span>
+                                </>
+                              ) : (
+                                <span>Approve</span>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -337,7 +443,10 @@ function AdminDashboard() {
 
             </div>
 
-            <button className="w-full mt-6 text-sm font-semibold text-gray-500 hover:text-[#111111] flex items-center justify-center gap-2 transition-colors">
+            <button 
+              onClick={() => navigate('/admin/notifications')}
+              className="w-full mt-6 text-sm font-semibold text-gray-500 hover:text-[#111111] flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            >
               View All Notifications
               <ArrowRight size={16} />
             </button>
@@ -349,7 +458,10 @@ function AdminDashboard() {
             
             <div className="space-y-3">
               {/* Tool 1 */}
-              <button className="w-full bg-[#025c40] hover:bg-[#03704e] transition-colors rounded-lg p-4 flex items-center justify-between text-left group">
+              <button 
+                onClick={() => navigate('/admin/reports')}
+                className="w-full bg-[#025c40] hover:bg-[#03704e] transition-colors rounded-lg p-4 flex items-center justify-between text-left group cursor-pointer"
+              >
                 <div className="flex items-center gap-4">
                   <div className="text-[#4ade80]">
                     <FileBarChart size={20} />
@@ -363,7 +475,10 @@ function AdminDashboard() {
               </button>
 
               {/* Tool 2 */}
-              <button className="w-full bg-[#025c40] hover:bg-[#03704e] transition-colors rounded-lg p-4 flex items-center justify-between text-left group">
+              <button 
+                onClick={() => navigate('/admin/requests')}
+                className="w-full bg-[#025c40] hover:bg-[#03704e] transition-colors rounded-lg p-4 flex items-center justify-between text-left group cursor-pointer"
+              >
                 <div className="flex items-center gap-4">
                   <div className="text-[#4ade80]">
                     <ClipboardList size={20} />
@@ -377,7 +492,10 @@ function AdminDashboard() {
               </button>
 
               {/* Tool 3 */}
-              <button className="w-full bg-[#025c40] hover:bg-[#03704e] transition-colors rounded-lg p-4 flex items-center justify-between text-left group">
+              <button 
+                onClick={() => navigate('/admin/users')}
+                className="w-full bg-[#025c40] hover:bg-[#03704e] transition-colors rounded-lg p-4 flex items-center justify-between text-left group cursor-pointer"
+              >
                 <div className="flex items-center gap-4">
                   <div className="text-[#4ade80]">
                     <Settings size={20} />
@@ -396,9 +514,8 @@ function AdminDashboard() {
 
       </div>
 
-      {/* Global Presence Map Placeholder */}
+      {/* Global Presence Map Card */}
       <div className="bg-gray-400 rounded-xl overflow-hidden relative min-h-[260px] flex items-center">
-        {/* Mock Map Image Background - using a placeholder pattern */}
         <div 
           className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-60"
           style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=2000")' }}
@@ -425,6 +542,71 @@ function AdminDashboard() {
           <Maximize2 size={20} />
         </button>
       </div>
+
+      {/* Modal: View Details Modal for Pending Request */}
+      {selectedViewItem && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 relative animate-in fade-in duration-200">
+            <button
+              onClick={() => setSelectedViewItem(null)}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <span className={`px-2.5 py-1 text-xs font-bold rounded uppercase tracking-wider ${
+                selectedViewItem.type === 'TOURNAMENT' ? 'bg-emerald-100 text-emerald-800' : 'bg-teal-100 text-teal-800'
+              }`}>
+                {selectedViewItem.type} Details
+              </span>
+            </div>
+
+            <h3 className="text-lg font-extrabold text-gray-900">{selectedViewItem.name}</h3>
+            <p className="text-xs text-gray-500 mt-1">{selectedViewItem.subtitle}</p>
+
+            <div className="bg-gray-50 p-4 rounded-xl space-y-2 mt-4 text-xs border border-gray-100">
+              <div className="flex justify-between border-b border-gray-200 pb-2">
+                <span className="text-gray-500 font-medium">Submission Date:</span>
+                <span className="font-mono text-gray-800">{selectedViewItem.date}</span>
+              </div>
+              <div className="flex justify-between border-b border-gray-200 pb-2">
+                <span className="text-gray-500 font-medium">Approval Status:</span>
+                <span className={`font-bold ${selectedViewItem.isApproved ? 'text-emerald-700' : 'text-amber-600'}`}>
+                  {selectedViewItem.status}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 font-medium">Request Category:</span>
+                <span className="font-bold text-gray-900">{selectedViewItem.type === 'TOURNAMENT' ? 'Tournament Host Application' : 'Role Account Verification'}</span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-2">
+              {!selectedViewItem.isApproved && (
+                <button
+                  onClick={() => {
+                    handleApprove(selectedViewItem);
+                    setSelectedViewItem(null);
+                  }}
+                  className="w-full py-2.5 bg-[#014731] hover:bg-[#023827] text-white text-xs font-extrabold rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <CheckCircle2 size={16} /> Approve Request Now
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setSelectedViewItem(null);
+                  navigate('/admin/requests');
+                }}
+                className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                Go to Full Requests Console →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

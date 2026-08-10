@@ -57,6 +57,7 @@ import AdminRequests from "./pages/admin/AdminRequests";
 import AdminTournaments from "./pages/admin/AdminTournaments";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminNotifications from "./pages/admin/AdminNotifications";
+import AdminReports from "./pages/admin/AdminReports";
 
 
 import PlaygroundLayout from "./components/playground/PlaygroundLayout";
@@ -149,6 +150,7 @@ function App() {
         <Route path="tournaments" element={<AdminTournaments />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="notifications" element={<AdminNotifications />} />
+        <Route path="reports" element={<AdminReports />} />
       </Route>
 
       {/* Team Routes */}
