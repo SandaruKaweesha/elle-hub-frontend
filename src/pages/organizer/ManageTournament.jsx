@@ -1245,11 +1245,13 @@ export default function ManageTournament() {
                 <div className="space-y-1.5">
                   <h4 className="text-xs font-extrabold uppercase text-gray-500 tracking-wider">Official Sponsors</h4>
                   <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-1 text-xs font-bold text-gray-800">
-                    {sponsors.filter(s => (s.status || '').toUpperCase() === 'APPROVED' || (s.status || '').toUpperCase() === 'ACCEPTED').map(s => (
-                      <p key={s.sponsor_user_id}>• {s.display_name || s.company_name || 'Official Sponsor'}</p>
-                    ))}
-                    {sponsors.filter(s => (s.status || '').toUpperCase() === 'APPROVED' || (s.status || '').toUpperCase() === 'ACCEPTED').length === 0 && (
-                      <p className="text-xs text-gray-400 font-medium">No assigned sponsors.</p>
+                    {sponsorRequests
+                      .filter(s => (s.status || '').toUpperCase() === 'APPROVED' || (s.status || '').toUpperCase() === 'ACCEPTED')
+                      .map(s => (
+                        <p key={s.sponsor_user_id || s.user_id || s.id}>• {s.company_name || s.display_name || s.email || 'Official Sponsor'}</p>
+                      ))}
+                    {sponsorRequests.filter(s => (s.status || '').toUpperCase() === 'APPROVED' || (s.status || '').toUpperCase() === 'ACCEPTED').length === 0 && (
+                      <p className="text-xs text-gray-400 font-medium">No approved sponsors.</p>
                     )}
                   </div>
                 </div>
