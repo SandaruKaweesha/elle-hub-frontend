@@ -300,14 +300,22 @@ function OrganizerDashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTournaments.map((t) => (
+          {filteredTournaments.map((t, idx) => (
             <div 
               key={t.tournament_id || t.id}
               className="bg-white rounded-2xl border border-[#e5e5e5] overflow-hidden shadow-xs hover:shadow-md transition-shadow flex flex-col group"
             >
               {/* Cover Banner */}
-              <div className="h-24 bg-gradient-to-r from-[#00382D] to-[#08733e] relative p-4 flex items-start justify-end">
-                {getStatusBadge(t)}
+              <div className="h-32 relative overflow-hidden flex items-start justify-end p-4">
+                <img 
+                  src={t.image_url || `/images/tournament-${(idx % 3) + 1}.png`} 
+                  alt={t.title} 
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none"></div>
+                <div className="relative z-10">
+                  {getStatusBadge(t)}
+                </div>
               </div>
               
               <div className="p-6 flex-grow flex flex-col justify-between">

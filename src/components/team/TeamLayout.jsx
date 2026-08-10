@@ -43,20 +43,35 @@ export default function TeamLayout() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const user = JSON.parse(localStorage.getItem('user')) || {};
-  const userName = user.teamName || user.team_name || user.fullName || user.full_name || user.name || user.email?.split('@')[0] || 'Team Member';
-  const userRole = user.role || 'TEAM';
+  const [dbUser, setDbUser] = useState(null);
+  const userString = localStorage.getItem('user');
+  let localUser = {};
+  try {
+    localUser = userString && userString !== 'undefined' ? JSON.parse(userString) : {};
+  } catch (e) {
+    localUser = {};
+  }
+  const displayUser = dbUser || localUser || {};
+
+  const userName = displayUser.teamName || displayUser.team_name || displayUser.fullName || displayUser.full_name || displayUser.name || displayUser.email?.split('@')[0] || 'Team Member';
+  const userRole = displayUser.role || 'TEAM';
   const avatarSeed = userName.replace(/\s+/g, '');
 
   useEffect(() => {
-    const userString = localStorage.getItem('user');
-    if (!userString) {
+    const userStr = localStorage.getItem('user');
+    if (!userStr || userStr === 'undefined') {
       navigate('/login');
       return;
     }
 
-    const localUser = JSON.parse(userString);
-    const role = (localUser?.role || '').toString().trim().toUpperCase();
+    let curUser = {};
+    try {
+      curUser = JSON.parse(userStr);
+    } catch (e) {
+      navigate('/login');
+      return;
+    }
+    const role = (curUser?.role || '').toString().trim().toUpperCase();
 
     if (role && role !== 'TEAM') {
       if (role === 'ORGANIZER') navigate('/organizer');
@@ -68,11 +83,22 @@ export default function TeamLayout() {
       return;
     }
 
+    const targetId = curUser.userId || curUser.user_id || curUser.id;
+    if (targetId) {
+      api.get(`/user/${targetId}`)
+        .then(res => {
+          const userData = res.data.data || res.data;
+          if (userData && res.data.success !== false) {
+            setDbUser(userData);
+          }
+        })
+        .catch(err => console.error("Error fetching user profile data from DB:", err));
+    }
+
     const fetchTournaments = async () => {
       try {
         const response = await api.get('/tournaments');
         if (response.data.success) {
-          // Getting first 3 tournaments to show as new notifications
           setRecentTournaments(response.data.data.slice(0, 3));
         }
       } catch (error) {
@@ -268,7 +294,7 @@ export default function TeamLayout() {
                 <span className="text-xs text-[#666666] capitalize">{userRole.toLowerCase()}</span>
               </div>
               <div className="w-10 h-10 rounded-full bg-white overflow-hidden border-2 border-[#111111] group-hover:border-[#333333] shadow-sm flex items-center justify-center shrink-0 transition-colors relative">
-                 <img src={user.profilePicture || user.profile_picture || user.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}&backgroundColor=eaf1ec`} alt="Avatar" className="w-full h-full object-cover" />
+                 <img src={displayUser.profilePicture || displayUser.profile_picture || displayUser.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}&backgroundColor=eaf1ec`} alt="Avatar" className="w-full h-full object-cover" />
                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                    <User size={16} className="text-white" />
                  </div>

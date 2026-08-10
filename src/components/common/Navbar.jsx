@@ -20,7 +20,6 @@ function Navbar() {
         {/* Middle Navigation Links (Desktop) */}
         <div className="hidden lg:flex items-center gap-8 text-lg text-[#252525]">
           <Link to="/tournaments" className="relative py-2 hover:text-[#08733e] transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-[2px] after:bg-[#C9A227] after:transition-all after:duration-300 hover:after:w-full">Tournaments</Link>
-          <Link to="/matches" className="relative py-2 hover:text-[#08733e] transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-[2px] after:bg-[#C9A227] after:transition-all after:duration-300 hover:after:w-full">Matches</Link>
           <Link to="/rankings" className="relative py-2 hover:text-[#08733e] transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-[2px] after:bg-[#C9A227] after:transition-all after:duration-300 hover:after:w-full">Rankings</Link>
           <Link to="/about" className="relative py-2 hover:text-[#08733e] transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-[2px] after:bg-[#C9A227] after:transition-all after:duration-300 hover:after:w-full">About</Link>
         </div>
@@ -46,7 +45,6 @@ function Navbar() {
       {isMobileMenuOpen && (
         <div className="absolute top-16 md:top-[68px] left-0 w-full bg-[#f8f7f4] border-b border-[#d6d8d4] flex flex-col items-center py-8 gap-6 lg:hidden shadow-xl z-50">
           <Link to="/tournaments" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-medium text-[#252525] hover:text-[#08733e] w-full text-center py-2">Tournaments</Link>
-          <Link to="/matches" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-medium text-[#252525] hover:text-[#08733e] w-full text-center py-2">Matches</Link>
           <Link to="/rankings" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-medium text-[#252525] hover:text-[#08733e] w-full text-center py-2">Rankings</Link>
           <Link to="/about" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-medium text-[#252525] hover:text-[#08733e] w-full text-center py-2">About</Link>
           

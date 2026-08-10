@@ -229,7 +229,14 @@ export default function PlaygroundTournaments() {
                 
                 <div>
                   {/* Banner Header */}
-                  <div className="h-32 bg-gradient-to-r from-[#00382D] to-[#08733e] relative p-4 flex justify-between items-start">
+                  <div className="h-32 relative overflow-hidden p-4 flex justify-between items-start">
+                    <img 
+                      src={t.image_url || `/images/tournament-${(idx % 3) + 1}.png`} 
+                      alt={title} 
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none"></div>
+                    <div className="relative z-10 flex justify-between items-start w-full">
                     <span className="bg-black/20 backdrop-blur-md text-white/90 text-[11px] font-semibold px-2.5 py-1 rounded-md flex items-center gap-1 border border-white/10">
                       <Trophy size={12} /> Active Tournament
                     </span>
@@ -243,6 +250,7 @@ export default function PlaygroundTournaments() {
                         {myStatus === 'APPROVED' ? 'Venue Approved' : 'Request Pending'}
                       </span>
                     )}
+                    </div>
                   </div>
 
                   {/* Body Content */}

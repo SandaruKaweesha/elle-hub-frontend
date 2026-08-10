@@ -80,7 +80,7 @@ function Tournaments() {
       });
   }, [tournaments, regionFilter, statusFilter, sortOption]);
 
-  const mockImages = ["/images/tournament-1.png", "/images/tournament-2.png", "/images/tournament-3.png"];
+  const mockImages = ["/images/elle1.jpeg", "/images/elle2.jpeg", "/images/elle3.jpeg", "/images/elle4.jpeg", "/images/elle5.jpeg"];
   const mockPositions = ["center 42%", "center 38%", "center 45%"];
 
   const formatDate = (dateString) => {

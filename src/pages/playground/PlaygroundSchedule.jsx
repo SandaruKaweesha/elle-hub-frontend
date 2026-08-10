@@ -54,10 +54,10 @@ export default function PlaygroundSchedule() {
         // Map backend playground requests into clean schedule items
         const mapped = rawReqs.map(r => {
           const s = (r.status || '').toUpperCase();
-          const tStatus = (r.tournament_status || '').toUpperCase();
+          const tStatus = (r.tournament_status || r.status_tournament || '').toUpperCase();
 
           let displayStatus = 'Pending';
-          if (tStatus === 'COMPLETED') {
+          if (tStatus === 'COMPLETED' || tStatus === 'FINISHED' || tStatus === 'ENDED') {
             displayStatus = 'Completed';
           } else if (s === 'APPROVED' || s === 'ACCEPTED') {
             displayStatus = 'Active';
