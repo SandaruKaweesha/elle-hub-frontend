@@ -116,6 +116,11 @@ function App() {
             <CreateTournament />
           </ErrorBoundary>
         } />
+        <Route path="create-tournament" element={
+          <ErrorBoundary>
+            <CreateTournament />
+          </ErrorBoundary>
+        } />
         <Route path="tournaments/manage/:id" element={<ManageTournament />}>
           <Route path="draw" element={<MatchDraw />} />
           <Route path="results" element={<UpdateResults />} />
@@ -133,7 +138,11 @@ function App() {
       </Route>
 
       {/* Admin Routes */}
-      <Route path="/admin" element={<AdminLayout />}>
+      <Route path="/admin" element={
+        <ErrorBoundary>
+          <AdminLayout />
+        </ErrorBoundary>
+      }>
         <Route index element={<AdminDashboard />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="requests" element={<AdminRequests />} />
@@ -142,9 +151,12 @@ function App() {
         <Route path="notifications" element={<AdminNotifications />} />
       </Route>
 
-
       {/* Team Routes */}
-      <Route path="/team" element={<TeamLayout />}>
+      <Route path="/team" element={
+        <ErrorBoundary>
+          <TeamLayout />
+        </ErrorBoundary>
+      }>
         <Route index element={<TeamDashboard />} />
         <Route path="dashboard" element={<TeamDashboard />} />
         <Route path="tournaments" element={<TeamTournaments />} />
@@ -159,7 +171,11 @@ function App() {
       </Route>
 
       {/* Referee Routes */}
-      <Route path="/referee" element={<RefereeLayout />}>
+      <Route path="/referee" element={
+        <ErrorBoundary>
+          <RefereeLayout />
+        </ErrorBoundary>
+      }>
         <Route index element={<RefereeDashboard />} />
         <Route path="dashboard" element={<RefereeDashboard />} />
         <Route path="tournaments" element={<RefereeTournaments />} />
@@ -172,9 +188,12 @@ function App() {
         <Route path="notifications" element={<RefereeNotifications />} />
       </Route>
 
-
       {/* Playground Routes */}
-      <Route path="/playground" element={<PlaygroundLayout />}>
+      <Route path="/playground" element={
+        <ErrorBoundary>
+          <PlaygroundLayout />
+        </ErrorBoundary>
+      }>
         <Route index element={<PlaygroundDashboard />} />
         <Route path="dashboard" element={<PlaygroundDashboard />} />
         <Route path="tournaments" element={<PlaygroundTournaments />} />
@@ -187,7 +206,11 @@ function App() {
       </Route>
 
       {/* Sponsor Routes */}
-      <Route path="/sponsor" element={<SponsorLayout />}>
+      <Route path="/sponsor" element={
+        <ErrorBoundary>
+          <SponsorLayout />
+        </ErrorBoundary>
+      }>
         <Route index element={<SponsorDashboard />} />
         <Route path="dashboard" element={<SponsorDashboard />} />
         <Route path="tournaments" element={<SponsorTournaments />} />
