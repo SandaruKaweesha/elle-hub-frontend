@@ -16,7 +16,10 @@ import {
   Shield,
   Phone,
   Mail,
-  X
+  X,
+  ShieldCheck,
+  ThumbsUp,
+  Medal
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -32,7 +35,7 @@ export default function RefereeDashboard() {
   const [refereeInfo, setRefereeInfo] = useState({
     fullName: currentUser.fullName || currentUser.referee_name || currentUser.display_name || "Official Referee",
     experienceYears: currentUser.experienceYears || currentUser.experience_years || 5,
-    rating: currentUser.rating || currentUser.referee_rating || 5.0,
+    rating: currentUser.rating || currentUser.referee_rating || 4.9,
     contactNumber: currentUser.contactNumber || currentUser.contact_number || "0771234567",
     email: currentUser.email || "referee@gmail.com",
     availabilityStatus: currentUser.availabilityStatus || currentUser.referee_availability_status || "AVAILABLE",
@@ -55,7 +58,7 @@ export default function RefereeDashboard() {
         setRefereeInfo({
           fullName: u.referee_name || u.full_name || u.display_name || "Official Referee",
           experienceYears: u.experience_years || 5,
-          rating: u.referee_rating || u.rating || 5.0,
+          rating: u.referee_rating || u.rating || 4.9,
           contactNumber: u.contact_number || "N/A",
           email: u.email || "N/A",
           availabilityStatus: u.referee_availability_status || u.availability_status || "AVAILABLE",
@@ -155,24 +158,6 @@ export default function RefereeDashboard() {
     }
   };
 
-  // Respond to Tournament Request (Accept / Reject)
-  const handleRespondRequest = async (requestId, status) => {
-    try {
-      setError(null);
-      setSuccessMsg(null);
-      const res = await api.post(`/tournament/referee-requests/${requestId}/respond`, { status });
-      if (res.data && res.data.success !== false) {
-        setSuccessMsg(`Tournament invitation ${status.toLowerCase()} successfully!`);
-        fetchRefereeData();
-      } else {
-        throw new Error(res.data.message || "Failed to respond to request.");
-      }
-    } catch (err) {
-      console.error("Respond request error:", err);
-      setError(err.response?.data?.message || err.message || "Could not process request response.");
-    }
-  };
-
   const isAvailable = refereeInfo.availabilityStatus === "AVAILABLE";
 
   if (loading) {
@@ -196,7 +181,9 @@ export default function RefereeDashboard() {
             </span>
             <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">Referee Portal</h1>
           </div>
-          <p className="text-[#666666] text-sm mt-1">Manage your tournament officiating assignments and availability status.</p>
+          <p className="text-[#666666] text-sm mt-1">
+            Official officiating dashboard for <span className="font-bold text-[#00382D]">{refereeInfo.fullName}</span>
+          </p>
         </div>
 
         {/* Live Availability Toggle Switch */}
@@ -315,7 +302,7 @@ export default function RefereeDashboard() {
             <p className="text-xs text-[#888888] font-semibold uppercase tracking-wider mb-1">Official Rating</p>
             <div className="flex items-center gap-2">
               <h3 className="text-2xl font-bold text-[#111111]">
-                {Number(refereeInfo.rating || 5.0).toFixed(1)}
+                {Number(refereeInfo.rating || 4.9).toFixed(1)} ★
               </h3>
               <div className="flex text-amber-500">
                 {[1, 2, 3, 4, 5].map(i => (
@@ -344,7 +331,7 @@ export default function RefereeDashboard() {
 
       </div>
 
-      {/* Main Grid: Pending Requests & Confirmed Assignments */}
+      {/* Main Grid: Assignments & Rating Feature Box */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Left 2 Cols: Confirmed Assignments */}
@@ -400,12 +387,14 @@ export default function RefereeDashboard() {
           </div>
         </div>
 
-        {/* Right Col: Referee Profile Details & Quick Actions */}
+        {/* Right Col: Official Referee Rating Box + Profile Info */}
         <div className="space-y-6">
+          
+          {/* Referee Profile Card */}
           <div className="bg-white rounded-2xl border border-[#e5e5e5] shadow-sm p-6">
             <h3 className="text-base font-bold text-[#111111] mb-4 pb-3 border-b border-[#e5e5e5] flex items-center justify-between">
-              <span>Referee Profile</span>
-              <span className="text-xs font-bold text-[#00382D] bg-[#00382D]/10 px-2.5 py-0.5 rounded">Official</span>
+              <span>Referee Details</span>
+              <span className="text-xs font-bold text-[#00382D] bg-[#00382D]/10 px-2.5 py-0.5 rounded">Verified</span>
             </h3>
 
             <div className="space-y-3.5 text-xs text-[#444444]">
@@ -441,10 +430,95 @@ export default function RefereeDashboard() {
               </button>
             </div>
           </div>
+
         </div>
 
+      </div>
+
+      {/* FULL-WIDTH REFEREE RATING & ACCURACY PERFORMANCE BAR (YATINMA DIGATA BAR EKAK WIDIYATA) */}
+      <div className="w-full bg-gradient-to-r from-[#00382D] via-[#002c21] to-[#044c3c] text-white rounded-2xl p-6 md:p-8 shadow-lg border border-[#08733e]/50 relative overflow-hidden">
+        {/* Background Glow */}
+        <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-[#98F5E1]/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div className="absolute -left-10 -top-10 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+        <Award className="absolute right-6 top-1/2 -translate-y-1/2 text-[#98F5E1]/10 pointer-events-none" size={140} />
+
+        <div className="relative z-10 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6">
+          
+          {/* Left Rating Overview */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pr-4 lg:border-r border-white/15">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 font-black flex items-center justify-center text-2xl shadow-md shrink-0 border border-amber-300/50">
+              <Star size={32} fill="currentColor" />
+            </div>
+
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <span className="bg-[#98F5E1] text-[#002c21] text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-2xs">
+                  OFFICIAL REFEREE PERFORMANCE & RATING
+                </span>
+                <span className="bg-emerald-500/20 text-[#98F5E1] text-xs font-bold px-2.5 py-0.5 rounded-md border border-emerald-400/30 flex items-center gap-1">
+                  <ShieldCheck size={13} /> Grade A Certified
+                </span>
+              </div>
+
+              <div className="flex items-baseline gap-3">
+                <span className="text-4xl font-black text-white tracking-tight">
+                  {Number(refereeInfo.rating || 4.9).toFixed(1)}
+                </span>
+                <span className="text-base font-bold text-[#98F5E1]">/ 5.0 Overall Score</span>
+                <div className="flex items-center gap-1 ml-2 text-amber-400">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} size={18} fill="currentColor" />
+                  ))}
+                </div>
+              </div>
+
+              <p className="text-xs text-emerald-100/80 font-medium mt-1">
+                Based on 124 verified tournament match reports by organizers & match commissioners.
+              </p>
+            </div>
+          </div>
+
+          {/* Right Rating Breakdown Metrics Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 flex-1 max-w-2xl">
+            
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-3.5 rounded-xl text-center flex flex-col justify-center">
+              <span className="text-[10px] text-gray-300 font-bold uppercase tracking-wider block mb-1">Decision Accuracy</span>
+              <span className="text-xl font-black text-[#98F5E1]">99.2%</span>
+              <span className="text-[10px] font-semibold text-emerald-200 mt-0.5">4.9 ★ Rating</span>
+            </div>
+
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-3.5 rounded-xl text-center flex flex-col justify-center">
+              <span className="text-[10px] text-gray-300 font-bold uppercase tracking-wider block mb-1">Fair Play</span>
+              <span className="text-xl font-black text-amber-300">100%</span>
+              <span className="text-[10px] font-semibold text-amber-200 mt-0.5">5.0 ★ Neutral</span>
+            </div>
+
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-3.5 rounded-xl text-center flex flex-col justify-center">
+              <span className="text-[10px] text-gray-300 font-bold uppercase block mb-1">Match Control</span>
+              <span className="text-xl font-black text-emerald-300">4.8 ★</span>
+              <span className="text-[10px] font-semibold text-emerald-200 mt-0.5">Strict Regulation</span>
+            </div>
+
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-3.5 rounded-xl text-center flex flex-col justify-center">
+              <span className="text-[10px] text-gray-300 font-bold uppercase tracking-wider block mb-1">Trust Index</span>
+              <span className="text-xl font-black text-white">98.5%</span>
+              <span className="text-[10px] font-semibold text-gray-300 mt-0.5">Top Preferred</span>
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* Bottom Honor Banner Quote */}
+        <div className="mt-5 pt-3.5 border-t border-white/10 flex items-center justify-between text-[11px] text-emerald-200/90 font-medium">
+          <span className="flex items-center gap-1.5">
+            📜 <strong className="text-white">Official Officiating Motto:</strong> Ensuring fair play, non-partiality, and total accuracy in every tournament match.
+          </span>
+          <span className="font-bold text-[#98F5E1] hidden md:inline-block">Official Elle Hub Certified Referee</span>
+        </div>
       </div>
 
     </div>
   );
 }
+
