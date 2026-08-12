@@ -287,7 +287,11 @@ export default function RefereeLayout() {
                           return (
                             <div 
                               key={n.notification_id}
-                              onClick={() => markSingleRead(n.notification_id)}
+                              onClick={() => {
+                                markSingleRead(n.notification_id);
+                                setShowNotifications(false);
+                                navigate('/referee/notifications');
+                              }}
                               className={`p-3.5 hover:bg-gray-50 transition-colors cursor-pointer text-left ${isUnread ? 'bg-emerald-50/50' : 'opacity-75'}`}
                             >
                               <div className="flex justify-between items-start gap-2">
