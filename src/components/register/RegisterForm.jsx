@@ -99,6 +99,26 @@ function RegisterForm({selectedRole}){
   if (type === "file") {
     const file = files[0];
     if (file) {
+      // Validate file extension and MIME type (JPG and PNG allowed only)
+      const fileName = file.name.toLowerCase();
+      const fileType = file.type.toLowerCase();
+      const validTypes = ["image/jpeg", "image/png", "image/jpg"];
+      const validExts = [".jpg", ".jpeg", ".png"];
+
+      const isTypeValid = validTypes.includes(fileType) || validExts.some((ext) => fileName.endsWith(ext));
+
+      if (!isTypeValid) {
+        setErrors((prev) => ({
+          ...prev,
+          [name]: "File type is incorrect",
+        }));
+        setFormData((prevData) => ({
+          ...prevData,
+          [name]: null,
+        }));
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData((prevData) => ({
@@ -128,7 +148,11 @@ function validateForm() {
 
   for (let field of fields) {
     if (!formData[field.name]) {
-      tempErrors[field.name] = `${field.label} is required`;
+      if (field.name === "profilePicture" && errors[field.name] === "File type is incorrect") {
+        tempErrors[field.name] = "File type is incorrect";
+      } else {
+        tempErrors[field.name] = `${field.label} is required`;
+      }
       isValid = false;
     }
   }
