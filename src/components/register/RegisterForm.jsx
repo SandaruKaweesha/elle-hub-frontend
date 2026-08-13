@@ -3,6 +3,34 @@ import { useState } from "react";
 import api from "../../services/api";
 import { useNavigate } from "react-router-dom";
 
+const SRI_LANKAN_DISTRICTS = [
+  "Ampara",
+  "Anuradhapura",
+  "Badulla",
+  "Batticaloa",
+  "Colombo",
+  "Galle",
+  "Gampaha",
+  "Hambantota",
+  "Jaffna",
+  "Kalutara",
+  "Kandy",
+  "Kegalle",
+  "Kilinochchi",
+  "Kurunegala",
+  "Mannar",
+  "Matale",
+  "Matara",
+  "Monaragala",
+  "Mullaitivu",
+  "Nuwara Eliya",
+  "Polonnaruwa",
+  "Puttalam",
+  "Ratnapura",
+  "Trincomalee",
+  "Vavuniya",
+];
+
 const roleFields ={
      Team: [
     { label: "Team Name", name: "teamName", type: "text", placeholder: "Enter team name" },
@@ -10,7 +38,7 @@ const roleFields ={
     { label: "Password", name: "password", type: "password", placeholder: "Enter password" },
     { label: "Profile Picture", name: "profilePicture", type: "file" },
     { label: "Contact Number", name: "contactNumber", type: "tel", placeholder: "+94 7X XXX XXXX" },
-    { label: "District", name: "district", type: "text", placeholder: "Enter district" },
+    { label: "District", name: "district", type: "select", placeholder: "Select District", options: SRI_LANKAN_DISTRICTS },
   ],
 
   Sponsor: [
@@ -39,7 +67,7 @@ const roleFields ={
     { label: "Password", name: "password", type: "password", placeholder: "Enter password" },
     { label: "Profile Picture", name: "profilePicture", type: "file" },
     { label: "Playground Name", name: "playgroundName", type: "text", placeholder: "Enter playground name" },
-    { label: "District", name: "district", type: "text", placeholder: "Enter district (e.g. Badulla, Colombo)" },
+    { label: "District", name: "district", type: "select", placeholder: "Select District", options: SRI_LANKAN_DISTRICTS },
     { label: "Location", name: "location", type: "text", placeholder: "Enter location / city" },
     { label: "Address", name: "address", type: "text", placeholder: "Enter address" },
     { label: "Playground Area", name: "area", type: "text", placeholder: "e.g. 500 Sq. Ft or 2 Acres" },
@@ -271,6 +299,7 @@ function handleSubmit(e) {
                  name={field.name}
                  type={field.type}
                  placeholder={field.placeholder}
+                 options={field.options}
                  value={formData[field.name] || ""}
                  onChange={handleChange}
                  error={errors[field.name]}
