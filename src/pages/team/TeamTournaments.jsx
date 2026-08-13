@@ -33,7 +33,7 @@ export default function TeamTournaments() {
           const activeOnly = raw.filter(t => {
             const s = (t.status || '').toUpperCase();
             const appS = (t.approval_status || '').toUpperCase();
-            return appS !== 'REJECTED' && s !== 'COMPLETED' && s !== 'FINISHED';
+            return appS === 'APPROVED' && s !== 'COMPLETED' && s !== 'FINISHED';
           });
           setTournaments(activeOnly);
         } else {

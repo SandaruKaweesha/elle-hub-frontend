@@ -81,7 +81,7 @@ export default function OrganizerSponsors() {
         const list = tournamentsRes.data.data || [];
         const activeOnly = list.filter(t => 
           t && 
-          (t.approval_status || 'APPROVED').toString().toUpperCase() !== 'REJECTED' && 
+          (t.approval_status || '').toString().toUpperCase() === 'APPROVED' && 
           (t.status || 'ACTIVE').toString().toUpperCase() !== 'COMPLETED' && 
           (t.status || 'ACTIVE').toString().toUpperCase() !== 'CANCELLED'
         );
