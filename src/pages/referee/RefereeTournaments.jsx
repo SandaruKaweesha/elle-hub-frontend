@@ -38,6 +38,8 @@ export default function RefereeTournaments() {
   const [participatingTeams, setParticipatingTeams] = useState([]);
   const [assignedReferees, setAssignedReferees] = useState([]);
 
+  const [accountStatus, setAccountStatus] = useState('APPROVED');
+
   // Apply Loading State
   const [applyLoadingId, setApplyLoadingId] = useState(null);
 
@@ -46,9 +48,10 @@ export default function RefereeTournaments() {
       setLoading(true);
       setError(null);
 
-      const [tournamentsRes, myRequestsRes] = await Promise.all([
+      const [tournamentsRes, myRequestsRes, userRes] = await Promise.all([
         api.get("/tournaments"),
-        refereeUserId ? api.get(`/referee/${refereeUserId}/requests`).catch(() => null) : Promise.resolve(null)
+        refereeUserId ? api.get(`/referee/${refereeUserId}/requests`).catch(() => null) : Promise.resolve(null),
+        refereeUserId ? api.get(`/user/${refereeUserId}`).catch(() => null) : Promise.resolve(null)
       ]);
 
       if (tournamentsRes.data && tournamentsRes.data.success !== false) {
@@ -56,7 +59,7 @@ export default function RefereeTournaments() {
         const activeOnly = list.filter(t => {
           const s = (t.status || '').toUpperCase();
           const appS = (t.approval_status || '').toUpperCase();
-          return appS !== 'REJECTED' && s !== 'COMPLETED' && s !== 'FINISHED';
+          return appS === 'APPROVED' && s !== 'COMPLETED' && s !== 'FINISHED';
         });
         setTournaments(activeOnly);
       }
@@ -69,6 +72,10 @@ export default function RefereeTournaments() {
           map[req.tournament_id] = req.status || 'PENDING';
         });
         setRefereeRequestsMap(map);
+      }
+
+      if (userRes && userRes.data && userRes.data.success && userRes.data.data) {
+        setAccountStatus((userRes.data.data.status || 'APPROVED').toUpperCase());
       }
 
     } catch (err) {
@@ -126,6 +133,11 @@ export default function RefereeTournaments() {
       return;
     }
 
+    if (accountStatus !== 'APPROVED') {
+      setError("Your referee account registration is currently pending admin approval. You cannot apply for tournaments until an admin approves your account.");
+      return;
+    }
+
     try {
       setApplyLoadingId(tournamentId);
       setError(null);
@@ -177,6 +189,16 @@ export default function RefereeTournaments() {
       </div>
 
       {/* Notifications Banners */}
+      {accountStatus !== 'APPROVED' && (
+        <div className="mb-6 bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-xl flex items-center gap-3 text-sm shadow-sm">
+          <ShieldCheck size={22} className="shrink-0 text-amber-600" />
+          <div>
+            <h4 className="font-bold text-sm text-amber-900">Account Pending Admin Approval</h4>
+            <p className="text-xs text-amber-700 mt-0.5 font-medium">Your referee account registration is currently pending admin approval. You cannot apply for tournaments until an admin approves your account.</p>
+          </div>
+        </div>
+      )}
+
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-center justify-between text-sm shadow-sm">
           <div className="flex items-center gap-2">
@@ -317,9 +339,9 @@ export default function RefereeTournaments() {
 
                   <button 
                     onClick={() => handleApplyAsReferee(tournamentId, title)}
-                    disabled={applyLoadingId === tournamentId || Boolean(existingReqStatus)}
+                    disabled={applyLoadingId === tournamentId || Boolean(existingReqStatus) || accountStatus !== 'APPROVED'}
                     className={`w-full py-2.5 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm ${
-                      existingReqStatus 
+                      existingReqStatus || accountStatus !== 'APPROVED'
                         ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
                         : 'bg-[#00382D] hover:bg-[#002b22] cursor-pointer'
                     }`}
@@ -333,6 +355,11 @@ export default function RefereeTournaments() {
                       <>
                         <CheckCircle2 size={14} />
                         {existingReqStatus === 'APPROVED' ? 'Assigned Referee' : 'Request Submitted'}
+                      </>
+                    ) : accountStatus !== 'APPROVED' ? (
+                      <>
+                        <ShieldCheck size={14} />
+                        Pending Admin Approval
                       </>
                     ) : (
                       <>

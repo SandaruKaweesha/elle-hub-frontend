@@ -2,20 +2,16 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { 
-  Calendar,
-  Download,
   Users,
   Activity,
   ClipboardList,
   Shield,
   BadgeDollarSign,
-  AlertCircle,
   UserPlus,
   DollarSign,
   Clock,
   ArrowRight,
   Sparkles,
-  Maximize2,
   FileBarChart,
   Settings,
   CheckCircle2,
@@ -45,6 +41,81 @@ function AdminDashboard() {
   const [toastMessage, setToastMessage] = useState(null);
   const [selectedViewItem, setSelectedViewItem] = useState(null);
 
+  // Finalized Tournaments Bar Chart State
+  const [rawTournaments, setRawTournaments] = useState([]);
+  const [monthlyFinalizedData, setMonthlyFinalizedData] = useState([
+    { month: 'Jan', count: 0 },
+    { month: 'Feb', count: 0 },
+    { month: 'Mar', count: 0 },
+    { month: 'Apr', count: 0 },
+    { month: 'May', count: 0 },
+    { month: 'Jun', count: 0 },
+    { month: 'Jul', count: 0 },
+    { month: 'Aug', count: 0 },
+    { month: 'Sep', count: 0 },
+    { month: 'Oct', count: 0 },
+    { month: 'Nov', count: 0 },
+    { month: 'Dec', count: 0 }
+  ]);
+  const [totalFinalizedCount, setTotalFinalizedCount] = useState(0);
+  const [selectedYear, setSelectedYear] = useState(2026);
+
+  const updateChartForYear = (tournamentsList, year) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    const tournamentsInYear = tournamentsList.filter(t => {
+      const statusUpper = (t.status || '').toUpperCase();
+      const appStatusUpper = (t.approval_status || '').toUpperCase();
+      const isFinalized = statusUpper === 'COMPLETED' || statusUpper === 'FINISHED' || statusUpper === 'FINALIZED' || statusUpper === 'ENDED' || appStatusUpper === 'APPROVED';
+
+      if (!isFinalized) return false;
+
+      const dateStr = t.end_date || t.tournament_held_date || t.created_at || t.start_date;
+      if (!dateStr) return false;
+
+      const d = new Date(dateStr);
+      return !isNaN(d.getTime()) && d.getFullYear() === year;
+    });
+
+    if (tournamentsList.length > 0) {
+      tournamentsInYear.forEach(t => {
+        const dateStr = t.end_date || t.tournament_held_date || t.created_at || t.start_date;
+        const d = new Date(dateStr);
+        const monthIdx = d.getMonth();
+        counts[monthIdx] += 1;
+      });
+
+      const totalForYear = counts.reduce((a, b) => a + b, 0);
+
+      setMonthlyFinalizedData(months.map((m, idx) => ({
+        month: m,
+        count: counts[idx]
+      })));
+      setTotalFinalizedCount(totalForYear);
+    } else {
+      // Distinct demo datasets per year if database has no tournaments yet
+      const yearSamples = {
+        2026: [2, 4, 3, 7, 5, 11, 8, 10, 6, 12, 9, 4],
+        2025: [1, 3, 0, 5, 2, 8, 4, 9, 3, 10, 6, 2],
+        2024: [0, 1, 2, 4, 3, 6, 2, 5, 4, 7, 3, 1],
+        2023: [0, 0, 1, 2, 1, 4, 3, 5, 2, 4, 2, 1]
+      };
+      const sample = yearSamples[year] || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      const sampleTotal = sample.reduce((a, b) => a + b, 0);
+
+      setMonthlyFinalizedData(months.map((m, idx) => ({
+        month: m,
+        count: sample[idx]
+      })));
+      setTotalFinalizedCount(sampleTotal);
+    }
+  };
+
+  useEffect(() => {
+    updateChartForYear(rawTournaments, selectedYear);
+  }, [selectedYear, rawTournaments]);
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -54,6 +125,18 @@ function AdminDashboard() {
         }
       } catch (error) {
         console.error("Failed to fetch user stats", error);
+      }
+    };
+
+    const fetchChartData = async () => {
+      try {
+        const res = await api.get('/admin/tournaments');
+        const list = (res.data && res.data.success !== false && Array.isArray(res.data.data))
+          ? res.data.data
+          : [];
+        setRawTournaments(list);
+      } catch (err) {
+        console.error("Failed to fetch tournaments for chart:", err);
       }
     };
 
@@ -110,6 +193,7 @@ function AdminDashboard() {
     };
 
     fetchStats();
+    fetchChartData();
     fetchPending();
   }, []);
 
@@ -166,19 +250,6 @@ function AdminDashboard() {
         <div>
           <h1 className="text-[28px] font-extrabold text-[#111111] tracking-tight">Management Console</h1>
           <p className="text-gray-500 text-sm mt-1">Precision oversight for the elite sports circuit.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
-            <Calendar size={16} className="text-gray-500" />
-            Sept 15 - Oct 15
-          </button>
-          <button 
-            onClick={() => navigate('/admin/reports')}
-            className="flex items-center gap-2 bg-[#014731] text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-[#023827] transition-colors shadow-sm cursor-pointer"
-          >
-            <Download size={16} />
-            Export Data
-          </button>
         </div>
       </div>
 
@@ -262,198 +333,107 @@ function AdminDashboard() {
 
       </div>
 
-      {/* Main Grid: Charts & System Alerts */}
+      {/* Top Grid: Tournament Growth Chart (2 cols) & Management Tools (1 col) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         
         {/* Left Column (2 Cols) */}
-        <div className="lg:col-span-2 flex flex-col gap-8">
-          
-          {/* Tournament Growth Chart */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
+        <div className="lg:col-span-2">
+          {/* Finalized Tournaments Growth Chart */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 h-full flex flex-col justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-lg font-bold text-[#111111]">Tournament Growth</h2>
-                <p className="text-sm text-gray-500 mt-1">Participation trends over the last 6 months</p>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-[#111111]">Tournament Growth Mapping</h2>
+                  <span className="px-2.5 py-0.5 bg-emerald-100 text-[#014731] rounded-full text-xs font-extrabold flex items-center gap-1 transition-all duration-300">
+                    <CheckCircle2 size={12} />
+                    {totalFinalizedCount} Total in {selectedYear}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">Monthly completed tournaments count for the year</p>
               </div>
-              <button className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md text-sm font-medium text-gray-700 transition-colors">
-                This Year
-              </button>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-500">Year:</span>
+                <select 
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#014731] cursor-pointer"
+                >
+                  <option value={2026}>2026</option>
+                  <option value={2025}>2025</option>
+                  <option value={2024}>2024</option>
+                  <option value={2023}>2023</option>
+                </select>
+              </div>
             </div>
             
-            {/* Chart Bars */}
-            <div className="h-[240px] w-full flex items-end justify-between gap-2 px-2">
-              {[40, 50, 45, 75, 48, 65, 55, 58, 45, 80, 75, 85].map((height, i) => (
-                <div key={i} className="w-full relative flex justify-center group">
-                  <div 
-                    className={`w-full rounded-t-sm transition-all duration-300 ${i === 3 ? 'bg-[#014731]' : 'bg-gray-200 group-hover:bg-gray-300'}`}
-                    style={{ height: `${height}%` }}
-                  ></div>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-between mt-4 text-xs font-medium text-gray-400 px-2">
-              <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+            {/* Dynamic Bar Chart Container */}
+            <div className="relative pt-6">
+              {/* Grid Background Lines */}
+              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20 pb-8">
+                <div className="border-b border-gray-300 border-dashed w-full"></div>
+                <div className="border-b border-gray-300 border-dashed w-full"></div>
+                <div className="border-b border-gray-300 border-dashed w-full"></div>
+              </div>
+
+              <div className="h-[220px] w-full flex items-end justify-between gap-1.5 sm:gap-2 px-1 sm:px-3 relative z-10">
+                {monthlyFinalizedData.map((item, i) => {
+                  const maxVal = Math.max(...monthlyFinalizedData.map(d => d.count), 1);
+                  const heightPercent = item.count > 0 ? Math.max((item.count / maxVal) * 100, 12) : 6;
+                  const currentMonthIdx = new Date().getMonth();
+                  const isCurrentMonth = i === currentMonthIdx;
+
+                  return (
+                    <div key={i} className="w-full h-full flex flex-col justify-end items-center group relative">
+                      
+                      {/* Tooltip on Hover */}
+                      <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-20 bg-[#111111] text-white text-[11px] font-bold py-1 px-2.5 rounded-lg shadow-xl whitespace-nowrap flex items-center gap-1.5">
+                        <span>{item.month}:</span>
+                        <span className="text-emerald-400 font-extrabold">{item.count} Finalized</span>
+                      </div>
+
+                      {/* Value Badge above Bar */}
+                      <span className={`text-[11px] font-extrabold mb-1.5 transition-colors ${
+                        item.count > 0 ? (isCurrentMonth ? 'text-[#014731]' : 'text-gray-700') : 'text-gray-300'
+                      }`}>
+                        {item.count}
+                      </span>
+
+                      {/* Bar Track & Fill */}
+                      <div className="w-full max-w-[36px] bg-gray-100 rounded-t-lg overflow-hidden flex items-end h-full">
+                        <div 
+                          className={`w-full rounded-t-lg transition-all duration-500 ease-out group-hover:bg-[#014731] ${
+                            isCurrentMonth 
+                              ? 'bg-gradient-to-t from-[#014731] to-emerald-500 shadow-md' 
+                              : item.count > 0 
+                                ? 'bg-gradient-to-t from-emerald-800 to-emerald-600' 
+                                : 'bg-gray-200'
+                          }`}
+                          style={{ height: `${heightPercent}%` }}
+                        ></div>
+                      </div>
+
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* X-Axis Month Labels */}
+              <div className="flex justify-between mt-3 text-xs font-bold text-gray-500 px-1 sm:px-3 pt-2 border-t border-gray-100">
+                {monthlyFinalizedData.map((item, i) => (
+                  <span key={i} className={`w-full text-center ${i === new Date().getMonth() ? 'text-[#014731] font-black' : ''}`}>
+                    {item.month}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
-
-          {/* Pending Approvals Table */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-[#111111]">Pending Approvals</h2>
-              <button 
-                onClick={() => navigate('/admin/requests')} 
-                className="text-sm font-semibold text-[#014731] hover:underline cursor-pointer"
-              >
-                View All →
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-gray-50/50 text-xs font-semibold text-gray-500 uppercase border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-4">Type</th>
-                    <th className="px-6 py-4">Name / Event</th>
-                    <th className="px-6 py-4">Submission Date</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 text-sm">
-                  {pendingItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 text-xs font-bold rounded uppercase tracking-wider ${
-                          item.type === 'TOURNAMENT' ? 'bg-emerald-100 text-emerald-800' : 'bg-teal-100 text-teal-800'
-                        }`}>
-                          {item.type}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-[#111111]">{item.name}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">{item.subtitle}</div>
-                      </td>
-                      <td className="px-6 py-4 text-gray-600 font-mono text-xs">{item.date}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5 text-xs font-semibold">
-                          <span className={`w-2 h-2 rounded-full ${item.isApproved ? 'bg-emerald-600' : (item.type === 'TOURNAMENT' ? 'bg-red-600' : 'bg-amber-500')}`}></span>
-                          <span className={item.isApproved ? 'text-emerald-700 font-bold' : 'text-gray-700'}>{item.status}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-3">
-                          <button 
-                            onClick={() => handleView(item)}
-                            className="text-[#014731] font-bold text-xs hover:underline cursor-pointer flex items-center gap-1"
-                          >
-                            <Eye size={13} />
-                            View
-                          </button>
-
-                          {item.isApproved ? (
-                            <span className="bg-emerald-100 text-[#014731] px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1">
-                              <CheckCircle2 size={13} /> Approved
-                            </span>
-                          ) : (
-                            <button 
-                              onClick={() => handleApprove(item)}
-                              disabled={actionLoadingId === item.id}
-                              className="bg-[#111111] hover:bg-black/80 text-white px-4 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
-                            >
-                              {actionLoadingId === item.id ? (
-                                <>
-                                  <Loader2 size={13} className="animate-spin" />
-                                  <span>Approving...</span>
-                                </>
-                              ) : (
-                                <span>Approve</span>
-                              )}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
         </div>
 
-        {/* Right Column */}
-        <div className="flex flex-col gap-6">
-          
-          {/* System Alerts */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex-1">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-[#111111]">System Alerts</h2>
-              <div className="w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                3
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              {/* Alert 1 */}
-              <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-500 shrink-0 mt-1">
-                  <AlertCircle size={16} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-[#111111]">Server Latency Detected</h4>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">Primary database in Region East is experiencing high response times.</p>
-                  <span className="text-[10px] font-semibold text-gray-400 mt-2 block">2 mins ago</span>
-                </div>
-              </div>
-
-              {/* Alert 2 */}
-              <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 shrink-0 mt-1">
-                  <UserPlus size={16} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-[#111111]">New Referee Application</h4>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">David Miller has submitted a Tier 2 referee certification for review.</p>
-                  <span className="text-[10px] font-semibold text-gray-400 mt-2 block">15 mins ago</span>
-                </div>
-              </div>
-
-              {/* Alert 3 */}
-              <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-600 shrink-0 mt-1">
-                  <DollarSign size={16} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-[#111111]">Sponsorship Payout</h4>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">Payout of $2,500 processed for 'Coastal Masters' tournament sponsors.</p>
-                  <span className="text-[10px] font-semibold text-gray-400 mt-2 block">1 hour ago</span>
-                </div>
-              </div>
-
-              {/* Alert 4 */}
-              <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 shrink-0 mt-1">
-                  <Clock size={16} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-[#111111]">Maintenance Scheduled</h4>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">System update v2.4.1 scheduled for Oct 18 at 02:00 AM UTC.</p>
-                  <span className="text-[10px] font-semibold text-gray-400 mt-2 block">4 hours ago</span>
-                </div>
-              </div>
-
-            </div>
-
-            <button 
-              onClick={() => navigate('/admin/notifications')}
-              className="w-full mt-6 text-sm font-semibold text-gray-500 hover:text-[#111111] flex items-center justify-center gap-2 transition-colors cursor-pointer"
-            >
-              View All Notifications
-              <ArrowRight size={16} />
-            </button>
-          </div>
-
+        {/* Right Column (1 Col) */}
+        <div className="lg:col-span-1">
           {/* Management Tools */}
-          <div className="bg-[#014731] rounded-xl p-6 shadow-md">
+          <div className="bg-[#014731] rounded-xl p-6 shadow-md h-full flex flex-col justify-between">
             <h3 className="text-lg font-bold text-white mb-6">Management<br/>Tools</h3>
             
             <div className="space-y-3">
@@ -509,39 +489,93 @@ function AdminDashboard() {
               </button>
             </div>
           </div>
-
         </div>
 
       </div>
 
-      {/* Global Presence Map Card */}
-      <div className="bg-gray-400 rounded-xl overflow-hidden relative min-h-[260px] flex items-center">
-        <div 
-          className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-60"
-          style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=2000")' }}
-        ></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-500/80 to-transparent"></div>
-        
-        <div className="relative z-10 p-8 max-w-md text-white">
-          <h2 className="text-xl font-bold mb-3">Global Presence</h2>
-          <p className="text-sm text-gray-100 mb-8 leading-relaxed">The Elle Hub is currently active in 14 countries, managing over 200+ local sports facilities and organizations.</p>
-          
-          <div className="flex gap-8">
-            <div>
-              <div className="text-3xl font-extrabold mb-1">14</div>
-              <div className="text-xs uppercase tracking-wider text-gray-200 font-semibold">Regions</div>
-            </div>
-            <div>
-              <div className="text-3xl font-extrabold mb-1">2.1k</div>
-              <div className="text-xs uppercase tracking-wider text-gray-200 font-semibold">Teams</div>
-            </div>
-          </div>
+      {/* Full Width Pending Approvals Table Card */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-8">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-lg font-bold text-[#111111]">Pending Approvals</h2>
+          <button 
+            onClick={() => navigate('/admin/requests')} 
+            className="text-sm font-semibold text-[#014731] hover:underline cursor-pointer"
+          >
+            View All →
+          </button>
         </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-gray-50/50 text-xs font-semibold text-gray-500 uppercase border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-4">Type</th>
+                <th className="px-6 py-4">Name / Event</th>
+                <th className="px-6 py-4">Submission Date</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 text-sm">
+              {pendingItems.map((item) => (
+                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4">
+                    <span className={`px-2.5 py-1 text-xs font-bold rounded uppercase tracking-wider ${
+                      item.type === 'TOURNAMENT' ? 'bg-emerald-100 text-emerald-800' : 'bg-teal-100 text-teal-800'
+                    }`}>
+                      {item.type}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="font-bold text-[#111111]">{item.name}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{item.subtitle}</div>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600 font-mono text-xs">{item.date}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold">
+                      <span className={`w-2 h-2 rounded-full ${item.isApproved ? 'bg-emerald-600' : (item.type === 'TOURNAMENT' ? 'bg-red-600' : 'bg-amber-500')}`}></span>
+                      <span className={item.isApproved ? 'text-emerald-700 font-bold' : 'text-gray-700'}>{item.status}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-3">
+                      <button 
+                        onClick={() => handleView(item)}
+                        className="text-[#014731] font-bold text-xs hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        <Eye size={13} />
+                        View
+                      </button>
 
-        <button className="absolute bottom-4 right-4 bg-white/20 hover:bg-white/30 backdrop-blur-md p-2 rounded-lg text-white transition-colors">
-          <Maximize2 size={20} />
-        </button>
+                      {item.isApproved ? (
+                        <span className="bg-emerald-100 text-[#014731] px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1">
+                          <CheckCircle2 size={13} /> Approved
+                        </span>
+                      ) : (
+                        <button 
+                          onClick={() => handleApprove(item)}
+                          disabled={actionLoadingId === item.id}
+                          className="bg-[#111111] hover:bg-black/80 text-white px-4 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+                        >
+                          {actionLoadingId === item.id ? (
+                            <>
+                              <Loader2 size={13} className="animate-spin" />
+                              <span>Approving...</span>
+                            </>
+                          ) : (
+                            <span>Approve</span>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+
 
       {/* Modal: View Details Modal for Pending Request */}
       {selectedViewItem && (
