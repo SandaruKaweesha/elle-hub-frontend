@@ -9,9 +9,19 @@ import api from '../../services/api';
 function TeamDashboard() {
   const [tournaments, setTournaments] = useState([]);
   const [loadingTournaments, setLoadingTournaments] = useState(true);
+  const [stats, setStats] = useState({
+    played: 0,
+    wins: 0,
+    losses: 0,
+    winRate: 0,
+    goalProgress: 0,
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
 
   const currentUser = JSON.parse(localStorage.getItem('user')) || {};
-  const teamName = currentUser.teamName || currentUser.team_name || currentUser.organizationName || currentUser.displayName || 'Chilaw Super';
+  const teamName = currentUser.teamName || currentUser.team_name || currentUser.organizationName || currentUser.displayName || currentUser.user?.teamName || currentUser.user?.team_name || 'Chilaw Super';
+  const teamUserId = currentUser.userId || currentUser.user_id || currentUser.id || currentUser.user?.userId || currentUser.user?.user_id || currentUser.user?.id;
+
 
   useEffect(() => {
     const fetchTournaments = async () => {
@@ -29,6 +39,35 @@ function TeamDashboard() {
     };
     fetchTournaments();
   }, []);
+
+  useEffect(() => {
+    const fetchTeamStats = async () => {
+      if (!teamUserId) {
+        setLoadingStats(false);
+        return;
+      }
+      try {
+        setLoadingStats(true);
+        const response = await api.get(`/team/${teamUserId}/stats`);
+        if (response.data && response.data.success && response.data.data) {
+          const d = response.data.data;
+          setStats({
+            played: d.played ?? 0,
+            wins: d.won ?? 0,
+            losses: d.losses ?? 0,
+            winRate: d.win_rate ?? 0,
+            goalProgress: d.goal_progress ?? 0,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch team stats", error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    fetchTeamStats();
+  }, [teamUserId]);
+
 
   const getStatusDisplay = (status, startDate, endDate) => {
     const s = (status || "").toUpperCase();
@@ -188,32 +227,46 @@ function TeamDashboard() {
             <div className="grid grid-cols-2 gap-2.5 mb-3">
               <div className="bg-[#f8f7f4] rounded-xl p-3 flex flex-col items-center justify-center text-center">
                 <span className="text-[9px] font-bold text-[#666666] uppercase tracking-wider mb-0.5">Played</span>
-                <span className="text-lg font-black text-[#111111]">48</span>
+                <span className="text-lg font-black text-[#111111]">
+                  {loadingStats ? <Loader2 size={16} className="animate-spin text-[#08733e]" /> : stats.played}
+                </span>
               </div>
               <div className="bg-[#f8f7f4] rounded-xl p-3 flex flex-col items-center justify-center text-center">
                 <span className="text-[9px] font-bold text-[#666666] uppercase tracking-wider mb-0.5">Wins</span>
-                <span className="text-lg font-black text-[#08733e]">32</span>
+                <span className="text-lg font-black text-[#08733e]">
+                  {loadingStats ? <Loader2 size={16} className="animate-spin text-[#08733e]" /> : stats.wins}
+                </span>
               </div>
               <div className="bg-[#f8f7f4] rounded-xl p-3 flex flex-col items-center justify-center text-center">
                 <span className="text-[9px] font-bold text-[#666666] uppercase tracking-wider mb-0.5">Losses</span>
-                <span className="text-lg font-black text-red-500">12</span>
+                <span className="text-lg font-black text-red-500">
+                  {loadingStats ? <Loader2 size={16} className="animate-spin text-red-500" /> : stats.losses}
+                </span>
               </div>
               <div className="bg-[#f8f7f4] rounded-xl p-3 flex flex-col items-center justify-center text-center">
                 <span className="text-[9px] font-bold text-[#666666] uppercase tracking-wider mb-0.5">Win Rate</span>
-                <span className="text-lg font-black text-[#111111]">66.7%</span>
+                <span className="text-lg font-black text-[#111111]">
+                  {loadingStats ? <Loader2 size={16} className="animate-spin text-[#111111]" /> : `${stats.winRate}%`}
+                </span>
               </div>
             </div>
 
             <div className="pt-3 border-t border-[#e5e5e5]">
               <div className="flex justify-between items-center mb-1.5">
                 <span className="text-[11px] font-semibold text-[#666666]">Tournament Goal Progress</span>
-                <span className="text-[11px] font-black text-[#111111]">75%</span>
+                <span className="text-[11px] font-black text-[#111111]">
+                  {loadingStats ? "..." : `${stats.goalProgress}%`}
+                </span>
               </div>
               <div className="w-full h-1.5 bg-[#e5e5e5] rounded-full overflow-hidden">
-                <div className="w-[75%] h-full bg-[#08733e] rounded-full"></div>
+                <div 
+                  className="h-full bg-[#08733e] rounded-full transition-all duration-500"
+                  style={{ width: `${stats.goalProgress}%` }}
+                ></div>
               </div>
             </div>
           </div>
+
 
         </div>
       </div>
