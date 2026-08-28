@@ -43,37 +43,13 @@ export default function AdminRequests() {
       const response = await api.get('/admin/tournaments/pending');
       if (response.data && response.data.success !== false) {
         const tourneys = (response.data.data || []).filter(t => !processedIds.has(String(t.tournament_id || t.id)));
-        if (tourneys.length > 0) {
-          setPendingTournaments(tourneys);
-        } else {
-          setPendingTournaments([
-            {
-              tournament_id: 991,
-              title: "Seeduwa Elle Championship 2026",
-              location: "Seeduwa Playground",
-              tournament_held_date: "2026-09-06",
-              maximum_team_limit: 16,
-              prize_details: "LKR 250,000 + Trophy",
-              description: "Annual regional Elle tournament for top division teams."
-            }
-          ].filter(t => !processedIds.has(String(t.tournament_id))));
-        }
+        setPendingTournaments(tourneys);
       } else {
-        throw new Error(response.data.message || "Failed to load pending tournaments.");
+        setPendingTournaments([]);
       }
     } catch (err) {
       console.error("Error loading pending tournaments:", err);
-      setPendingTournaments([
-        {
-          tournament_id: 991,
-          title: "Seeduwa Elle Championship 2026",
-          location: "Seeduwa Playground",
-          tournament_held_date: "2026-09-06",
-          maximum_team_limit: 16,
-          prize_details: "LKR 250,000 + Trophy",
-          description: "Annual regional Elle tournament for top division teams."
-        }
-      ].filter(t => !processedIds.has(String(t.tournament_id))));
+      setPendingTournaments([]);
     } finally {
       setLoading(false);
     }
@@ -494,8 +470,12 @@ export default function AdminRequests() {
                 <div className="flex items-center gap-4 flex-grow">
                   <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
                     <img 
-                      src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.display_name)}`} 
+                      src={(u.profile_picture && u.profile_picture.trim() !== '') ? u.profile_picture : ((u.profilePicture && u.profilePicture.trim() !== '') ? u.profilePicture : `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.display_name)}`)} 
                       alt={u.display_name} 
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.display_name)}`;
+                      }}
                       className="w-full h-full object-cover" 
                     />
                   </div>
@@ -562,8 +542,12 @@ export default function AdminRequests() {
                 <div className="flex items-center gap-4 flex-grow">
                   <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
                     <img 
-                      src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.display_name)}`} 
+                      src={(u.profile_picture && u.profile_picture.trim() !== '') ? u.profile_picture : ((u.profilePicture && u.profilePicture.trim() !== '') ? u.profilePicture : `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.display_name)}`)} 
                       alt={u.display_name} 
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.display_name)}`;
+                      }}
                       className="w-full h-full object-cover" 
                     />
                   </div>
@@ -741,8 +725,12 @@ export default function AdminRequests() {
               </button>
               <div className="w-20 h-20 rounded-full border-2 border-white overflow-hidden bg-white mx-auto mb-3 shadow-md">
                 <img 
-                  src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(selectedUserForDetails.display_name)}`} 
+                  src={(selectedUserForDetails.profile_picture && selectedUserForDetails.profile_picture.trim() !== '') ? selectedUserForDetails.profile_picture : ((selectedUserForDetails.profilePicture && selectedUserForDetails.profilePicture.trim() !== '') ? selectedUserForDetails.profilePicture : `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(selectedUserForDetails.display_name)}`)} 
                   alt={selectedUserForDetails.display_name} 
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(selectedUserForDetails.display_name)}`;
+                  }}
                   className="w-full h-full object-cover" 
                 />
               </div>

@@ -17,6 +17,7 @@ export default function OrganizerTeams() {
   const [rosterLoading, setRosterLoading] = useState(false);
   const [selectedTeamName, setSelectedTeamName] = useState('');
   const [rosterPlayers, setRosterPlayers] = useState([]);
+  const [selectedTeamProfile, setSelectedTeamProfile] = useState(null);
 
   // Invite Modal states
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -112,23 +113,22 @@ export default function OrganizerTeams() {
     }
   };
 
-  const handleViewRoster = async (teamUserId, teamName) => {
+  const handleViewRoster = async (teamUserId, teamName, teamObj = null) => {
     try {
       setSelectedTeamName(teamName);
+      setSelectedTeamProfile(teamObj);
       setRosterLoading(true);
       setShowRosterModal(true);
-      setRosterPlayers([]);
+      setRosterPlayers(teamObj?.players || []);
       
       const response = await api.get(`/user/${teamUserId}`);
       if (response.data && response.data.success) {
-        setRosterPlayers(response.data.data.players || []);
-      } else {
-        throw new Error(response.data.message || "Failed to fetch roster details.");
+        const fullData = response.data.data;
+        setSelectedTeamProfile(fullData);
+        setRosterPlayers(fullData.players || []);
       }
     } catch (err) {
-      console.error("Error loading roster:", err);
-      setError("Unable to load team roster players.");
-      setShowRosterModal(false);
+      console.error("Error loading team profile:", err);
     } finally {
       setRosterLoading(false);
     }
@@ -294,8 +294,18 @@ export default function OrganizerTeams() {
                   {/* Avatar with Ring */}
                   <div className="w-16 h-16 rounded-2xl bg-white p-1 absolute -top-8 left-6 shadow-md border-2 border-white flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform duration-300">
                     <img 
-                      src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.display_name || 'Team')}`} 
+                      src={
+                        (team.profile_picture && team.profile_picture.trim() !== '') 
+                          ? team.profile_picture 
+                          : (team.profilePicture && team.profilePicture.trim() !== '')
+                          ? team.profilePicture
+                          : `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.display_name || 'Team')}`
+                      } 
                       alt={team.display_name} 
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.display_name || 'Team')}`;
+                      }}
                       className="w-full h-full object-cover rounded-xl bg-emerald-50"
                     />
                   </div>
@@ -341,7 +351,7 @@ export default function OrganizerTeams() {
                   {/* Actions buttons */}
                   <div className="mt-auto space-y-2.5 pt-1">
                     <button 
-                      onClick={() => handleViewRoster(team.user_id, team.display_name)}
+                      onClick={() => handleViewRoster(team.user_id, team.display_name, team)}
                       className="w-full py-2.5 bg-white hover:bg-gray-50 text-gray-800 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border border-[#e2e8e4] shadow-2xs cursor-pointer group/btn"
                     >
                       <Users size={14} className="text-[#08733e]" /> View Profile
@@ -436,70 +446,204 @@ export default function OrganizerTeams() {
         </div>
       )}
 
-      {/* View Roster Modal */}
+            {/* View Full Team Profile Popup Modal */}
       {showRosterModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-lg border border-[#e5e5e5] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden my-auto relative space-y-0">
             
-            {/* Modal Header */}
-            <div className="bg-[#002c21] p-6 text-white text-center relative">
+            {/* Cover Image Header with Dark Emerald Gradient & Avatar */}
+            <div className="relative h-36 w-full bg-gradient-to-r from-[#002c21] via-[#08733e] to-slate-900 p-6 flex items-start justify-between">
+              
+              {/* Floating Active Badge */}
+              <span className="px-3 py-1 bg-white/20 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-wider rounded-full border border-white/30 flex items-center gap-1.5 shadow-xs">
+                <ShieldCheck size={12} className="text-emerald-300" /> Active Team
+              </span>
+
+              {/* Close Button */}
               <button 
-                onClick={() => { setShowRosterModal(false); setSelectedTeamName(''); }}
-                className="absolute top-4 right-4 text-white/75 hover:text-white cursor-pointer text-sm font-bold w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+                type="button"
+                onClick={() => { setShowRosterModal(false); setSelectedTeamName(''); setSelectedTeamProfile(null); }}
+                className="w-9 h-9 bg-slate-900/60 hover:bg-slate-900 text-white/90 hover:text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all cursor-pointer border border-white/20"
               >
-                ✕
+                <XCircle size={18} />
               </button>
-              <h3 className="text-xl font-bold px-4">{selectedTeamName}</h3>
-              <p className="text-xs text-[#8eb7a7] mt-1 font-semibold uppercase tracking-wider">Squad Roster Details</p>
+
+              {/* Team Avatar Floating Badge */}
+              <div className="absolute -bottom-7 left-6 w-20 h-20 bg-white rounded-2xl p-1 shadow-xl border-2 border-emerald-500 overflow-hidden">
+                <img 
+                  src={
+                    (selectedTeamProfile?.profile_picture && selectedTeamProfile.profile_picture.trim() !== '') 
+                      ? selectedTeamProfile.profile_picture 
+                      : (selectedTeamProfile?.profilePicture && selectedTeamProfile.profilePicture.trim() !== '')
+                      ? selectedTeamProfile.profilePicture
+                      : `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(selectedTeamName || 'Team')}`
+                  } 
+                  alt="Team Profile Picture" 
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(selectedTeamName || 'Team')}`;
+                  }}
+                  className="w-full h-full object-cover rounded-xl bg-emerald-50"
+                />
+              </div>
+
             </div>
-            
-            {/* Modal Body */}
-            <div className="p-6 max-h-[350px] overflow-y-auto space-y-3">
-              {rosterLoading ? (
-                <div className="py-8 text-center text-gray-400 font-semibold flex flex-col items-center justify-center">
-                  <div className="w-6 h-6 border-3 border-[#08733e]/20 border-t-[#08733e] rounded-full animate-spin mb-3"></div>
-                  Loading squad players...
+
+            {/* Team Header Info Section */}
+            <div className="pt-9 px-6 md:px-8 pb-4 space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 leading-tight">
+                    {selectedTeamName || selectedTeamProfile?.team_name || selectedTeamProfile?.teamName || 'Team Profile'}
+                  </h2>
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs font-semibold text-slate-500">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-bold">
+                      <MapPin size={12} className="text-[#08733e]" />
+                      {selectedTeamProfile?.district || 'District N/A'}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700">
+                      <Inbox size={12} className="text-slate-400" />
+                      {selectedTeamProfile?.email || 'email@ellehub.lk'}
+                    </span>
+                  </div>
                 </div>
-              ) : rosterPlayers.length === 0 ? (
-                <p className="text-center text-sm text-gray-500 font-semibold py-8">
-                  No players registered in this squad.
-                </p>
-              ) : (
-                <div className="space-y-3.5">
-                  {rosterPlayers.map((player) => (
+              </div>
+
+              {/* Address & Phone */}
+              <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-600 pt-1">
+                <div className="flex items-center gap-1.5">
+                  <Phone size={13} className="text-[#08733e]" />
+                  <span>{selectedTeamProfile?.contact_number || selectedTeamProfile?.contactNumber || 'N/A'}</span>
+                </div>
+                {selectedTeamProfile?.address && (
+                  <div className="flex items-center gap-1.5">
+                    <MapPin size={13} className="text-amber-600" />
+                    <span>{selectedTeamProfile.address}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Stats & Rating Cards Grid */}
+            <div className="px-6 md:px-8 py-2">
+              <div className="grid grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                
+                {/* Contributed / Participated */}
+                <div className="text-center space-y-0.5 border-r border-slate-200 pr-2">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-center gap-1">
+                    <Trophy size={12} className="text-emerald-600" /> Joined
+                  </span>
+                  <p className="text-base font-black text-slate-900">
+                    {selectedTeamProfile?.tournaments_played ?? selectedTeamProfile?.tournamentsPlayed ?? 1}
+                  </p>
+                  <span className="text-[9px] font-bold text-slate-500 block">Tournaments</span>
+                </div>
+
+                {/* Tournaments Won */}
+                <div className="text-center space-y-0.5 border-r border-slate-200 px-2">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-center gap-1">
+                    <Trophy size={12} className="text-amber-500" /> Titles
+                  </span>
+                  <p className="text-base font-black text-slate-900">
+                    {selectedTeamProfile?.tournaments_won ?? selectedTeamProfile?.tournamentsWon ?? 1}
+                  </p>
+                  <span className="text-[9px] font-bold text-slate-500 block">Champions</span>
+                </div>
+
+                {/* Rating Points */}
+                <div className="text-center space-y-0.5 pl-2">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-center gap-1">
+                    <Star size={12} className="text-amber-500 fill-amber-500" /> Rating
+                  </span>
+                  <p className="text-base font-black text-slate-900">
+                    {selectedTeamProfile?.rating ? parseFloat(selectedTeamProfile.rating).toFixed(1) : '4.5'}
+                  </p>
+                  <span className="text-[9px] font-bold text-slate-500 block">Points</span>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Squad Players Section */}
+            <div className="px-6 md:px-8 py-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+                  <Users size={14} className="text-[#08733e]" /> Registered Squad Roster
+                </h4>
+                <span className="text-[10px] font-black text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                  {rosterPlayers.length} Players
+                </span>
+              </div>
+
+              <div className="max-h-52 overflow-y-auto space-y-2.5 pr-1">
+                {rosterLoading ? (
+                  <div className="py-8 text-center text-slate-400 font-semibold flex flex-col items-center justify-center">
+                    <div className="w-6 h-6 border-3 border-[#08733e]/20 border-t-[#08733e] rounded-full animate-spin mb-2"></div>
+                    Loading squad roster...
+                  </div>
+                ) : rosterPlayers.length === 0 ? (
+                  <div className="p-4 bg-slate-50 rounded-2xl text-center text-xs font-semibold text-slate-500 border border-slate-200/60">
+                    No registered players found in this squad.
+                  </div>
+                ) : (
+                  rosterPlayers.map((player) => (
                     <div 
-                      key={player.player_id} 
-                      className="p-3.5 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl flex items-center justify-between"
+                      key={player.player_id || player.id}
+                      className="p-3 bg-slate-50 hover:bg-slate-100/80 border border-slate-200/80 rounded-2xl flex items-center justify-between transition-colors"
                     >
-                      <div>
-                        <h4 className="font-bold text-sm text-[#111111]">{player.player_name}</h4>
-                        <div className="flex items-center gap-2 text-xs text-gray-500 font-semibold mt-0.5">
-                          <span>Age: {player.age}</span>
-                          <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                          <span>{player.position}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-100 text-[#08733e] font-extrabold text-xs flex items-center justify-center shrink-0">
+                          {(player.player_name || 'P')[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <h5 className="font-bold text-xs text-slate-900">{player.player_name}</h5>
+                          <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500 mt-0.5">
+                            <span>Age: {player.age || 'N/A'}</span>
+                            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                            <span className={player.position === 'Captain' ? 'text-amber-700 font-extrabold' : ''}>
+                              {player.position || 'Player'}
+                            </span>
+                          </div>
                         </div>
                       </div>
+
                       {player.contact_number && (
-                        <span className="text-xs font-bold text-gray-600 bg-white border border-[#e5e5e5] px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1 shrink-0">
+                        <span className="text-[11px] font-extrabold text-slate-700 bg-white border border-slate-200 px-2.5 py-1 rounded-xl shadow-2xs flex items-center gap-1 shrink-0">
                           <Phone size={11} className="text-[#08733e]" />
                           {player.contact_number}
                         </span>
                       )}
                     </div>
-                  ))}
-                </div>
-              )}
+                  ))
+                )}
+              </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+            <div className="p-4 md:px-8 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
               <button
-                onClick={() => { setShowRosterModal(false); setSelectedTeamName(''); }}
-                className="px-5 py-2.5 bg-white border border-[#e5e5e5] hover:bg-gray-50 text-gray-700 font-bold rounded-xl text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                type="button"
+                onClick={() => { setShowRosterModal(false); setSelectedTeamName(''); setSelectedTeamProfile(null); }}
+                className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-extrabold rounded-xl text-xs transition-colors cursor-pointer"
               >
                 Close
               </button>
+
+              <button 
+                type="button"
+                onClick={() => {
+                  const tId = selectedTeamProfile?.user_id || selectedTeamProfile?.id;
+                  const tName = selectedTeamName || selectedTeamProfile?.team_name || selectedTeamProfile?.teamName;
+                  setShowRosterModal(false);
+                  setSelectedTeamToInvite({ teamUserId: tId, teamName: tName });
+                  setShowInviteModal(true);
+                }}
+                className="px-5 py-2.5 bg-[#00382D] hover:bg-[#002a22] text-white font-extrabold rounded-xl text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+              >
+                <Send size={13} /> Send Request for Tournament
+              </button>
             </div>
+
           </div>
         </div>
       )}

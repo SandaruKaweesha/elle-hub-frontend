@@ -54,6 +54,12 @@ function RefereeSchedule() {
         const mapped = rawReqs.map(r => {
           const s = (r.status || '').toUpperCase();
           const tStatus = (r.tournament_status || '').toUpperCase();
+          const isDrawFinalized = Boolean(
+            Number(r.is_draw_finalized) === 1 || 
+            Number(r.is_finalized) === 1 || 
+            r.isDrawFinalized || 
+            r.isFinalized
+          );
 
           let displayStatus = 'Pending';
           if (tStatus === 'COMPLETED') {
@@ -64,17 +70,26 @@ function RefereeSchedule() {
             displayStatus = 'Declined';
           }
 
+          const pgName = r.playground_name || r.playgroundName || null;
+          const pgAddr = r.playground_address || r.playgroundAddress || null;
+          const venueDisplay = pgName 
+            ? `${pgName} (${r.location || 'Central Venue'})` 
+            : (r.location || 'Central Venue');
+
           return {
             id: r.request_id || r.tournament_id,
             tournament: r.tournament_title || 'Elle Tournament',
-            venue: r.location || 'Sri Lanka',
+            venue: venueDisplay,
+            playgroundName: pgName || (r.location || 'Central Venue'),
+            playgroundAddress: pgAddr || (r.location || 'Central Venue'),
             date: r.tournament_held_date || r.start_date || 'TBD',
             time: 'Full Day Match Schedule',
             role: 'Official Match Referee',
             organizer: r.organizer_name || 'Elle Sports Association',
             contact: r.contact_number || 'Available on Request',
             status: displayStatus,
-            initiatedBy: r.initiated_by
+            initiatedBy: r.initiated_by,
+            isDrawFinalized: isDrawFinalized
           };
         });
 
@@ -396,9 +411,24 @@ function RefereeSchedule() {
                 <span className="text-gray-500 font-medium">Held Date:</span>
                 <span className="font-bold">{selectedItem.date}</span>
               </div>
+              <div className="flex justify-between items-start py-1 border-b border-gray-50">
+                <span className="text-gray-500 font-medium">Assigned Playground Ground:</span>
+                <span className="font-extrabold text-[#00382D] text-right">
+                  {selectedItem.playgroundName && selectedItem.playgroundName !== selectedItem.venue
+                    ? `${selectedItem.playgroundName} (${selectedItem.playgroundAddress})`
+                    : selectedItem.venue
+                  }
+                </span>
+              </div>
               <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                <span className="text-gray-500 font-medium">Venue Location:</span>
-                <span className="font-bold">{selectedItem.venue}</span>
+                <span className="text-gray-500 font-medium">Tournament Finalization:</span>
+                <span className={`font-bold px-2 py-0.5 rounded-md text-[11px] ${
+                  selectedItem.isDrawFinalized 
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                    : 'bg-amber-100 text-amber-800 border border-amber-300'
+                }`}>
+                  {selectedItem.isDrawFinalized ? 'Draw Finalized 🔒' : 'Draw Pending ⏳'}
+                </span>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-gray-50">
                 <span className="text-gray-500 font-medium">Organizer Contact:</span>

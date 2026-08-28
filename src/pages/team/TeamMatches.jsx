@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Trophy, Calendar, MapPin, ArrowRight, Loader2, ShieldCheck, 
+  Trophy, Calendar, MapPin, ArrowRight, Loader2, ShieldCheck, Lock, 
   AlertCircle, Users, Swords, CheckCircle2, Search, Clock, 
   XCircle, Info, Filter, ArrowLeft, RefreshCw
 } from 'lucide-react';
@@ -121,8 +121,19 @@ export default function TeamMatches() {
     return images[index % images.length];
   };
 
+  // Filter tournaments: Only include tournaments where the organizer HAS finalized the draw (is_draw_finalized === 1 or is_finalized === 1)
+  const finalizedMatchesOnly = appliedTournaments.filter(t => {
+    const isFinal = Boolean(
+      Number(t.is_draw_finalized) === 1 || 
+      Number(t.is_finalized) === 1 || 
+      t.isDrawFinalized === true || 
+      t.isFinalized === true
+    );
+    return isFinal;
+  });
+
   // Filter tournaments by active tab and search query
-  const filteredTournaments = appliedTournaments.filter(t => {
+  const filteredTournaments = finalizedMatchesOnly.filter(t => {
     const s = t.request_status;
     const statusMatch = 
       activeTab === 'ALL' ||
@@ -138,10 +149,10 @@ export default function TeamMatches() {
   });
 
   const counts = {
-    ALL: appliedTournaments.length,
-    APPROVED: appliedTournaments.filter(t => t.request_status === 'APPROVED' || t.request_status === 'ACCEPTED').length,
-    PENDING: appliedTournaments.filter(t => t.request_status === 'PENDING').length,
-    REJECTED: appliedTournaments.filter(t => t.request_status === 'REJECTED').length
+    ALL: finalizedMatchesOnly.length,
+    APPROVED: finalizedMatchesOnly.filter(t => t.request_status === 'APPROVED' || t.request_status === 'ACCEPTED').length,
+    PENDING: finalizedMatchesOnly.filter(t => t.request_status === 'PENDING').length,
+    REJECTED: finalizedMatchesOnly.filter(t => t.request_status === 'REJECTED').length
   };
 
     const renderStatusBadge = (status) => {
@@ -245,7 +256,7 @@ export default function TeamMatches() {
           <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
           <p className="text-red-800 text-sm font-semibold">{error}</p>
         </div>
-      ) : appliedTournaments.length === 0 ? (
+      ) : finalizedMatchesOnly.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 px-6 bg-white rounded-2xl border border-[#e5e5e5] text-center">
           <div className="w-16 h-16 bg-[#eaf1ec] rounded-full flex items-center justify-center mb-4 text-[#08733e] border border-[#bbf7d0]">
             <Trophy size={28} />
@@ -294,7 +305,7 @@ export default function TeamMatches() {
                 <Loader2 className="w-8 h-8 animate-spin text-[#08733e] mx-auto mb-2" />
                 <p className="text-xs text-gray-500 font-bold">Loading match bracket draw...</p>
               </div>
-            ) : (
+            ) : (drawDetails && (drawDetails.isDrawFinalized === true || drawDetails.isFinalized === true || Number(drawDetails.tournament?.is_draw_finalized) === 1 || Number(drawDetails.tournament?.is_finalized) === 1)) ? (
               <div className="space-y-6">
                 {/* Fixture Schedule Summary Card */}
                 {drawDetails && (
@@ -322,6 +333,17 @@ export default function TeamMatches() {
                   drawData={drawDetails?.drawData}
                   readOnly={true}
                 />
+              </div>
+            ) : (
+              /* Pending Finalization Info Box */
+              <div className="bg-amber-50/90 border border-amber-200 rounded-3xl p-8 text-center space-y-4 shadow-sm">
+                <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto border border-amber-300 shadow-sm">
+                  <Lock size={28} />
+                </div>
+                <h3 className="text-xl font-black text-amber-950">Tournament Draw Pending</h3>
+                <p className="text-xs font-semibold text-amber-800 max-w-md mx-auto leading-relaxed">
+                  The tournament organizer has not finalized the official match bracket draw yet. Once the organizer completes and finalizes the draw, full match fixtures and brackets will be displayed here.
+                </p>
               </div>
             )
           ) : selectedMatch.request_status === 'PENDING' ? (
@@ -422,21 +444,42 @@ export default function TeamMatches() {
                       <MapPin size={12} className="text-gray-400 shrink-0" />
                       {t.location}
                     </span>
-                    <div className={`flex items-center gap-1 text-xs font-bold ${
-                      isApproved 
-                        ? 'text-[#08733e]' 
-                        : isPending 
-                        ? 'text-amber-700' 
-                        : 'text-rose-700'
-                    }`}>
-                      {isApproved ? (
-                        <>View Fixtures <ArrowRight size={14} /></>
-                      ) : isPending ? (
-                        <>Under Review <Info size={14} /></>
-                      ) : (
-                        <>Declined <Info size={14} /></>
-                      )}
-                    </div>
+                    {(() => {
+                      const isDrawFinalized = Boolean(
+                        Number(t.is_draw_finalized) === 1 || 
+                        Number(t.is_finalized) === 1 || 
+                        t.isDrawFinalized === true || 
+                        t.isFinalized === true
+                      );
+
+                      if (isApproved) {
+                        if (isDrawFinalized) {
+                          return (
+                            <span className="flex items-center gap-1 text-xs font-extrabold text-[#08733e]">
+                              View Fixtures <ArrowRight size={14} />
+                            </span>
+                          );
+                        } else {
+                          return (
+                            <span className="flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-xl shadow-2xs">
+                              <Lock size={12} className="text-amber-600" /> Draw Pending
+                            </span>
+                          );
+                        }
+                      }
+                      if (isPending) {
+                        return (
+                          <span className="flex items-center gap-1 text-xs font-bold text-amber-700">
+                            Under Review <Info size={14} />
+                          </span>
+                        );
+                      }
+                      return (
+                        <span className="flex items-center gap-1 text-xs font-bold text-rose-700">
+                          Declined <Info size={14} />
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

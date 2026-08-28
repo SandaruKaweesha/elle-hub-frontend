@@ -245,8 +245,20 @@ function OrganizerLayout() {
                     <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}></div>
                     <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-[#e5e5e5] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
                       <div className="p-4 border-b border-[#e5e5e5] flex items-center justify-between">
-                        <h3 className="font-bold text-[#111111]">Notifications</h3>
-                        <button className="text-xs text-[#08733e] font-medium hover:underline">Mark all read</button>
+                        <div className="flex items-center gap-2">
+                          <Bell size={18} className="text-[#08733e]" />
+                          <h3 className="font-bold text-[#111111]">Notifications</h3>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button className="text-xs text-[#08733e] font-medium hover:underline">Mark all read</button>
+                          <button 
+                            onClick={() => { if (typeof setShowNotifDropdown === 'function') setShowNotifDropdown(false); else if (typeof setShowNotifications === 'function') setShowNotifications(false); }} 
+                            className="text-gray-400 hover:text-gray-700 hover:bg-gray-200/80 p-1.5 rounded-full transition-colors cursor-pointer flex items-center justify-center"
+                            title="Close notifications"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
                       </div>
                       <div className="max-h-[300px] overflow-y-auto">
                         <div 

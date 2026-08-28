@@ -60,7 +60,7 @@ export default function PlaygroundDashboard() {
         });
       }
 
-      // Fetch tournaments assigned to this venue/location
+      // Fetch tournaments assigned to this venue/location ONLY if finalized by organizer
       try {
         const tourRes = await api.get("/tournaments/approved");
         if (tourRes.data && tourRes.data.success !== false) {
@@ -71,7 +71,19 @@ export default function PlaygroundDashboard() {
             const pgDist = (playgroundData.locatedDistrict || '').toLowerCase();
             return loc.includes(pgLoc) || loc.includes(pgDist) || loc.includes('badulla');
           };
-          setHostedTournaments(allTournaments.filter(matchVenue));
+
+          // Filter strictly: Only display tournaments where organizer HAS finalized the draw (is_draw_finalized === 1 or is_finalized === 1)
+          const finalizedHosted = allTournaments.filter(t => {
+            const isFinalized = Boolean(
+              Number(t.is_draw_finalized) === 1 || 
+              Number(t.is_finalized) === 1 || 
+              t.isDrawFinalized === true || 
+              t.isFinalized === true
+            );
+            return isFinalized && matchVenue(t);
+          });
+
+          setHostedTournaments(finalizedHosted);
         }
       } catch (e) {
         console.warn("Could not fetch tournaments for playground venue:", e);
