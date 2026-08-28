@@ -38,12 +38,12 @@ function PodiumCard({ team, position }) {
         <Trophy size={28} className={medalColor} />
       </div>
       <div className="text-center mt-4">
-        <h3 className="font-extrabold text-[#111111] text-lg leading-tight mb-1">{team.name}</h3>
+        <h3 className="font-extrabold text-[#111111] text-lg leading-tight mb-1">{team.name || 'Team'}</h3>
         <p className="text-sm text-[#666666] flex items-center justify-center gap-1 mb-3 capitalize">
-          <MapPin size={14} /> {team.district}
+          <MapPin size={14} /> {team.district || 'General'}
         </p>
         <div className="inline-block bg-[#111111] text-white px-4 py-1.5 rounded-full font-bold text-sm">
-          {team.points} pts
+          {team.points ?? 0} pts
         </div>
       </div>
       <div className={`absolute bottom-0 w-full h-2 ${isFirst ? 'bg-[#D6A900]' : isSecond ? 'bg-[#C0C0C0]' : 'bg-[#CD7F32]'}`}></div>
@@ -71,8 +71,22 @@ function Rankings() {
     try {
       setLoading(true);
       const res = await api.get('/teams/rankings');
-      if (res.data && res.data.success && Array.isArray(res.data.data)) {
-        setRankings(res.data.data);
+      const resData = res.data;
+      if (resData && (resData.success || Array.isArray(resData.data) || Array.isArray(resData))) {
+        const rawTeams = Array.isArray(resData) ? resData : (resData.data || []);
+        // Sanitize team data to ensure non-null properties
+        const sanitized = rawTeams.map((t, idx) => ({
+          id: t.id || t.user_id || idx + 1,
+          rank: t.rank || idx + 1,
+          name: t.name || t.team_name || `Team #${t.id || idx + 1}`,
+          district: t.district || 'General',
+          played: Number(t.played || 0),
+          won: Number(t.won || 0),
+          points: Number(t.points || 0),
+          rating: Number(t.rating || 0),
+          trend: t.trend || 'same'
+        }));
+        setRankings(sanitized);
       }
     } catch (err) {
       console.error("Failed to fetch team rankings:", err);
@@ -82,8 +96,10 @@ function Rankings() {
   };
 
   const filteredTeams = rankings.filter((team) => {
-    const matchesSearch = team.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDistrict = filterDistrict === "All" || team.district.toLowerCase() === filterDistrict.toLowerCase();
+    const teamName = String(team?.name || "").toLowerCase();
+    const teamDistrict = String(team?.district || "").toLowerCase();
+    const matchesSearch = teamName.includes(searchTerm.toLowerCase());
+    const matchesDistrict = filterDistrict === "All" || teamDistrict === filterDistrict.toLowerCase();
     return matchesSearch && matchesDistrict;
   });
 
@@ -98,7 +114,7 @@ function Rankings() {
   const restOfTeams = filteredTeams.slice(3);
 
   const uniqueDistricts = Array.from(
-    new Set(rankings.map((t) => t.district).filter(Boolean))
+    new Set(rankings.map((t) => (t.district || '').trim()).filter(Boolean))
   );
 
   return (

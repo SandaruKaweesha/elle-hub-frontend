@@ -7,9 +7,13 @@ function TournamentCard({id, image,imagePosition,title,date,prize,status,buttonT
      <article className="overflow-hidden rounded-md border border-[#d8ddd9] bg-white">
       <div className="relative w-full aspect-[16/7] overflow-hidden">
   <img
-    src={image}
-    alt={title}
-    style={{ objectPosition: imagePosition }}
+    src={image || "/images/elle1.jpeg"}
+    alt={title || "Tournament"}
+    style={{ objectPosition: imagePosition || "center" }}
+    onError={(e) => {
+      e.target.onerror = null;
+      e.target.src = "/images/elle1.jpeg";
+    }}
     className="
       w-full
       h-full
