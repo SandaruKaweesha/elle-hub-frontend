@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Trophy, Calendar, MapPin, ArrowRight, Loader2, ShieldCheck, 
+  Trophy, Calendar, MapPin, ArrowRight, Loader2, ShieldCheck, Lock, 
   AlertCircle, Users, Swords, CheckCircle2, Search, Clock, 
   XCircle, Info, Filter, ArrowLeft, RefreshCw
 } from 'lucide-react';
@@ -121,8 +121,19 @@ export default function TeamMatches() {
     return images[index % images.length];
   };
 
+  // Filter tournaments: Only include tournaments where the organizer HAS finalized the draw (is_draw_finalized === 1 or is_finalized === 1)
+  const finalizedMatchesOnly = appliedTournaments.filter(t => {
+    const isFinal = Boolean(
+      Number(t.is_draw_finalized) === 1 || 
+      Number(t.is_finalized) === 1 || 
+      t.isDrawFinalized === true || 
+      t.isFinalized === true
+    );
+    return isFinal;
+  });
+
   // Filter tournaments by active tab and search query
-  const filteredTournaments = appliedTournaments.filter(t => {
+  const filteredTournaments = finalizedMatchesOnly.filter(t => {
     const s = t.request_status;
     const statusMatch = 
       activeTab === 'ALL' ||
@@ -138,31 +149,31 @@ export default function TeamMatches() {
   });
 
   const counts = {
-    ALL: appliedTournaments.length,
-    APPROVED: appliedTournaments.filter(t => t.request_status === 'APPROVED' || t.request_status === 'ACCEPTED').length,
-    PENDING: appliedTournaments.filter(t => t.request_status === 'PENDING').length,
-    REJECTED: appliedTournaments.filter(t => t.request_status === 'REJECTED').length
+    ALL: finalizedMatchesOnly.length,
+    APPROVED: finalizedMatchesOnly.filter(t => t.request_status === 'APPROVED' || t.request_status === 'ACCEPTED').length,
+    PENDING: finalizedMatchesOnly.filter(t => t.request_status === 'PENDING').length,
+    REJECTED: finalizedMatchesOnly.filter(t => t.request_status === 'REJECTED').length
   };
 
-  const renderStatusBadge = (status) => {
+    const renderStatusBadge = (status) => {
     const s = (status || '').toUpperCase();
     if (s === 'APPROVED' || s === 'ACCEPTED') {
       return (
-        <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border shadow-xs bg-emerald-100/90 text-emerald-800 border-emerald-300 flex items-center gap-1 backdrop-blur-xs">
-          <CheckCircle2 size={12} className="text-emerald-700" /> APPROVED MATCH
+        <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-600/90 text-white border border-white/20 shadow-md backdrop-blur-md flex items-center gap-1.5">
+          <CheckCircle2 size={13} className="text-white" /> APPROVED MATCH
         </span>
       );
     }
     if (s === 'PENDING') {
       return (
-        <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border shadow-xs bg-amber-100/90 text-amber-800 border-amber-300 flex items-center gap-1 backdrop-blur-xs">
-          <Clock size={12} className="text-amber-700" /> PENDING APPROVAL
+        <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-amber-500/90 text-white border border-white/20 shadow-md backdrop-blur-md flex items-center gap-1.5">
+          <Clock size={13} className="text-white" /> PENDING APPROVAL
         </span>
       );
     }
     return (
-      <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border shadow-xs bg-rose-100/90 text-rose-800 border-rose-300 flex items-center gap-1 backdrop-blur-xs">
-        <XCircle size={12} className="text-rose-700" /> APPLICATION REJECTED
+      <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-rose-600/90 text-white border border-white/20 shadow-md backdrop-blur-md flex items-center gap-1.5">
+        <XCircle size={13} className="text-white" /> DECLINED
       </span>
     );
   };
@@ -245,7 +256,7 @@ export default function TeamMatches() {
           <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
           <p className="text-red-800 text-sm font-semibold">{error}</p>
         </div>
-      ) : appliedTournaments.length === 0 ? (
+      ) : finalizedMatchesOnly.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 px-6 bg-white rounded-2xl border border-[#e5e5e5] text-center">
           <div className="w-16 h-16 bg-[#eaf1ec] rounded-full flex items-center justify-center mb-4 text-[#08733e] border border-[#bbf7d0]">
             <Trophy size={28} />
@@ -294,7 +305,7 @@ export default function TeamMatches() {
                 <Loader2 className="w-8 h-8 animate-spin text-[#08733e] mx-auto mb-2" />
                 <p className="text-xs text-gray-500 font-bold">Loading match bracket draw...</p>
               </div>
-            ) : (
+            ) : (drawDetails && (drawDetails.isDrawFinalized === true || drawDetails.isFinalized === true || Number(drawDetails.tournament?.is_draw_finalized) === 1 || Number(drawDetails.tournament?.is_finalized) === 1)) ? (
               <div className="space-y-6">
                 {/* Fixture Schedule Summary Card */}
                 {drawDetails && (
@@ -322,6 +333,17 @@ export default function TeamMatches() {
                   drawData={drawDetails?.drawData}
                   readOnly={true}
                 />
+              </div>
+            ) : (
+              /* Pending Finalization Info Box */
+              <div className="bg-amber-50/90 border border-amber-200 rounded-3xl p-8 text-center space-y-4 shadow-sm">
+                <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto border border-amber-300 shadow-sm">
+                  <Lock size={28} />
+                </div>
+                <h3 className="text-xl font-black text-amber-950">Tournament Draw Pending</h3>
+                <p className="text-xs font-semibold text-amber-800 max-w-md mx-auto leading-relaxed">
+                  The tournament organizer has not finalized the official match bracket draw yet. Once the organizer completes and finalizes the draw, full match fixtures and brackets will be displayed here.
+                </p>
               </div>
             )
           ) : selectedMatch.request_status === 'PENDING' ? (
@@ -381,25 +403,33 @@ export default function TeamMatches() {
               <div 
                 key={t.tournament_id || idx}
                 onClick={() => handleSelectTournament(t)}
-                className="bg-white rounded-2xl border border-[#e5e5e5] overflow-hidden shadow-sm flex flex-col group hover:shadow-md hover:border-[#08733e]/50 transition-all duration-300 cursor-pointer relative"
+                className="group relative bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-2xl hover:shadow-emerald-950/10 hover:-translate-y-1.5 hover:border-emerald-500/40 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col justify-between"
               >
-                {/* Image Header with Badge */}
-                <div className="relative h-36 w-full bg-[#002c21] overflow-hidden">
+                {/* Image Banner Header with Glassmorphism Badge */}
+                <div className="relative h-44 w-full bg-slate-950 overflow-hidden">
                   <img 
                     src={t.image_url || getFallbackImage(idx)} 
                     alt={t.tournament_title} 
-                    className="w-full h-full object-cover opacity-75 group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+                    className="w-full h-full object-cover opacity-85 group-hover:scale-110 group-hover:opacity-95 transition-all duration-700 ease-out pointer-events-none"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent"></div>
                   
-                  <div className="absolute top-3 left-3">
+                  {/* Floating Glassmorphic Status Badge */}
+                  <div className="absolute top-3 left-3 z-10">
                     {renderStatusBadge(t.request_status)}
+                  </div>
+
+                  {/* Location Pill Overlay on Image */}
+                  <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1 bg-slate-900/60 backdrop-blur-md text-white rounded-full text-[11px] font-bold border border-white/20 shadow-xs">
+                    <MapPin size={12} className="text-emerald-400" />
+                    <span className="truncate max-w-[140px]">{t.location || 'Sri Lanka'}</span>
                   </div>
                 </div>
 
                 {/* Card Details */}
-                <div className="p-4 flex-1 flex flex-col justify-between bg-white space-y-3">
+                <div className="p-5 flex-1 flex flex-col justify-between bg-white space-y-4">
                   <div>
-                    <h3 className="text-[15px] font-bold text-[#111111] leading-snug line-clamp-2 group-hover:text-[#08733e] transition-colors mb-1.5">
+                    <h3 className="text-base font-bold text-slate-900 leading-snug line-clamp-2 group-hover:text-[#08733e] transition-colors">
                       {t.tournament_title}
                     </h3>
                     
@@ -414,21 +444,42 @@ export default function TeamMatches() {
                       <MapPin size={12} className="text-gray-400 shrink-0" />
                       {t.location}
                     </span>
-                    <div className={`flex items-center gap-1 text-xs font-bold ${
-                      isApproved 
-                        ? 'text-[#08733e]' 
-                        : isPending 
-                        ? 'text-amber-700' 
-                        : 'text-rose-700'
-                    }`}>
-                      {isApproved ? (
-                        <>View Fixtures <ArrowRight size={14} /></>
-                      ) : isPending ? (
-                        <>Under Review <Info size={14} /></>
-                      ) : (
-                        <>Declined <Info size={14} /></>
-                      )}
-                    </div>
+                    {(() => {
+                      const isDrawFinalized = Boolean(
+                        Number(t.is_draw_finalized) === 1 || 
+                        Number(t.is_finalized) === 1 || 
+                        t.isDrawFinalized === true || 
+                        t.isFinalized === true
+                      );
+
+                      if (isApproved) {
+                        if (isDrawFinalized) {
+                          return (
+                            <span className="flex items-center gap-1 text-xs font-extrabold text-[#08733e]">
+                              View Fixtures <ArrowRight size={14} />
+                            </span>
+                          );
+                        } else {
+                          return (
+                            <span className="flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-xl shadow-2xs">
+                              <Lock size={12} className="text-amber-600" /> Draw Pending
+                            </span>
+                          );
+                        }
+                      }
+                      if (isPending) {
+                        return (
+                          <span className="flex items-center gap-1 text-xs font-bold text-amber-700">
+                            Under Review <Info size={14} />
+                          </span>
+                        );
+                      }
+                      return (
+                        <span className="flex items-center gap-1 text-xs font-bold text-rose-700">
+                          Declined <Info size={14} />
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

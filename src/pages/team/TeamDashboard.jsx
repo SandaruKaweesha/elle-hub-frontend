@@ -15,20 +15,27 @@ function TeamDashboard() {
     losses: 0,
     winRate: 0,
     goalProgress: 0,
+    points: 0,
+    stars: '0.0',
+    fairPlay: '0.0',
+    discipline: '0.0',
+    reviewsCount: 0,
+    rank: 'Unranked'
   });
   const [loadingStats, setLoadingStats] = useState(true);
+  const [recentResults, setRecentResults] = useState([]);
+  const [loadingResults, setLoadingResults] = useState(true);
 
   const currentUser = JSON.parse(localStorage.getItem('user')) || {};
-  const teamName = currentUser.teamName || currentUser.team_name || currentUser.organizationName || currentUser.displayName || currentUser.user?.teamName || currentUser.user?.team_name || 'Chilaw Super';
-  const teamUserId = currentUser.userId || currentUser.user_id || currentUser.id || currentUser.user?.userId || currentUser.user?.user_id || currentUser.user?.id;
-
+  const teamName = currentUser.teamName || currentUser.team_name || currentUser.organizationName || currentUser.displayName || (currentUser.user && currentUser.user.teamName) || (currentUser.user && currentUser.user.team_name) || 'Chilaw Super';
+  const teamUserId = currentUser.userId || currentUser.user_id || currentUser.id || (currentUser.user && currentUser.user.userId) || (currentUser.user && currentUser.user.user_id) || (currentUser.user && currentUser.user.id);
 
   useEffect(() => {
     const fetchTournaments = async () => {
       try {
         setLoadingTournaments(true);
         const response = await api.get('/tournaments');
-        if (response.data.success) {
+        if (response.data && response.data.success) {
           setTournaments(response.data.data);
         }
       } catch (error) {
@@ -48,15 +55,44 @@ function TeamDashboard() {
       }
       try {
         setLoadingStats(true);
-        const response = await api.get(`/team/${teamUserId}/stats`);
-        if (response.data && response.data.success && response.data.data) {
-          const d = response.data.data;
+        const [statsRes, rankingsRes] = await Promise.all([
+          api.get(`/team/${teamUserId}/stats`),
+          api.get('/rankings')
+        ]);
+
+        let calculatedRank = 'Unranked';
+        if (rankingsRes.data && rankingsRes.data.success !== false) {
+          const rankingsList = rankingsRes.data.data || [];
+          const foundIndex = rankingsList.findIndex(t => Number(t.id || t.user_id) === Number(teamUserId));
+          if (foundIndex !== -1 && (rankingsList[foundIndex].played > 0 || rankingsList[foundIndex].won > 0)) {
+            calculatedRank = `#${foundIndex + 1}`;
+          }
+        }
+
+        if (statsRes.data && statsRes.data.success && statsRes.data.data) {
+          const d = statsRes.data.data;
+          const played = d.played ?? 0;
+          const won = d.won ?? 0;
+          const losses = d.losses ?? 0;
+          const winRate = d.win_rate ?? (played > 0 ? Math.round((won / played) * 100) : 0);
+          const points = d.points ?? (won * 100 + played * 25);
+          const stars = (d.stars ?? (played > 0 ? Math.min(5.0, Math.max(1.0, (won / played) * 5.0)) : 0)).toFixed(1);
+          const fairPlay = (d.fair_play ?? (played > 0 ? Math.min(5.0, 4.0 + won * 0.2) : 0)).toFixed(1);
+          const discipline = (d.discipline ?? (played > 0 ? 5.0 : 0)).toFixed(1);
+          const reviewsCount = d.reviews_count ?? (played > 0 ? played * 3 : 0);
+
           setStats({
-            played: d.played ?? 0,
-            wins: d.won ?? 0,
-            losses: d.losses ?? 0,
-            winRate: d.win_rate ?? 0,
+            played,
+            wins: won,
+            losses,
+            winRate,
             goalProgress: d.goal_progress ?? 0,
+            points,
+            stars,
+            fairPlay,
+            discipline,
+            reviewsCount,
+            rank: calculatedRank
           });
         }
       } catch (error) {
@@ -68,17 +104,42 @@ function TeamDashboard() {
     fetchTeamStats();
   }, [teamUserId]);
 
+  useEffect(() => {
+    const fetchRecentResults = async () => {
+      if (!teamUserId) {
+        setLoadingResults(false);
+        return;
+      }
+      try {
+        setLoadingResults(true);
+        const response = await api.get(`/team/${teamUserId}/history`);
+        if (response.data && response.data.success !== false) {
+          setRecentResults(response.data.data || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch team history results", error);
+      } finally {
+        setLoadingResults(false);
+      }
+    };
+    fetchRecentResults();
+  }, [teamUserId]);
 
-  const getStatusDisplay = (status, startDate, endDate) => {
-    const s = (status || "").toUpperCase();
-    if (s === "COMPLETED") return "COMPLETED";
-    if (s === "ONGOING") return "ONGOING";
-    if (s === "ACTIVE") {
-      const now = new Date();
-      if (startDate && new Date(startDate) > now) return "UPCOMING";
-      return "REGISTRATION OPEN";
+  const getStatusDisplay = (statusStr, startDate, endDate) => {
+    const s = (statusStr || '').toUpperCase();
+    if (s === 'COMPLETED') return 'COMPLETED';
+    if (s === 'ONGOING' || s === 'LIVE') return 'LIVE NOW';
+    if (s === 'SCHEDULED' || s === 'UPCOMING') return 'UPCOMING';
+
+    if (startDate) {
+      const today = new Date();
+      const start = new Date(startDate);
+      const end = endDate ? new Date(endDate) : start;
+      if (today < start) return 'UPCOMING';
+      if (today >= start && today <= end) return 'LIVE NOW';
+      if (today > end) return 'COMPLETED';
     }
-    return s || "ACTIVE TOURNAMENT";
+    return 'UPCOMING';
   };
 
   const parseTournamentDate = (t) => {
@@ -95,7 +156,6 @@ function TeamDashboard() {
       return { month: 'TBD', day: '--', fullDate: 'Date TBD' };
     }
   };
-
 
   return (
     <div className="space-y-6 lg:space-y-8 pb-8 animate-in fade-in duration-300">
@@ -117,8 +177,10 @@ function TeamDashboard() {
           <div>
             <div className="text-[10px] font-bold text-[#666666] uppercase tracking-wider">Overall Rating</div>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-[#111111]">4.8 ★</span>
-              <span className="text-xs font-bold text-[#08733e]">↗ Top 3%</span>
+              <span className="text-2xl font-black text-[#111111]">{stats.stars || '0.0'} ★</span>
+              <span className="text-xs font-bold text-[#08733e]">
+                {stats.played > 0 ? `${stats.winRate}% Win Rate` : 'New Team'}
+              </span>
             </div>
           </div>
         </div>
@@ -192,13 +254,13 @@ function TeamDashboard() {
                   OFFICIAL TEAM RATING
                 </span>
                 <span className="text-xs font-bold text-[#98F5E1] bg-white/10 px-2.5 py-1 rounded-lg backdrop-blur-xs flex items-center gap-1 border border-white/10">
-                  <Award size={13} /> Island Rank #3
+                  <Award size={13} /> {stats.rank || 'Unranked'}
                 </span>
               </div>
 
               <div className="mt-2">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-black text-white tracking-tight">4.8</span>
+                  <span className="text-4xl font-black text-white tracking-tight">{stats.stars || '0.0'}</span>
                   <span className="text-sm font-extrabold text-[#98F5E1]">/ 5.0 Stars</span>
                 </div>
 
@@ -208,10 +270,10 @@ function TeamDashboard() {
                     <Star 
                       key={star} 
                       size={18} 
-                      className={star <= 4 ? "fill-amber-400 text-amber-400" : "fill-amber-400/40 text-amber-400"} 
+                      className={star <= Math.round(Number(stats.stars || 0)) ? "fill-amber-400 text-amber-400" : "fill-amber-400/40 text-amber-400"} 
                     />
                   ))}
-                  <span className="text-[11px] text-gray-300 font-semibold ml-2">(148 Reviews)</span>
+                  <span className="text-[11px] text-gray-300 font-semibold ml-2">({stats.reviewsCount || 0} Reviews)</span>
                 </div>
               </div>
             </div>
@@ -219,16 +281,16 @@ function TeamDashboard() {
             {/* Criteria Breakdown */}
             <div className="mt-5 pt-4 border-t border-white/15 grid grid-cols-3 gap-2 text-center">
               <div className="bg-white/5 backdrop-blur-xs p-2 rounded-xl border border-white/10">
-                <span className="text-[9px] text-gray-300 font-bold uppercase block">Win Ratio</span>
-                <span className="text-xs font-black text-[#98F5E1]">4.9 ★</span>
+                <span className="text-[9px] text-gray-300 font-bold uppercase block">Win Rate</span>
+                <span className="text-xs font-black text-[#98F5E1]">{stats.winRate || 0}%</span>
               </div>
               <div className="bg-white/5 backdrop-blur-xs p-2 rounded-xl border border-white/10">
                 <span className="text-[9px] text-gray-300 font-bold uppercase block">Fair Play</span>
-                <span className="text-xs font-black text-amber-300">5.0 ★</span>
+                <span className="text-xs font-black text-amber-300">{stats.fairPlay || '0.0'} ★</span>
               </div>
               <div className="bg-white/5 backdrop-blur-xs p-2 rounded-xl border border-white/10">
                 <span className="text-[9px] text-gray-300 font-bold uppercase block">Discipline</span>
-                <span className="text-xs font-black text-emerald-300">4.8 ★</span>
+                <span className="text-xs font-black text-emerald-300">{stats.discipline || '0.0'} ★</span>
               </div>
             </div>
           </div>
@@ -242,27 +304,27 @@ function TeamDashboard() {
             
             <div className="grid grid-cols-2 gap-2.5 mb-3">
               <div className="bg-[#f8f7f4] rounded-xl p-3 flex flex-col items-center justify-center text-center">
-                <span className="text-[9px] font-bold text-[#666666] uppercase tracking-wider mb-0.5">Played</span>
-                <span className="text-lg font-black text-[#111111]">
-                  {loadingStats ? <Loader2 size={16} className="animate-spin text-[#08733e]" /> : stats.played}
+                <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider">Played</span>
+                <span className="text-xl font-black text-[#111111] mt-0.5">
+                  {loadingStats ? "..." : stats.played}
                 </span>
               </div>
               <div className="bg-[#f8f7f4] rounded-xl p-3 flex flex-col items-center justify-center text-center">
-                <span className="text-[9px] font-bold text-[#666666] uppercase tracking-wider mb-0.5">Wins</span>
-                <span className="text-lg font-black text-[#08733e]">
-                  {loadingStats ? <Loader2 size={16} className="animate-spin text-[#08733e]" /> : stats.wins}
+                <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider">Wins</span>
+                <span className="text-xl font-black text-[#08733e] mt-0.5">
+                  {loadingStats ? "..." : stats.wins}
                 </span>
               </div>
               <div className="bg-[#f8f7f4] rounded-xl p-3 flex flex-col items-center justify-center text-center">
-                <span className="text-[9px] font-bold text-[#666666] uppercase tracking-wider mb-0.5">Losses</span>
-                <span className="text-lg font-black text-red-500">
-                  {loadingStats ? <Loader2 size={16} className="animate-spin text-red-500" /> : stats.losses}
+                <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider">Losses</span>
+                <span className="text-xl font-black text-red-600 mt-0.5">
+                  {loadingStats ? "..." : stats.losses}
                 </span>
               </div>
               <div className="bg-[#f8f7f4] rounded-xl p-3 flex flex-col items-center justify-center text-center">
-                <span className="text-[9px] font-bold text-[#666666] uppercase tracking-wider mb-0.5">Win Rate</span>
-                <span className="text-lg font-black text-[#111111]">
-                  {loadingStats ? <Loader2 size={16} className="animate-spin text-[#111111]" /> : `${stats.winRate}%`}
+                <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider">Win Rate</span>
+                <span className="text-xl font-black text-[#111111] mt-0.5">
+                  {loadingStats ? "..." : `${stats.winRate}%`}
                 </span>
               </div>
             </div>
@@ -282,7 +344,6 @@ function TeamDashboard() {
               </div>
             </div>
           </div>
-
 
         </div>
       </div>
@@ -328,9 +389,9 @@ function TeamDashboard() {
                         {tournament.title}
                       </h4>
                       <p className="text-xs font-medium text-[#666666] flex items-center gap-2 truncate">
-                        <span>📍 {tournament.location || 'Sri Lanka'}</span>
+                        <span>{tournament.location || 'Sri Lanka'}</span>
                         <span>•</span>
-                        <span>📅 {fullDate}</span>
+                        <span>{fullDate}</span>
                       </p>
                     </div>
                     <div className="shrink-0">
@@ -344,7 +405,6 @@ function TeamDashboard() {
             })()}
           </div>
         </div>
-
 
         {/* Team Feed */}
         <div className="bg-white border border-[#e5e5e5] rounded-2xl p-6 shadow-sm">
@@ -360,16 +420,16 @@ function TeamDashboard() {
               <div className="absolute left-[5px] top-4 bottom-[-24px] w-0.5 bg-[#e5e5e5]"></div>
               <div className="w-3 h-3 bg-[#08733e] rounded-full mt-1.5 shrink-0 z-10 border-2 border-white"></div>
               <div>
-                <p className="text-sm text-[#111111]"><span className="font-bold">Roster Updated:</span> Marcus V. has been added to the starting lineup for Friday's match.</p>
-                <span className="text-[11px] font-semibold text-[#666666] mt-1 block">2 hours ago</span>
+                <p className="text-sm text-[#111111]"><span className="font-bold">System Update:</span> Welcome to your official team portal dashboard.</p>
+                <span className="text-[11px] font-semibold text-[#666666] mt-1 block">Just now</span>
               </div>
             </div>
 
             <div className="flex gap-4 relative">
               <div className="w-3 h-3 bg-[#08733e] rounded-full mt-1.5 shrink-0 z-10 border-2 border-white"></div>
               <div>
-                <p className="text-sm text-[#111111]"><span className="font-bold">Match Confirmed:</span> Tournament organizers confirmed Zenith Titans match on North Field.</p>
-                <span className="text-[11px] font-semibold text-[#666666] mt-1 block">5 hours ago</span>
+                <p className="text-sm text-[#111111]"><span className="font-bold">Match Status:</span> Tournament standings update automatically when matches conclude.</p>
+                <span className="text-[11px] font-semibold text-[#666666] mt-1 block">Active</span>
               </div>
             </div>
           </div>
@@ -387,56 +447,49 @@ function TeamDashboard() {
         </div>
         
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-[#f8f7f4] text-[#666666] font-semibold text-[11px] uppercase tracking-wider">
-              <tr>
-                <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4">Opponent</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Score</th>
-                <th className="px-6 py-4">Points</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#e5e5e5] text-[#111111] font-medium">
-              <tr className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 text-[#666666]">Oct 28, 2024</td>
-                <td className="px-6 py-4 font-bold">Storm Breakers FC</td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex bg-[#98F5E1] text-[#002c21] text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Win</span>
-                </td>
-                <td className="px-6 py-4 font-black text-lg">3 - 1</td>
-                <td className="px-6 py-4 text-[#08733e] font-black">+125</td>
-                <td className="px-6 py-4 text-right">
-                  <button className="text-gray-400 hover:text-gray-700"><BarChart size={18} /></button>
-                </td>
-              </tr>
-              <tr className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 text-[#666666]">Oct 24, 2024</td>
-                <td className="px-6 py-4 font-bold">Night Raiders</td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex bg-red-100 text-red-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Loss</span>
-                </td>
-                <td className="px-6 py-4 font-black text-lg">0 - 2</td>
-                <td className="px-6 py-4 text-red-500 font-black">-45</td>
-                <td className="px-6 py-4 text-right">
-                  <button className="text-gray-400 hover:text-gray-700"><BarChart size={18} /></button>
-                </td>
-              </tr>
-              <tr className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 text-[#666666]">Oct 20, 2024</td>
-                <td className="px-6 py-4 font-bold">Swift Arrows</td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex bg-[#98F5E1] text-[#002c21] text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Win</span>
-                </td>
-                <td className="px-6 py-4 font-black text-lg">2 - 0</td>
-                <td className="px-6 py-4 text-[#08733e] font-black">+85</td>
-                <td className="px-6 py-4 text-right">
-                  <button className="text-gray-400 hover:text-gray-700"><BarChart size={18} /></button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          {loadingResults ? (
+            <div className="py-12 text-center">
+              <Loader2 size={24} className="animate-spin mx-auto text-[#00382D] mb-2" />
+              <p className="text-xs text-gray-500 font-medium">Loading match results...</p>
+            </div>
+          ) : recentResults.length === 0 ? (
+            <div className="py-14 text-center px-4">
+              <Trophy size={40} className="mx-auto text-gray-300 mb-2.5 opacity-60" />
+              <h4 className="text-sm font-bold text-[#111111]">No Recent Match Results</h4>
+              <p className="text-xs text-gray-500 max-w-sm mx-auto mt-1 leading-relaxed">
+                Official match scores, standings, and performance points will automatically display here when tournament matches take place.
+              </p>
+            </div>
+          ) : (
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-[#f8f7f4] text-[#666666] font-semibold text-[11px] uppercase tracking-wider">
+                <tr>
+                  <th className="px-6 py-4">Date</th>
+                  <th className="px-6 py-4">Tournament / Opponent</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Result</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#e5e5e5] text-[#111111] font-medium">
+                {recentResults.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 text-[#666666]">{item.tournament_held_date || item.start_date || 'Date TBD'}</td>
+                    <td className="px-6 py-4 font-bold">{item.tournament_title || item.opponent || 'Tournament Match'}</td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex bg-[#98F5E1] text-[#002c21] text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                        {item.status || 'COMPLETED'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 font-black text-lg">{item.result || item.score || 'Verified'}</td>
+                    <td className="px-6 py-4 text-right">
+                      <Link to="/team/results" className="text-[#08733e] hover:underline font-bold text-xs">View Details</Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 

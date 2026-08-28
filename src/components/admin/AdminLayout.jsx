@@ -262,14 +262,23 @@ function AdminLayout() {
                         </span>
                       )}
                     </div>
-                    {unreadCount > 0 && (
+                    <div className="flex items-center gap-3">
+                      {unreadCount > 0 && (
+                        <button 
+                          onClick={markAllRead} 
+                          className="text-[11px] font-bold text-[#08733e] hover:underline cursor-pointer"
+                        >
+                          Mark all read
+                        </button>
+                      )}
                       <button 
-                        onClick={markAllRead} 
-                        className="text-[11px] font-bold text-[#08733e] hover:underline cursor-pointer"
+                        onClick={() => setShowNotifDropdown(false)} 
+                        className="text-gray-400 hover:text-gray-700 hover:bg-gray-200/80 p-1.5 rounded-full transition-colors cursor-pointer flex items-center justify-center"
+                        title="Close notifications"
                       >
-                        Mark all as read
+                        <X size={16} />
                       </button>
-                    )}
+                    </div>
                   </div>
 
                   <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Award, Download, Building2, MapPin, Calendar, ShieldCheck, Trophy, Loader2 } from 'lucide-react';
+import { X, Award, Download, Building2, MapPin, Calendar, ShieldCheck, Trophy, Loader2, FileText, Printer } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 export default function CertificateModal({ certificate, onClose }) {
   const [downloading, setDownloading] = useState(false);
@@ -25,7 +26,7 @@ Verification Token: ${token}
 ================================
 Status: 100% Genuine & Verified by Elle Hub`;
 
-  const handleDownload = async () => {
+  const handleDownloadPDF = async () => {
     const certElement = document.getElementById('certificate-card-container');
     if (!certElement) return;
     try {
@@ -33,19 +34,71 @@ Status: 100% Genuine & Verified by Elle Hub`;
       const canvas = await html2canvas(certElement, {
         scale: 2,
         useCORS: true,
+        allowTaint: true,
         backgroundColor: '#FFFFFF',
         logging: false
       });
-      const dataUrl = canvas.toDataURL('image/png');
-      const downloadLink = document.createElement('a');
-      downloadLink.download = `ElleHub_Certificate_${recipient.replace(/\s+/g, '_')}.png`;
-      downloadLink.href = dataUrl;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min((pdfWidth - 20) / imgWidth, (pdfHeight - 20) / imgHeight);
+      const renderWidth = imgWidth * ratio;
+      const renderHeight = imgHeight * ratio;
+      const x = (pdfWidth - renderWidth) / 2;
+      const y = (pdfHeight - renderHeight) / 2;
+
+      pdf.addImage(imgData, 'PNG', x, y, renderWidth, renderHeight);
+      pdf.save(`ElleHub_Certificate_${recipient.replace(/\s+/g, '_')}.pdf`);
     } catch (err) {
-      console.error("Error downloading certificate:", err);
+      console.error("Error downloading PDF certificate:", err);
       window.print();
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleDownloadPNG = async () => {
+    const certElement = document.getElementById('certificate-card-container');
+    if (!certElement) return;
+    try {
+      setDownloading(true);
+      const canvas = await html2canvas(certElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#FFFFFF',
+        logging: false
+      });
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          const dataUrl = canvas.toDataURL('image/png');
+          const downloadLink = document.createElement('a');
+          downloadLink.download = `ElleHub_Certificate_${recipient.replace(/\s+/g, '_')}.png`;
+          downloadLink.href = dataUrl;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const downloadLink = document.createElement('a');
+        downloadLink.download = `ElleHub_Certificate_${recipient.replace(/\s+/g, '_')}.png`;
+        downloadLink.href = url;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }, 'image/png');
+    } catch (err) {
+      console.error("Error downloading PNG certificate:", err);
     } finally {
       setDownloading(false);
     }
@@ -64,13 +117,32 @@ Status: 100% Genuine & Verified by Elle Hub`;
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={handleDownload}
+              onClick={handleDownloadPDF}
               disabled={downloading}
               className="px-4 py-2 bg-[#08733e] hover:bg-[#065b31] text-white rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
             >
-              {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} 
-              {downloading ? "Generating PNG..." : "Download E-Certificate"}
+              {downloading ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />} 
+              {downloading ? "Generating..." : "Download PDF"}
             </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadPNG}
+              disabled={downloading}
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-50 border border-slate-200"
+            >
+              <Download size={14} className="text-[#08733e]" /> PNG
+            </button>
+
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="p-2 text-gray-500 hover:text-gray-900 rounded-xl hover:bg-slate-100 transition-all cursor-pointer"
+              title="Print Certificate"
+            >
+              <Printer size={18} />
+            </button>
+
             <button
               type="button"
               onClick={onClose}
@@ -84,7 +156,6 @@ Status: 100% Genuine & Verified by Elle Hub`;
         {/* Certificate Card Content */}
         <div id="certificate-card-container" className="bg-white rounded-2xl border-8 border-amber-400 p-6 md:p-10 shadow-lg space-y-6 relative overflow-hidden text-center print:border-4 print:p-4">
 
-          
           {/* Background Watermark */}
           <div className="absolute inset-0 pointer-events-none opacity-[0.03] flex items-center justify-center">
             <Trophy size={300} />
@@ -146,7 +217,6 @@ Status: 100% Genuine & Verified by Elle Hub`;
               <p className="bg-slate-100 px-2 py-0.5 rounded text-gray-800 font-bold inline-block">{token}</p>
             </div>
           </div>
-
 
         </div>
 

@@ -211,8 +211,8 @@ function Rankings() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#e5e5e5]">
-                    {filteredTeams.length > 0 ? (
-                      filteredTeams.map((team) => {
+                    {restOfTeams.length > 0 ? (
+                      restOfTeams.map((team) => {
                         const hasActivity = team.played > 0 || team.won > 0;
                         return (
                           <tr key={team.id} className="hover:bg-[#f8f7f4] transition-colors">

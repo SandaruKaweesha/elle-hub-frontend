@@ -367,13 +367,7 @@ export default function OrganizerMessages() {
               </div>
 
               {/* Message Input Box / Lock Banner */}
-              {selectedContact?.can_message === false ? (
-                <div className="p-4 bg-amber-50 border-t border-amber-200 text-amber-900 text-xs font-bold flex items-center justify-center gap-2">
-                  <Lock size={16} className="text-amber-600 shrink-0" />
-                  <span>Messaging is locked until the sponsor accepts the tournament sponsorship request.</span>
-                </div>
-              ) : (
-                <form onSubmit={handleSendMessage} className="p-4 border-t border-[#e5e5e5] bg-white flex items-center gap-3">
+              <form onSubmit={handleSendMessage} className="p-4 border-t border-[#e5e5e5] bg-white flex items-center gap-3">
                   <input
                     type="text"
                     placeholder={`Type a message to ${selectedContact.display_name}...`}
@@ -397,7 +391,6 @@ export default function OrganizerMessages() {
                     )}
                   </button>
                 </form>
-              )}
             </>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#fbfbfa]">

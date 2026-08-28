@@ -239,6 +239,12 @@ function handleSubmit(e) {
   // Call the backend API
   api.post('/user/register', finalData)
   .then((response) => {
+    if (response.data && response.data.success === false) {
+      setErrorMessage(response.data.message || "Registration failed. Please try again.");
+      setSuccessMessage("");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     console.log("Registration Success:", response.data);
     setSuccessMessage("Registration successful! Redirecting to login...");
     setErrorMessage("");
@@ -248,8 +254,10 @@ function handleSubmit(e) {
   })
   .catch((error) => {
     console.error("Registration Error:", error);
-    setErrorMessage("Registration failed. Please try again.");
+    const serverMessage = error.response && error.response.data && error.response.data.message;
+    setErrorMessage(serverMessage || "Registration failed. Please try again.");
     setSuccessMessage("");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 }
 

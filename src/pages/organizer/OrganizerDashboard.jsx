@@ -19,7 +19,10 @@ import {
   X,
   Users,
   CheckCircle2,
-  Swords
+  Swords,
+  Edit3,
+  Save,
+  Loader2
 } from "lucide-react";
 import KnockoutBracketDisplay from "../../components/organizer/KnockoutBracketDisplay";
 
@@ -32,6 +35,11 @@ function OrganizerDashboard() {
 
   // Completed Details Modal State
   const [selectedCompletedTournament, setSelectedCompletedTournament] = useState(null);
+  const [selectedDetailsTournament, setSelectedDetailsTournament] = useState(null);
+  const [editingTournament, setEditingTournament] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [successMsg, setSuccessMsg] = useState(null);
+  const [editForm, setEditForm] = useState({ title: '', description: '', location: '', tournament_held_date: '', end_date: '', maximum_team_limit: '', rules: '', prize_details: '' });
   const [completedDetailsLoading, setCompletedDetailsLoading] = useState(false);
   const [completedDrawData, setCompletedDrawData] = useState(null);
   const [completedTeams, setCompletedTeams] = useState([]);
@@ -107,6 +115,75 @@ function OrganizerDashboard() {
     }
   };
 
+    const handleOpenEditModal = (t) => {
+    const tId = t.tournament_id || t.id;
+    setEditingTournament(t);
+    setEditForm({
+      title: t.title || '',
+      description: t.description || '',
+      location: t.location || '',
+      tournament_held_date: t.tournament_held_date || '',
+      end_date: t.end_date || '',
+      maximum_team_limit: t.maximum_team_limit || '16',
+      rules: t.rules || '',
+      prize_details: t.prize_details || t.prizeDetails || ''
+    });
+  };
+
+  const handleUpdateTournamentSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingTournament) return;
+    const tId = editingTournament.tournament_id || editingTournament.id;
+    setIsUpdating(true);
+
+    try {
+      const payload = {
+        title: editForm.title,
+        description: editForm.description,
+        location: editForm.location,
+        tournamentHeldDate: editForm.tournament_held_date,
+        endDate: editForm.end_date,
+        maximumTeamLimit: parseInt(editForm.maximum_team_limit || 16, 10),
+        rules: editForm.rules,
+        prizeDetails: editForm.prize_details
+      };
+
+      const res = await api.put(`/tournament/${tId}`, payload);
+      if (res.data && res.data.success !== false) {
+        // Update local list
+        setTournaments(prev => prev.map(item => {
+          if (String(item.tournament_id || item.id) === String(tId)) {
+            return {
+              ...item,
+              ...payload,
+              tournament_held_date: editForm.tournament_held_date,
+              end_date: editForm.end_date,
+              maximum_team_limit: editForm.maximum_team_limit,
+              prize_details: editForm.prize_details
+            };
+          }
+          return item;
+        }));
+
+        // Also update selected details if open
+        if (selectedDetailsTournament && String(selectedDetailsTournament.tournament_id || selectedDetailsTournament.id) === String(tId)) {
+          setSelectedDetailsTournament(prev => ({ ...prev, ...payload, tournament_held_date: editForm.tournament_held_date }));
+        }
+
+        setEditingTournament(null);
+        setSuccessMsg("Tournament details updated successfully!");
+        setTimeout(() => setSuccessMsg(null), 4000);
+      } else {
+        alert(res.data?.message || "Failed to update tournament details.");
+      }
+    } catch (err) {
+      console.error("Update tournament error:", err);
+      alert(err.response?.data?.message || err.message || "Failed to update tournament.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const getStatusBadge = (t) => {
     const isCompleted = (t.status || '').toUpperCase() === 'COMPLETED';
     if (isCompleted) {
@@ -156,6 +233,17 @@ function OrganizerDashboard() {
     return matchesSearch && matchesStatus;
   });
 
+    const getFallbackImage = (index) => {
+    const images = [
+      "/images/elle1.jpeg",
+      "/images/elle2.jpeg",
+      "/images/elle3.jpeg",
+      "/images/elle4.jpeg",
+      "/images/elle5.jpeg"
+    ];
+    return images[index % images.length];
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'TBD';
     try {
@@ -168,6 +256,27 @@ function OrganizerDashboard() {
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 font-['Poppins']">
+      {/* SUCCESS TOAST POPUP NOTIFICATION */}
+      {successMsg && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-[#08733e] text-white px-6 py-3.5 rounded-2xl shadow-2xl border border-emerald-400/50 flex items-center gap-3.5 font-extrabold text-sm backdrop-blur-md">
+            <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white shrink-0">
+              <CheckCircle2 size={20} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200">Success</p>
+              <p className="text-sm font-bold text-white">{successMsg}</p>
+            </div>
+            <button 
+              type="button"
+              onClick={() => setSuccessMsg(null)}
+              className="ml-3 p-1.5 hover:bg-white/20 rounded-xl text-white/80 hover:text-white transition-colors cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* Top Banner / Welcome */}
       <div className="bg-[#00382D] text-white rounded-3xl p-8 shadow-md relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -303,18 +412,25 @@ function OrganizerDashboard() {
           {filteredTournaments.map((t, idx) => (
             <div 
               key={t.tournament_id || t.id}
-              className="bg-white rounded-2xl border border-[#e5e5e5] overflow-hidden shadow-xs hover:shadow-md transition-shadow flex flex-col group"
+              className="group relative bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-2xl hover:shadow-emerald-950/15 hover:-translate-y-1.5 hover:border-emerald-500/50 transition-all duration-500 overflow-hidden flex flex-col justify-between"
             >
               {/* Cover Banner */}
-              <div className="h-32 relative overflow-hidden flex items-start justify-end p-4">
+              <div className="h-44 relative bg-slate-950 overflow-hidden flex items-start justify-end p-4">
                 <img 
-                  src={t.image_url || `/images/tournament-${(idx % 3) + 1}.png`} 
+                  src={(t.image_url && t.image_url.trim() !== '') ? t.image_url : getFallbackImage(idx)} 
                   alt={t.title} 
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+                  onError={(e) => { e.target.onerror = null; e.target.src = getFallbackImage(idx); }}
+                  className="absolute inset-0 w-full h-full object-cover opacity-85 group-hover:scale-110 group-hover:opacity-95 transition-all duration-700 ease-out pointer-events-none" 
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent"></div>
                 <div className="relative z-10">
                   {getStatusBadge(t)}
+                </div>
+
+                {/* Location Pill Overlay on Image */}
+                <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1 bg-slate-900/60 backdrop-blur-md text-white rounded-full text-[11px] font-bold border border-white/20 shadow-xs">
+                  <MapPin size={12} className="text-emerald-400" />
+                  <span className="truncate max-w-[140px]">{t.location || 'Sri Lanka'}</span>
                 </div>
               </div>
               
@@ -352,12 +468,13 @@ function OrganizerDashboard() {
                     </button>
                   ) : (t.approval_status || '').toUpperCase() === 'APPROVED' ? (
                     <div className="flex gap-2">
-                      <Link 
-                        to={`/tournaments/${t.tournament_id || t.id}`}
-                        className="flex-1 py-2.5 bg-[#f8f7f4] hover:bg-[#e5e5e5] text-[#333333] rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1 border border-[#e5e5e5] shadow-sm cursor-pointer"
+                      <button 
+                        type="button"
+                        onClick={() => setSelectedDetailsTournament(t)}
+                        className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-extrabold transition-colors flex items-center justify-center gap-1 border border-slate-200 shadow-xs cursor-pointer"
                       >
                         View Details
-                      </Link>
+                      </button>
                       <Link 
                         to={`/organizer/tournaments/manage/${t.tournament_id || t.id}`}
                         className="flex-1 py-2.5 bg-[#00382D] hover:bg-[#002a22] text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-sm cursor-pointer"
@@ -366,13 +483,14 @@ function OrganizerDashboard() {
                       </Link>
                     </div>
                   ) : (
-                    <Link 
-                      to={`/tournaments/${t.tournament_id || t.id}`}
-                      className="w-full py-2.5 bg-[#f8f7f4] hover:bg-[#e5e5e5] text-[#333333] rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 group/btn border border-[#e5e5e5] shadow-sm cursor-pointer"
+                    <button 
+                      type="button"
+                      onClick={() => setSelectedDetailsTournament(t)}
+                      className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-extrabold transition-colors flex items-center justify-center gap-1.5 group/btn border border-slate-200 shadow-xs cursor-pointer"
                     >
                       View Details
-                      <ChevronRight size={14} className="text-[#888888] group-hover/btn:text-[#333333] transition-colors" />
-                    </Link>
+                      <ChevronRight size={14} className="text-slate-500 group-hover/btn:text-slate-900 transition-colors" />
+                    </button>
                   )}
                 </div>
               </div>
@@ -493,6 +611,287 @@ function OrganizerDashboard() {
         </div>
       )}
 
+      {/* --- TOURNAMENT ALL DETAILS POPUP MODAL --- */}
+      {selectedDetailsTournament && (
+        <div className="fixed inset-0 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden my-auto relative space-y-0">
+            
+            {/* Cover Image Header with Dark Gradient & Badges */}
+            <div className="relative h-56 md:h-64 w-full bg-slate-950 overflow-hidden">
+              <img 
+                src={(selectedDetailsTournament.image_url && selectedDetailsTournament.image_url.trim() !== '') ? selectedDetailsTournament.image_url : getFallbackImage(0)} 
+                alt={selectedDetailsTournament.title} 
+                onError={(e) => { e.target.onerror = null; e.target.src = getFallbackImage(0); }}
+                className="w-full h-full object-cover opacity-85"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+              
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={() => setSelectedDetailsTournament(null)}
+                className="absolute top-4 right-4 z-20 w-9 h-9 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all cursor-pointer border border-white/20"
+              >
+                <X size={18} />
+              </button>
+
+              {/* Top Status Pill */}
+              <div className="absolute top-4 left-4 z-10">
+                {getStatusBadge(selectedDetailsTournament)}
+              </div>
+
+              {/* Floating Tournament Title & Location */}
+              <div className="absolute bottom-4 left-6 right-6 z-10 text-white space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/80 px-2.5 py-0.5 rounded-full backdrop-blur-xs border border-white/20 inline-block mb-1">
+                  Elle Tournament
+                </span>
+                <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white capitalize leading-tight">
+                  {selectedDetailsTournament.title || selectedDetailsTournament.tournament_title}
+                </h2>
+                <p className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 pt-0.5">
+                  <MapPin size={14} className="text-emerald-400" /> {selectedDetailsTournament.location || 'Sri Lanka'}
+                </p>
+              </div>
+            </div>
+
+            {/* Details Body */}
+            <div className="p-6 md:p-8 space-y-6 max-h-[60vh] overflow-y-auto">
+              
+              {/* Quick Meta Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1">
+                  <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-extrabold uppercase">
+                    <Calendar size={13} className="text-[#08733e]" /> Held Date
+                  </div>
+                  <p className="text-xs font-black text-slate-800">
+                    {formatDate(selectedDetailsTournament.tournament_held_date)}
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1">
+                  <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-extrabold uppercase">
+                    <Users size={13} className="text-[#08733e]" /> Max Teams
+                  </div>
+                  <p className="text-xs font-black text-slate-800">
+                    {selectedDetailsTournament.maximum_team_limit || '16'} Teams
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1">
+                  <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-extrabold uppercase">
+                    <ShieldCheck size={13} className="text-[#08733e]" /> Referees
+                  </div>
+                  <p className="text-xs font-black text-slate-800">
+                    {selectedDetailsTournament.maximum_referee_limit || '2'} Officials
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1">
+                  <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-extrabold uppercase">
+                    <Clock size={13} className="text-[#08733e]" /> Registration
+                  </div>
+                  <p className="text-[11px] font-black text-slate-800 truncate">
+                    {formatDate(selectedDetailsTournament.start_date)} - {formatDate(selectedDetailsTournament.end_date)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Description Section */}
+              {selectedDetailsTournament.description && (
+                <div className="space-y-1.5">
+                  <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Tournament Overview</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed font-medium bg-slate-50/60 p-4 rounded-2xl border border-slate-100">
+                    {selectedDetailsTournament.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Prize Details & Rules Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-amber-50/60 border border-amber-200/80 p-4 rounded-2xl space-y-2">
+                  <h4 className="text-xs font-black text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Trophy size={15} className="text-amber-600" /> Prize Details & Awards
+                  </h4>
+                  <p className="text-xs text-amber-900/80 font-medium leading-relaxed">
+                    {selectedDetailsTournament.prize_details || selectedDetailsTournament.prizeDetails || "Trophies, Certificates & Cash prizes awarded to Champions & Runners-up."}
+                  </p>
+                </div>
+
+                <div className="bg-emerald-50/60 border border-emerald-200/80 p-4 rounded-2xl space-y-2">
+                  <h4 className="text-xs font-black text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText size={15} className="text-emerald-700" /> Rules & Match Format
+                  </h4>
+                  <p className="text-xs text-emerald-900/80 font-medium leading-relaxed">
+                    {selectedDetailsTournament.rules || "Standard Sri Lanka National Elle Federation Tournament rules and knockout match format."}
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer Actions */}
+            <div className="p-4 md:px-8 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedDetailsTournament(null)}
+                className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-extrabold transition-all cursor-pointer"
+              >
+                Close
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleOpenEditModal(selectedDetailsTournament)}
+                className="px-6 py-2.5 bg-[#08733e] hover:bg-[#065b31] text-white rounded-xl text-xs font-extrabold transition-all shadow-md flex items-center gap-2 cursor-pointer"
+              >
+                <Edit3 size={15} /> Update Tournament
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+      {/* --- UPDATE TOURNAMENT MODAL --- */}
+      {editingTournament && (
+        <div className="fixed inset-0 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden my-auto p-6 md:p-8 space-y-6 relative">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2 text-[#08733e] font-black text-base">
+                <Edit3 size={20} /> Update Tournament Details
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingTournament(null)}
+                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Edit Form */}
+            <form onSubmit={handleUpdateTournamentSubmit} className="space-y-4">
+              
+              {/* Title */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Tournament Title</label>
+                <input 
+                  type="text"
+                  required
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#08733e]"
+                />
+              </div>
+
+              {/* Location & Held Date */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Location / Venue</label>
+                  <input 
+                    type="text"
+                    required
+                    value={editForm.location}
+                    onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#08733e]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Held Date</label>
+                  <input 
+                    type="date"
+                    required
+                    value={editForm.tournament_held_date}
+                    onChange={(e) => setEditForm({ ...editForm, tournament_held_date: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#08733e]"
+                  />
+                </div>
+              </div>
+
+              {/* End Date & Max Teams */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Registration Deadline</label>
+                  <input 
+                    type="date"
+                    value={editForm.end_date}
+                    onChange={(e) => setEditForm({ ...editForm, end_date: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#08733e]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Max Teams Limit</label>
+                  <input 
+                    type="number"
+                    min="2"
+                    max="64"
+                    value={editForm.maximum_team_limit}
+                    onChange={(e) => setEditForm({ ...editForm, maximum_team_limit: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#08733e]"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Tournament Description</label>
+                <textarea 
+                  rows="3"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#08733e]"
+                ></textarea>
+              </div>
+
+              {/* Prize Details & Rules */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Prize Details</label>
+                  <textarea 
+                    rows="2"
+                    value={editForm.prize_details}
+                    onChange={(e) => setEditForm({ ...editForm, prize_details: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#08733e]"
+                  ></textarea>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Rules & Format</label>
+                  <textarea 
+                    rows="2"
+                    value={editForm.rules}
+                    onChange={(e) => setEditForm({ ...editForm, rules: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#08733e]"
+                  ></textarea>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingTournament(null)}
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-extrabold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className="px-6 py-2.5 bg-[#08733e] hover:bg-[#065b31] text-white rounded-xl text-xs font-extrabold transition-all shadow-md cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isUpdating ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  {isUpdating ? "Updating..." : "Save Changes"}
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

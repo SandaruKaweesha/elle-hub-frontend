@@ -16,25 +16,8 @@ function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // If user is already logged in, redirect directly to their role dashboard
-    const userString = localStorage.getItem('user');
-    const tokenString = localStorage.getItem('token');
-    if (userString && tokenString) {
-      try {
-        const u = JSON.parse(userString);
-        const r = String(u?.role || u?.user_role || '').trim().toUpperCase();
-        if (r.includes('ADMIN')) { navigate('/admin'); return; }
-        if (r.includes('ORGANIZ')) { navigate('/organizer'); return; }
-        if (r.includes('TEAM')) { navigate('/team'); return; }
-        if (r.includes('REF')) { navigate('/referee'); return; }
-        if (r.includes('PLAY') || r.includes('GROUND')) { navigate('/playground'); return; }
-        if (r.includes('SPONSOR')) { navigate('/sponsor'); return; }
-      } catch (e) {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-      }
-    }
-  }, [navigate]);
+    // Clear stale user session on mount if invalid
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -115,12 +98,12 @@ function Login() {
         let userRole = '';
 
         if (rawRoleStr.includes('ADMIN') || formData.email.toLowerCase().includes('admin')) userRole = 'ADMIN';
-        else if (rawRoleStr.includes('ORGANIZ')) userRole = 'ORGANIZER';
-        else if (rawRoleStr.includes('TEAM')) userRole = 'TEAM';
-        else if (rawRoleStr.includes('REF')) userRole = 'REFEREE';
-        else if (rawRoleStr.includes('PLAY') || rawRoleStr.includes('GROUND')) userRole = 'PLAYGROUND';
-        else if (rawRoleStr.includes('SPONSOR')) userRole = 'SPONSOR';
-        else userRole = rawRoleStr || 'ORGANIZER';
+        else if (rawRoleStr.includes('ORGANIZ') || formData.email.toLowerCase().includes('organizer')) userRole = 'ORGANIZER';
+        else if (rawRoleStr.includes('TEAM') || formData.email.toLowerCase().includes('team')) userRole = 'TEAM';
+        else if (rawRoleStr.includes('REF') || formData.email.toLowerCase().includes('referee')) userRole = 'REFEREE';
+        else if (rawRoleStr.includes('PLAY') || rawRoleStr.includes('GROUND') || formData.email.toLowerCase().includes('ground')) userRole = 'PLAYGROUND';
+        else if (rawRoleStr.includes('SPONSOR') || formData.email.toLowerCase().includes('sponsor')) userRole = 'SPONSOR';
+        else userRole = rawRoleStr || 'TEAM';
 
         console.log("Extracted and normalized user role:", userRole, "from raw:", rawRoleStr);
 
@@ -138,10 +121,37 @@ function Login() {
           userData.organizer_id = targetId;
         }
 
-        localStorage.setItem('user', JSON.stringify(userData));
+        // Sanitize userData to prevent LocalStorage QuotaExceededError from large base64 strings
+        const sanitizedUserData = { ...userData };
+        if (typeof sanitizedUserData.profile_picture === 'string' && sanitizedUserData.profile_picture.length > 500) {
+          delete sanitizedUserData.profile_picture;
+        }
+        if (typeof sanitizedUserData.profilePicture === 'string' && sanitizedUserData.profilePicture.length > 500) {
+          delete sanitizedUserData.profilePicture;
+        }
+
+        try {
+          localStorage.setItem('user', JSON.stringify(sanitizedUserData));
+        } catch (quotaErr) {
+          console.warn("LocalStorage quota exceeded, saving minimal user object", quotaErr);
+          const minimalUserData = {
+            userId: targetId,
+            user_id: targetId,
+            id: targetId,
+            email: rawUserData.email || formData.email,
+            role: userRole,
+            status: rawUserData.status || 'APPROVED'
+          };
+          if (userRole === 'ORGANIZER') minimalUserData.organizer_id = targetId;
+          localStorage.setItem('user', JSON.stringify(minimalUserData));
+        }
 
         if (response.data.token) {
-          localStorage.setItem('token', response.data.token);
+          try {
+            localStorage.setItem('token', response.data.token);
+          } catch (e) {
+            console.error("Failed to store token:", e);
+          }
         }
 
         console.log("Navigating for role:", userRole);

@@ -223,8 +223,12 @@ export default function AdminUsers() {
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
                           <img 
-                            src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.display_name)}`} 
+                            src={(u.profile_picture && u.profile_picture.trim() !== '') ? u.profile_picture : ((u.profilePicture && u.profilePicture.trim() !== '') ? u.profilePicture : `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.display_name)}`)} 
                             alt={u.display_name} 
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.display_name)}`;
+                            }}
                             className="w-full h-full object-cover" 
                           />
                         </div>
@@ -297,8 +301,12 @@ export default function AdminUsers() {
               </button>
               <div className="w-20 h-20 rounded-full border-2 border-white overflow-hidden bg-white mx-auto mb-3 shadow-md">
                 <img 
-                  src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(selectedUserForDetails.display_name)}`} 
+                  src={(selectedUserForDetails.profile_picture && selectedUserForDetails.profile_picture.trim() !== '') ? selectedUserForDetails.profile_picture : ((selectedUserForDetails.profilePicture && selectedUserForDetails.profilePicture.trim() !== '') ? selectedUserForDetails.profilePicture : `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(selectedUserForDetails.display_name)}`)} 
                   alt={selectedUserForDetails.display_name} 
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(selectedUserForDetails.display_name)}`;
+                  }}
                   className="w-full h-full object-cover" 
                 />
               </div>
