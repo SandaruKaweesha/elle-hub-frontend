@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import api from '../../services/api';
 
 export default function VerifyCertificate() {
@@ -42,27 +43,38 @@ export default function VerifyCertificate() {
     }
   };
 
-  const handleDownload = async () => {
+  const handleDownloadPDF = async () => {
     const certElement = document.getElementById('public-certificate-card');
     if (!certElement) return;
     try {
       setDownloading(true);
       const canvas = await html2canvas(certElement, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         backgroundColor: '#FFFFFF',
         logging: false
       });
-      const dataUrl = canvas.toDataURL('image/png');
-      const downloadLink = document.createElement('a');
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min((pdfWidth - 20) / imgWidth, (pdfHeight - 20) / imgHeight);
+      const renderWidth = imgWidth * ratio;
+      const renderHeight = imgHeight * ratio;
+      const x = (pdfWidth - renderWidth) / 2;
+      const y = (pdfHeight - renderHeight) / 2;
+
       const rName = verificationResult?.data?.recipient_name || 'Recipient';
-      downloadLink.download = `ElleHub_Verified_Certificate_${rName.replace(/\s+/g, '_')}.png`;
-      downloadLink.href = dataUrl;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
+      pdf.addImage(imgData, 'PNG', x, y, renderWidth, renderHeight);
+      pdf.save(`ElleHub_Verified_Certificate_${rName.replace(/\s+/g, '_')}.pdf`);
     } catch (err) {
-      console.error("Error downloading certificate:", err);
+      console.error("Error downloading PDF certificate:", err);
       window.print();
     } finally {
       setDownloading(false);
@@ -117,7 +129,7 @@ export default function VerifyCertificate() {
 
               <button
                 type="button"
-                onClick={handleDownload}
+                onClick={handleDownloadPDF}
                 disabled={downloading}
                 className="px-5 py-2.5 bg-white hover:bg-emerald-50 text-[#08733e] rounded-2xl text-xs font-black transition-all shadow-md flex items-center gap-2 cursor-pointer print:hidden disabled:opacity-50"
               >

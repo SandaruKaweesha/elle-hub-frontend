@@ -144,25 +144,25 @@ export default function TeamMatches() {
     REJECTED: appliedTournaments.filter(t => t.request_status === 'REJECTED').length
   };
 
-  const renderStatusBadge = (status) => {
+    const renderStatusBadge = (status) => {
     const s = (status || '').toUpperCase();
     if (s === 'APPROVED' || s === 'ACCEPTED') {
       return (
-        <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border shadow-xs bg-emerald-100/90 text-emerald-800 border-emerald-300 flex items-center gap-1 backdrop-blur-xs">
-          <CheckCircle2 size={12} className="text-emerald-700" /> APPROVED MATCH
+        <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-600/90 text-white border border-white/20 shadow-md backdrop-blur-md flex items-center gap-1.5">
+          <CheckCircle2 size={13} className="text-white" /> APPROVED MATCH
         </span>
       );
     }
     if (s === 'PENDING') {
       return (
-        <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border shadow-xs bg-amber-100/90 text-amber-800 border-amber-300 flex items-center gap-1 backdrop-blur-xs">
-          <Clock size={12} className="text-amber-700" /> PENDING APPROVAL
+        <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-amber-500/90 text-white border border-white/20 shadow-md backdrop-blur-md flex items-center gap-1.5">
+          <Clock size={13} className="text-white" /> PENDING APPROVAL
         </span>
       );
     }
     return (
-      <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border shadow-xs bg-rose-100/90 text-rose-800 border-rose-300 flex items-center gap-1 backdrop-blur-xs">
-        <XCircle size={12} className="text-rose-700" /> APPLICATION REJECTED
+      <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-rose-600/90 text-white border border-white/20 shadow-md backdrop-blur-md flex items-center gap-1.5">
+        <XCircle size={13} className="text-white" /> DECLINED
       </span>
     );
   };
@@ -381,25 +381,33 @@ export default function TeamMatches() {
               <div 
                 key={t.tournament_id || idx}
                 onClick={() => handleSelectTournament(t)}
-                className="bg-white rounded-2xl border border-[#e5e5e5] overflow-hidden shadow-sm flex flex-col group hover:shadow-md hover:border-[#08733e]/50 transition-all duration-300 cursor-pointer relative"
+                className="group relative bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-2xl hover:shadow-emerald-950/10 hover:-translate-y-1.5 hover:border-emerald-500/40 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col justify-between"
               >
-                {/* Image Header with Badge */}
-                <div className="relative h-36 w-full bg-[#002c21] overflow-hidden">
+                {/* Image Banner Header with Glassmorphism Badge */}
+                <div className="relative h-44 w-full bg-slate-950 overflow-hidden">
                   <img 
                     src={t.image_url || getFallbackImage(idx)} 
                     alt={t.tournament_title} 
-                    className="w-full h-full object-cover opacity-75 group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+                    className="w-full h-full object-cover opacity-85 group-hover:scale-110 group-hover:opacity-95 transition-all duration-700 ease-out pointer-events-none"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent"></div>
                   
-                  <div className="absolute top-3 left-3">
+                  {/* Floating Glassmorphic Status Badge */}
+                  <div className="absolute top-3 left-3 z-10">
                     {renderStatusBadge(t.request_status)}
+                  </div>
+
+                  {/* Location Pill Overlay on Image */}
+                  <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1 bg-slate-900/60 backdrop-blur-md text-white rounded-full text-[11px] font-bold border border-white/20 shadow-xs">
+                    <MapPin size={12} className="text-emerald-400" />
+                    <span className="truncate max-w-[140px]">{t.location || 'Sri Lanka'}</span>
                   </div>
                 </div>
 
                 {/* Card Details */}
-                <div className="p-4 flex-1 flex flex-col justify-between bg-white space-y-3">
+                <div className="p-5 flex-1 flex flex-col justify-between bg-white space-y-4">
                   <div>
-                    <h3 className="text-[15px] font-bold text-[#111111] leading-snug line-clamp-2 group-hover:text-[#08733e] transition-colors mb-1.5">
+                    <h3 className="text-base font-bold text-slate-900 leading-snug line-clamp-2 group-hover:text-[#08733e] transition-colors">
                       {t.tournament_title}
                     </h3>
                     

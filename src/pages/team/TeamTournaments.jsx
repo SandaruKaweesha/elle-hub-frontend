@@ -87,10 +87,10 @@ export default function TeamTournaments() {
 
   const getStatusBadgeStyle = (status) => {
     const s = (status || '').toUpperCase();
-    if (s === 'ONGOING') return 'bg-[#eaf1ec] text-[#08733e] border-[#08733e]/20';
-    if (s === 'COMPLETED') return 'bg-gray-100 text-gray-700 border-gray-200';
-    if (s === 'CANCELLED') return 'bg-red-50 text-red-600 border-red-200';
-    return 'bg-[#e0f2fe] text-[#0369a1] border-[#0369a1]/20'; // ACTIVE
+    if (s === 'ONGOING') return 'bg-emerald-600/90 text-white border-white/20 shadow-md backdrop-blur-md';
+    if (s === 'COMPLETED') return 'bg-slate-700/90 text-white border-white/20 shadow-md backdrop-blur-md';
+    if (s === 'CANCELLED') return 'bg-rose-600/90 text-white border-white/20 shadow-md backdrop-blur-md';
+    return 'bg-[#08733e]/90 text-white border-white/20 shadow-md backdrop-blur-md'; // ACTIVE
   };
 
   const getFallbackImage = (index) => {
@@ -365,25 +365,33 @@ export default function TeamTournaments() {
             return (
               <div 
                 key={t.tournament_id || idx}
-                className="bg-white rounded-2xl border border-[#e5e5e5] overflow-hidden shadow-sm flex flex-col group hover:shadow-md transition-all duration-300 relative"
+                className="group relative bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-2xl hover:shadow-emerald-950/15 hover:-translate-y-2 hover:border-emerald-500/50 transition-all duration-500 overflow-hidden flex flex-col justify-between"
               >
-                {/* Simplified Cover Image */}
-                <div className="relative h-36 w-full bg-[#002c21] overflow-hidden">
+                {/* Image Banner Header with Glassmorphism Badge & Location Overlay */}
+                <div className="relative h-44 w-full bg-slate-950 overflow-hidden">
                   <img 
                     src={t.image_url || getFallbackImage(idx)} 
                     alt={t.title} 
-                    className="w-full h-full object-cover opacity-75 group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+                    className="w-full h-full object-cover opacity-85 group-hover:scale-110 group-hover:opacity-95 transition-all duration-700 ease-out pointer-events-none"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent"></div>
                   
-                  <span className={`absolute top-3 left-3 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border shadow-sm ${getStatusBadgeStyle(t.status)}`}>
+                  {/* Floating Glassmorphic Status Badge */}
+                  <span className={`absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border shadow-md backdrop-blur-md ${getStatusBadgeStyle(t.status)}`}>
                     {t.status || 'ACTIVE'}
                   </span>
+
+                  {/* Location Pill Overlay on Image */}
+                  <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1 bg-slate-900/60 backdrop-blur-md text-white rounded-full text-[11px] font-bold border border-white/20 shadow-xs">
+                    <MapPin size={12} className="text-emerald-400" />
+                    <span className="truncate max-w-[140px]">{t.location || 'Sri Lanka'}</span>
+                  </div>
                 </div>
 
                 {/* Card Content with 2 Buttons */}
-                <div className="p-4 flex-1 flex flex-col justify-between bg-white space-y-3">
+                <div className="p-5 flex-1 flex flex-col justify-between bg-white space-y-4">
                   <div>
-                    <h3 className="text-[15px] font-bold text-[#111111] leading-snug line-clamp-2 group-hover:text-[#08733e] transition-colors mb-1.5">
+                    <h3 className="text-base font-bold text-slate-900 leading-snug line-clamp-2 group-hover:text-[#08733e] transition-colors capitalize">
                       {t.title}
                     </h3>
                     
@@ -394,10 +402,10 @@ export default function TeamTournaments() {
                   </div>
 
                   {/* 2 Buttons Row */}
-                  <div className="pt-3 border-t border-gray-100 grid grid-cols-2 gap-2">
+                  <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-2">
                     <button
                       onClick={() => setSelectedTournament(t)}
-                      className="flex items-center justify-center gap-1.5 bg-white hover:bg-gray-50 border border-[#e5e5e5] text-gray-700 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                      className="flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-2xs border border-slate-200"
                     >
                       View Details
                     </button>
@@ -405,10 +413,10 @@ export default function TeamTournaments() {
                     {requestStatus ? (
                       <button
                         disabled
-                        className={`flex items-center justify-center text-[10px] font-bold uppercase tracking-wider py-2 rounded-xl border ${
-                          requestStatus.status === 'PENDING' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                          requestStatus.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-                          'bg-red-50 text-red-600 border-red-200'
+                        className={`flex items-center justify-center text-[10px] font-black uppercase tracking-wider py-2.5 rounded-xl border shadow-2xs ${
+                          requestStatus.status === 'PENDING' ? 'bg-amber-50 text-amber-700 border-amber-300/80' :
+                          requestStatus.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' :
+                          'bg-rose-50 text-rose-700 border-rose-300'
                         }`}
                       >
                         {requestStatus.status}
@@ -416,14 +424,14 @@ export default function TeamTournaments() {
                     ) : statusUpper === 'ACTIVE' ? (
                       <button
                         onClick={() => navigate(`/team/join-tournament/${t.tournament_id}`)}
-                        className="flex items-center justify-center gap-1 bg-[#08733e] hover:bg-[#065b31] text-white py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                        className="flex items-center justify-center gap-1 bg-[#08733e] hover:bg-[#065b31] text-white py-2.5 rounded-xl text-xs font-extrabold transition-all shadow-xs cursor-pointer hover:shadow-md"
                       >
-                        Request <ArrowRight size={12} />
+                        Request <ArrowRight size={13} />
                       </button>
                     ) : (
                       <button
                         onClick={() => navigate(`/tournaments/${t.tournament_id}`)}
-                        className="flex items-center justify-center gap-1 bg-gray-100 text-gray-600 py-2 rounded-xl text-xs font-bold cursor-pointer"
+                        className="flex items-center justify-center gap-1 bg-slate-100 text-slate-700 py-2.5 rounded-xl text-xs font-extrabold cursor-pointer hover:bg-slate-200 transition-colors border border-slate-200"
                       >
                         Brackets
                       </button>
