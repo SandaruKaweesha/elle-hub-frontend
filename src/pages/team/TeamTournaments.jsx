@@ -13,6 +13,8 @@ export default function TeamTournaments() {
   const [activeTab, setActiveTab] = useState('ACTIVE'); // 'ACTIVE', 'ONGOING', 'COMPLETED', 'CANCELLED', 'ALL'
   const [selectedTournament, setSelectedTournament] = useState(null);
 
+  const [accountStatus, setAccountStatus] = useState('APPROVED');
+
   const currentUser = JSON.parse(localStorage.getItem('user')) || {};
   const teamUserId = currentUser.userId || currentUser.user_id;
 
@@ -20,9 +22,10 @@ export default function TeamTournaments() {
     const fetchTournaments = async () => {
       try {
         setLoading(true);
-        const [tournamentsRes, requestsRes] = await Promise.all([
+        const [tournamentsRes, requestsRes, userRes] = await Promise.all([
           api.get('/tournaments'),
-          teamUserId ? api.get(`/team/${teamUserId}/requests`).catch(() => ({ data: { data: [] } })) : Promise.resolve({ data: { data: [] } })
+          teamUserId ? api.get(`/team/${teamUserId}/requests`).catch(() => ({ data: { data: [] } })) : Promise.resolve({ data: { data: [] } }),
+          teamUserId ? api.get(`/user/${teamUserId}`).catch(() => null) : Promise.resolve(null)
         ]);
         
         if (tournamentsRes.data.success) {
@@ -30,16 +33,19 @@ export default function TeamTournaments() {
           const activeOnly = raw.filter(t => {
             const s = (t.status || '').toUpperCase();
             const appS = (t.approval_status || '').toUpperCase();
-            return appS !== 'REJECTED' && s !== 'COMPLETED' && s !== 'FINISHED';
+            return appS === 'APPROVED' && s !== 'COMPLETED' && s !== 'FINISHED';
           });
           setTournaments(activeOnly);
         } else {
-
           setError(tournamentsRes.data.message || "Failed to load tournaments");
         }
 
         if (requestsRes.data && requestsRes.data.success !== false) {
           setTeamRequests(requestsRes.data.data || []);
+        }
+
+        if (userRes && userRes.data && userRes.data.success && userRes.data.data) {
+          setAccountStatus((userRes.data.data.status || 'APPROVED').toUpperCase());
         }
       } catch (err) {
         console.error("Fetch tournaments error:", err);
@@ -104,6 +110,16 @@ export default function TeamTournaments() {
         <h1 className="text-3xl font-black text-[#111111] tracking-tight">Tournaments Directory</h1>
         <p className="text-gray-500 text-sm mt-1">Browse and request to join upcoming tournaments, or track ongoing and past championships.</p>
       </div>
+
+      {accountStatus !== 'APPROVED' && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 px-5 py-4 rounded-2xl flex items-center gap-3 shadow-sm">
+          <ShieldAlert className="text-amber-600 shrink-0" size={22} />
+          <div>
+            <h4 className="font-bold text-sm text-amber-900">Account Pending Admin Approval</h4>
+            <p className="text-xs text-amber-700 mt-0.5 font-medium">Your team account registration is currently pending admin approval. You cannot apply for tournaments until an admin approves your account.</p>
+          </div>
+        </div>
+      )}
 
 
       {/* Filter and Search Bar */}
@@ -305,6 +321,14 @@ export default function TeamTournaments() {
                       return (
                         <button disabled className="w-full bg-gray-100 border border-gray-200 text-gray-400 py-3.5 rounded-xl text-sm font-bold cursor-not-allowed">
                           Registration Closed
+                        </button>
+                      );
+                    }
+
+                    if (accountStatus !== 'APPROVED') {
+                      return (
+                        <button disabled className="w-full bg-gray-100 border border-gray-200 text-gray-400 py-3.5 rounded-xl text-sm font-bold cursor-not-allowed">
+                          Pending Admin Approval
                         </button>
                       );
                     }

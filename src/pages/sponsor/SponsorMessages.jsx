@@ -13,7 +13,8 @@ import {
   Sparkles,
   AlertCircle,
   RefreshCw,
-  Info
+  Info,
+  Lock
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -366,31 +367,38 @@ export default function SponsorMessages() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Message Input Box */}
-              <form onSubmit={handleSendMessage} className="p-4 border-t border-[#e5e5e5] bg-white flex items-center gap-3">
-                <input
-                  type="text"
-                  placeholder={`Type a message to ${selectedContact.display_name}...`}
-                  value={newMessageText}
-                  onChange={(e) => setNewMessageText(e.target.value)}
-                  className="flex-1 px-4 py-3 bg-[#f8f7f4] border border-[#e5e5e5] rounded-2xl text-xs font-semibold text-[#111111] focus:outline-none focus:border-[#00382D] transition-colors"
-                />
+              {/* Message Input Box / Lock Banner */}
+              {selectedContact?.can_message === false ? (
+                <div className="p-4 bg-amber-50 border-t border-amber-200 text-amber-900 text-xs font-bold flex items-center justify-center gap-2">
+                  <Lock size={16} className="text-amber-600 shrink-0" />
+                  <span>Messaging is locked until you accept the tournament sponsorship request.</span>
+                </div>
+              ) : (
+                <form onSubmit={handleSendMessage} className="p-4 border-t border-[#e5e5e5] bg-white flex items-center gap-3">
+                  <input
+                    type="text"
+                    placeholder={`Type a message to ${selectedContact.display_name}...`}
+                    value={newMessageText}
+                    onChange={(e) => setNewMessageText(e.target.value)}
+                    className="flex-1 px-4 py-3 bg-[#f8f7f4] border border-[#e5e5e5] rounded-2xl text-xs font-semibold text-[#111111] focus:outline-none focus:border-[#00382D] transition-colors"
+                  />
 
-                <button
-                  type="submit"
-                  disabled={!newMessageText.trim() || isSending}
-                  className="px-5 py-3 bg-[#00382D] text-white text-xs font-bold rounded-2xl hover:bg-[#002a22] transition-colors flex items-center gap-2 shrink-0 cursor-pointer disabled:opacity-40 shadow-xs"
-                >
-                  {isSending ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <>
-                      <span>Send</span>
-                      <Send size={14} />
-                    </>
-                  )}
-                </button>
-              </form>
+                  <button
+                    type="submit"
+                    disabled={!newMessageText.trim() || isSending}
+                    className="px-5 py-3 bg-[#00382D] text-white text-xs font-bold rounded-2xl hover:bg-[#002a22] transition-colors flex items-center gap-2 shrink-0 cursor-pointer disabled:opacity-40 shadow-xs"
+                  >
+                    {isSending ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <>
+                        <span>Send</span>
+                        <Send size={14} />
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
             </>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#fbfbfa]">

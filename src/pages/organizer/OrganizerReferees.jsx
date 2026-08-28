@@ -21,6 +21,9 @@ export default function OrganizerReferees() {
   const [selectedTournamentId, setSelectedTournamentId] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
 
+  // Sent Referee IDs state to destroy cards after sending request
+  const [sentRefereeIds, setSentRefereeIds] = useState([]);
+
   useEffect(() => {
     const loadRefereesData = async () => {
       setLoading(true);
@@ -62,13 +65,15 @@ export default function OrganizerReferees() {
 
       const activeId = targetOrganizerId || 0;
 
-      // Fetch users and tournaments
+      // Fetch users, tournaments, and existing sent referee requests
       const results = await Promise.all([
         api.get('/user/getAllUsers'),
-        api.get(`/organizer/${activeId}/tournaments`)
+        api.get(`/organizer/${activeId}/tournaments`),
+        api.get(`/organizer/${activeId}/referee-requests`).catch(() => null)
       ]);
       const usersRes = results[0];
       const tournamentsRes = results[1];
+      const requestsRes = results[2];
 
       if (usersRes.data && usersRes.data.success !== false) {
         const allUsers = usersRes.data.data || [];
@@ -80,11 +85,17 @@ export default function OrganizerReferees() {
         const list = tournamentsRes.data.data || [];
         const activeOnly = list.filter(t => 
           t && 
-          (t.approval_status || 'APPROVED').toString().toUpperCase() !== 'REJECTED' && 
+          (t.approval_status || '').toString().toUpperCase() === 'APPROVED' && 
           (t.status || 'ACTIVE').toString().toUpperCase() !== 'COMPLETED' && 
           (t.status || 'ACTIVE').toString().toUpperCase() !== 'CANCELLED'
         );
         setOrganizerTournaments(activeOnly);
+      }
+
+      if (requestsRes && requestsRes.data && requestsRes.data.success !== false) {
+        const reqList = requestsRes.data.data || [];
+        const requestedRefereeIds = reqList.map(req => Number(req.referee_user_id || req.referee_id)).filter(Boolean);
+        setSentRefereeIds(requestedRefereeIds);
       }
 
     } catch (err) {
@@ -102,7 +113,7 @@ export default function OrganizerReferees() {
 
   const handleOpenInviteModal = (referee) => {
     const name = referee.referee_name || referee.full_name || referee.display_name || referee.email || 'Referee';
-    setSelectedRefereeToInvite({ userId: referee.userId || referee.user_id || referee.id, name });
+    setSelectedRefereeToInvite({ userId: Number(referee.userId || referee.user_id || referee.id), name });
     setSelectedTournamentId(organizerTournaments.length > 0 ? organizerTournaments[0].tournament_id : '');
     setShowInviteModal(true);
   };
@@ -118,8 +129,10 @@ export default function OrganizerReferees() {
       setError(null);
       setSuccessMsg(null);
 
+      const refereeId = Number(selectedRefereeToInvite.userId);
+
       const payload = {
-        refereeUserId: selectedRefereeToInvite.userId,
+        refereeUserId: refereeId,
         initiatedBy: 'ORGANIZER'
       };
 
@@ -127,6 +140,8 @@ export default function OrganizerReferees() {
       
       if (res.data && res.data.success !== false) {
         setSuccessMsg(`Invitation successfully dispatched to ${selectedRefereeToInvite.name}!`);
+        // Immediately destroy / hide referee card from grid
+        setSentRefereeIds(prev => [...prev, refereeId]);
         setShowInviteModal(false);
         setSelectedRefereeToInvite(null);
       } else {
@@ -140,8 +155,13 @@ export default function OrganizerReferees() {
     }
   };
 
-  // Filter referees by search query
+  // Filter referees by search query and destroy/remove referee cards that already received requests
   const filteredReferees = referees.filter(r => {
+    const rId = Number(r.userId || r.user_id || r.id);
+    if (sentRefereeIds.includes(rId)) {
+      return false; // Card destroyed once request sent
+    }
+
     const query = searchQuery.toLowerCase();
     const name = (r.referee_name || r.full_name || r.display_name || r.email || '').toLowerCase();
     const district = (r.district || r.location || '').toLowerCase();

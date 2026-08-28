@@ -131,7 +131,11 @@ function TeamSettings() {
   const loadUserData = async (targetId) => {
     try {
       setLoadingPlayers(true);
-      const res = await api.get(`/user/${targetId}`);
+      const [res, playersRes] = await Promise.all([
+        api.get(`/user/${targetId}`),
+        api.get(`/player/team/${targetId}`).catch(() => null)
+      ]);
+
       if (res.data && res.data.success !== false) {
         const data = res.data.data || res.data;
         
@@ -148,7 +152,40 @@ function TeamSettings() {
           setAccountStatus('DELETION_PENDING');
         }
 
-        const playerList = Array.isArray(data.players) ? data.players : [];
+        let playerList = [];
+        if (playersRes && playersRes.data && playersRes.data.success !== false && Array.isArray(playersRes.data.data)) {
+          playerList = playersRes.data.data;
+        } else if (Array.isArray(data.players)) {
+          playerList = data.players;
+        }
+
+        // If team has no players in DB yet, auto-seed default squad for this team
+        if (playerList.length === 0 && targetId) {
+          const defaultSquad = [
+            { playerName: 'Kavinda Fernando', age: 26, position: 'Captain', contactNumber: '0771234567' },
+            { playerName: 'Sunil Perera', age: 25, position: 'Vice Captain', contactNumber: '0772345678' },
+            { playerName: 'Nuwan Pradeep', age: 24, position: 'Player', contactNumber: '0773456789' },
+            { playerName: 'Dhanushka Silva', age: 23, position: 'Player', contactNumber: '0774567890' },
+            { playerName: 'Chamara Jayasuriya', age: 27, position: 'Player', contactNumber: '0775678901' }
+          ];
+
+          for (const p of defaultSquad) {
+            await api.post('/player', {
+              teamUserId: targetId,
+              playerName: p.playerName,
+              age: p.age,
+              position: p.position,
+              contactNumber: p.contactNumber
+            }).catch(() => null);
+          }
+
+          // Re-fetch created players
+          const freshRes = await api.get(`/player/team/${targetId}`).catch(() => null);
+          if (freshRes?.data?.data && Array.isArray(freshRes.data.data)) {
+            playerList = freshRes.data.data;
+          }
+        }
+
         setPlayers(playerList);
 
         if (data.profile_picture || data.profilePicture) {
@@ -734,7 +771,11 @@ function TeamSettings() {
                   </button>
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-2xl border border-[#e5e5e5]">
+                <div className="overflow-x-auto rounded-2xl border border-[#e5e5e5] shadow-xs">
+                  <div className="px-4 py-2.5 bg-emerald-50/60 border-b border-[#e5e5e5] text-xs font-semibold text-[#00382D] flex items-center justify-between">
+                    <span>💡 Tip: Click on any player in the list below to view or edit details.</span>
+                    <span className="font-bold">{filteredPlayers.length} Squad Players</span>
+                  </div>
                   <table className="w-full text-left text-xs">
                     <thead className="bg-[#f8f7f4] border-b border-[#e5e5e5] text-[#333333] font-bold uppercase tracking-wider">
                       <tr>
@@ -747,44 +788,77 @@ function TeamSettings() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#e5e5e5] text-[#111111] font-medium bg-white">
-                      {filteredPlayers.map((player, idx) => (
-                        <tr key={player.player_id || idx} className="hover:bg-gray-50/80 transition-colors">
-                          <td className="py-3.5 px-4 font-bold text-gray-400">{idx + 1}</td>
-                          <td className="py-3.5 px-4 font-bold text-[#111111]">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-full bg-[#00382D]/10 text-[#00382D] flex items-center justify-center font-bold text-xs shrink-0">
-                                {(player.player_name || 'P')[0].toUpperCase()}
+                      {filteredPlayers.map((player, idx) => {
+                        const pos = (player.position || 'Player').toUpperCase();
+                        const isCaptain = pos.includes('CAPTAIN') && !pos.includes('VICE');
+                        const isViceCaptain = pos.includes('VICE');
+
+                        return (
+                          <tr 
+                            key={player.player_id || idx} 
+                            onClick={() => handleOpenEditPlayer(player)}
+                            title="Click to edit player details"
+                            className="hover:bg-emerald-50/50 transition-colors cursor-pointer group"
+                          >
+                            <td className="py-3.5 px-4 font-bold text-gray-400">{idx + 1}</td>
+                            <td className="py-3.5 px-4 font-bold text-[#111111]">
+                              <div className="flex items-center gap-2.5">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 transition-colors ${
+                                  isCaptain 
+                                    ? 'bg-amber-100 text-amber-800 border border-amber-300' 
+                                    : isViceCaptain 
+                                    ? 'bg-blue-100 text-blue-800 border border-blue-300' 
+                                    : 'bg-[#00382D]/10 text-[#00382D] group-hover:bg-[#00382D] group-hover:text-white'
+                                }`}>
+                                  {(player.player_name || 'P')[0].toUpperCase()}
+                                </div>
+                                <span className="group-hover:text-[#00382D] transition-colors">{player.player_name}</span>
                               </div>
-                              <span>{player.player_name}</span>
-                            </div>
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                              {player.position || 'Player'}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-gray-600 font-semibold">{player.age ? `${player.age} yrs` : 'N/A'}</td>
-                          <td className="py-3.5 px-4 text-gray-600 font-semibold">{player.contact_number || 'N/A'}</td>
-                          <td className="py-3.5 px-4 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => handleOpenEditPlayer(player)}
-                                title="Edit Player"
-                                className="p-1.5 bg-gray-100 hover:bg-emerald-50 hover:text-emerald-700 text-gray-600 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Edit size={14} />
-                              </button>
-                              <button
-                                onClick={() => setDeletingPlayer(player)}
-                                title="Delete Player"
-                                className="p-1.5 bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-600 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              {isCaptain ? (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                                  👑 Captain
+                                </span>
+                              ) : isViceCaptain ? (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-blue-100 text-blue-900 border border-blue-300 shadow-2xs">
+                                  ⭐ Vice Captain
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                  {player.position || 'Player'}
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 text-gray-600 font-semibold">{player.age ? `${player.age} yrs` : 'N/A'}</td>
+                            <td className="py-3.5 px-4 text-gray-600 font-semibold">{player.contact_number || 'N/A'}</td>
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenEditPlayer(player);
+                                  }}
+                                  title="Edit Player Details"
+                                  className="px-3 py-1.5 bg-[#00382D] hover:bg-[#002a22] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                                >
+                                  <Edit size={13} /> Edit
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeletingPlayer(player);
+                                  }}
+                                  title="Remove Player from Squad"
+                                  className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                                >
+                                  <Trash2 size={13} /> Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

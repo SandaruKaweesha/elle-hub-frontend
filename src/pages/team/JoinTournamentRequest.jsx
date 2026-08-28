@@ -19,6 +19,8 @@ function JoinTournamentRequest() {
   const currentUser = JSON.parse(localStorage.getItem("user")) || {};
   const userId = currentUser.userId || currentUser.user_id;
 
+  const [accountStatus, setAccountStatus] = useState('APPROVED');
+
   useEffect(() => {
     if (userId) {
       fetchTeamProfile();
@@ -35,6 +37,9 @@ function JoinTournamentRequest() {
           contactNumber: data.contactNumber || data.contact_number || '',
           email: currentUser.email || data.email || ''
         });
+        if (data.status) {
+          setAccountStatus(data.status.toUpperCase());
+        }
       }
     } catch (err) {
       console.error("Error fetching team profile for request:", err);
@@ -50,6 +55,10 @@ function JoinTournamentRequest() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (accountStatus !== 'APPROVED') {
+      setError("Your team account registration is currently pending admin approval. You cannot apply for tournaments until an admin approves your account.");
+      return;
+    }
     setShowConfirm(true);
   };
 
@@ -188,6 +197,20 @@ function JoinTournamentRequest() {
         <div className="w-full md:w-[60%] p-8 md:p-10 bg-white">
           <h3 className="text-xl font-bold text-[#111111] mb-6 tracking-tight">Application Form</h3>
           
+          {accountStatus !== 'APPROVED' && (
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6 rounded-r-xl shadow-sm">
+              <div className="flex items-start gap-3">
+                <Lock className="text-amber-600 flex-shrink-0 mt-0.5" size={20} />
+                <div>
+                  <h4 className="font-bold text-amber-900 text-sm">Account Pending Admin Approval</h4>
+                  <p className="text-amber-700 text-xs mt-1 leading-relaxed font-medium">
+                    Your team account registration is currently pending admin approval. You cannot apply for tournaments until an admin approves your account.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="bg-red-50 text-red-700 p-4 rounded-xl text-xs mb-5 border border-red-200 font-semibold leading-relaxed">
               {error}
@@ -278,9 +301,14 @@ function JoinTournamentRequest() {
               </button>
               <button 
                 type="submit"
-                className="flex-1 bg-[#08733e] text-white py-3.5 rounded-xl text-[15px] font-bold hover:bg-[#065b31] transition-colors shadow-sm flex justify-center items-center gap-2 cursor-pointer"
+                disabled={accountStatus !== 'APPROVED' || submitting}
+                className={`flex-1 py-3.5 rounded-xl text-[15px] font-bold transition-all shadow-sm flex justify-center items-center gap-2 ${
+                  accountStatus !== 'APPROVED'
+                    ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed'
+                    : 'bg-[#08733e] hover:bg-[#065b31] text-white cursor-pointer'
+                }`}
               >
-                Submit Join Request
+                {accountStatus !== 'APPROVED' ? 'Pending Admin Approval' : 'Submit Join Request'}
               </button>
             </div>
           </form>

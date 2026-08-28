@@ -16,20 +16,23 @@ function Tournaments() {
     const fetchTournaments = async () => {
       try {
         setLoading(true);
+        setError(null);
         const response = await api.get('/tournaments');
-        if (response.data.success) {
-          const raw = response.data.data || [];
-          const activeOnly = raw.filter(t => {
-            const s = (t.status || '').toUpperCase();
-            const appS = (t.approval_status || '').toUpperCase();
-            return appS !== 'REJECTED' && s !== 'COMPLETED' && s !== 'FINISHED';
-          });
-          setTournaments(activeOnly);
+        const resData = response.data;
+        if (resData && (resData.success || Array.isArray(resData.data) || Array.isArray(resData))) {
+          const raw = Array.isArray(resData) ? resData : (resData.data || []);
+          // Keep all retrieved tournaments, ensuring basic object structure
+          const validTournaments = raw.map(t => ({
+            ...t,
+            displayStatus: t.status || t.approval_status || 'Active',
+            displayLocation: t.location || t.district || t.region || 'Sri Lanka'
+          }));
+          setTournaments(validTournaments);
         } else {
-          setError(response.data.message || "Failed to load tournaments");
+          setError(resData?.message || "Failed to load tournaments");
         }
       } catch (err) {
-        console.error(err);
+        console.error("Fetch tournaments error:", err);
         setError("An error occurred while fetching tournaments");
       } finally {
         setLoading(false);
@@ -169,11 +172,11 @@ function Tournaments() {
               <TournamentCard
                 key={tournament.tournament_id || index}
                 id={tournament.tournament_id}
-                image={mockImages[index % 3]}
-                imagePosition={mockPositions[index % 3]}
-                title={tournament.title}
-                date={formatDate(tournament.tournament_held_date)}
-                prize={tournament.prize_details || "TBD"}
+                image={tournament.image_url || mockImages[index % 5]}
+                imagePosition={mockPositions[index % 3] || "center"}
+                title={tournament.title || "Untitled Tournament"}
+                date={formatDate(tournament.tournament_held_date || tournament.start_date)}
+                prize={tournament.prize_details ? (isNaN(tournament.prize_details) ? tournament.prize_details : `LKR ${Number(tournament.prize_details).toLocaleString()}`) : "TBD"}
                 status={tournament.status || tournament.approval_status || "Active"}
                 buttonText="View Details"
               />

@@ -52,7 +52,7 @@ export default function SponsorTournaments() {
         allTourneys = raw.filter(t => {
           const s = (t.status || '').toUpperCase();
           const appS = (t.approval_status || '').toUpperCase();
-          return appS !== 'REJECTED' && s !== 'COMPLETED' && s !== 'FINISHED';
+          return appS === 'APPROVED' && s !== 'COMPLETED' && s !== 'FINISHED';
         });
       }
 
