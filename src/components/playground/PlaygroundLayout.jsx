@@ -207,7 +207,16 @@ export default function PlaygroundLayout() {
                   <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-[#e5e5e5] z-50 overflow-hidden animate-in fade-in">
                     <div className="p-4 border-b border-[#e5e5e5] flex items-center justify-between">
                       <h3 className="font-bold text-xs text-[#111111]">Playground Notifications</h3>
-                      <button className="text-[11px] text-[#00382D] font-bold hover:underline">Mark all read</button>
+                      <div className="flex items-center gap-2.5">
+                        <button className="text-[11px] text-[#00382D] font-bold hover:underline">Mark all read</button>
+                        <button 
+                          onClick={() => setShowNotifications(false)}
+                          className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+                          title="Close notifications"
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
                     </div>
                     <div className="p-4 text-center text-xs text-[#666666]">
                       No new venue requests.

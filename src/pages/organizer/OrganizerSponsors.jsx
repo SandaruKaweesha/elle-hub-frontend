@@ -249,10 +249,22 @@ export default function OrganizerSponsors() {
                   
                   <div className="p-6 relative pt-0">
                     {/* Avatar */}
-                    <div className="w-16 h-16 rounded-2xl bg-white p-1 absolute -top-8 left-6 shadow-sm">
-                      <div className="w-full h-full rounded-xl bg-[#f4f4f4] flex items-center justify-center font-bold text-lg text-[#00382D] border border-[#e5e5e5]">
-                        {initials}
-                      </div>
+                    <div className="w-16 h-16 rounded-2xl bg-white p-1 absolute -top-8 left-6 shadow-sm border-2 border-white flex items-center justify-center overflow-hidden">
+                      <img 
+                        src={
+                          (sponsor.profile_picture && sponsor.profile_picture.trim() !== '') 
+                            ? sponsor.profile_picture 
+                            : (sponsor.profilePicture && sponsor.profilePicture.trim() !== '')
+                            ? sponsor.profilePicture
+                            : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'Sponsor')}&backgroundColor=eaf1ec`
+                        } 
+                        alt={name} 
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'Sponsor')}&backgroundColor=eaf1ec`;
+                        }}
+                        className="w-full h-full object-cover rounded-xl bg-emerald-50"
+                      />
                     </div>
                     
                     {/* Status Badge */}

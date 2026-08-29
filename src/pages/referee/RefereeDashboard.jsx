@@ -35,7 +35,7 @@ export default function RefereeDashboard() {
   const [refereeInfo, setRefereeInfo] = useState({
     fullName: currentUser.fullName || currentUser.referee_name || currentUser.display_name || "Official Referee",
     experienceYears: currentUser.experienceYears || currentUser.experience_years || 5,
-    rating: currentUser.rating || currentUser.referee_rating || 4.9,
+    rating: (currentUser.referee_rating !== undefined && currentUser.referee_rating !== null) ? Number(currentUser.referee_rating) : ((currentUser.rating !== undefined && currentUser.rating !== null) ? Number(currentUser.rating) : 0.0),
     contactNumber: currentUser.contactNumber || currentUser.contact_number || "0771234567",
     email: currentUser.email || "referee@gmail.com",
     availabilityStatus: currentUser.availabilityStatus || currentUser.referee_availability_status || "AVAILABLE",
@@ -58,7 +58,7 @@ export default function RefereeDashboard() {
         setRefereeInfo({
           fullName: u.referee_name || u.full_name || u.display_name || "Official Referee",
           experienceYears: u.experience_years || 5,
-          rating: u.referee_rating || u.rating || 4.9,
+          rating: (u.referee_rating !== undefined && u.referee_rating !== null) ? Number(u.referee_rating) : ((u.rating !== undefined && u.rating !== null) ? Number(u.rating) : 0.0),
           contactNumber: u.contact_number || "N/A",
           email: u.email || "N/A",
           availabilityStatus: u.referee_availability_status || u.availability_status || "AVAILABLE",
@@ -294,20 +294,29 @@ export default function RefereeDashboard() {
             <div className="w-11 h-11 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
               <Star size={22} fill="currentColor" />
             </div>
-            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md uppercase tracking-wider border border-amber-200">
-              Top Rated
+            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider border ${
+              Number(refereeInfo.rating || 0) >= 4.5 
+                ? 'text-amber-700 bg-amber-50 border-amber-200' 
+                : Number(refereeInfo.rating || 0) > 0 
+                ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                : 'text-gray-600 bg-gray-50 border-gray-200'
+            }`}>
+              {Number(refereeInfo.rating || 0) >= 4.5 ? 'Top Rated' : Number(refereeInfo.rating || 0) > 0 ? 'Certified' : 'New Official'}
             </span>
           </div>
           <div>
             <p className="text-xs text-[#888888] font-semibold uppercase tracking-wider mb-1">Official Rating</p>
             <div className="flex items-center gap-2">
               <h3 className="text-2xl font-bold text-[#111111]">
-                {Number(refereeInfo.rating || 4.9).toFixed(1)} ★
+                {Number(refereeInfo.rating || 0).toFixed(1)} ★
               </h3>
-              <div className="flex text-amber-500">
-                {[1, 2, 3, 4, 5].map(i => (
-                  <Star key={i} size={14} fill="currentColor" />
-                ))}
+              <div className="flex text-amber-500 gap-0.5">
+                {[1, 2, 3, 4, 5].map(star => {
+                  const fillStar = Number(refereeInfo.rating || 0) >= star;
+                  return (
+                    <Star key={star} size={14} fill={fillStar ? "currentColor" : "none"} className={fillStar ? "text-amber-500" : "text-gray-300"} />
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -462,13 +471,16 @@ export default function RefereeDashboard() {
 
               <div className="flex items-baseline gap-3">
                 <span className="text-4xl font-black text-white tracking-tight">
-                  {Number(refereeInfo.rating || 4.9).toFixed(1)}
+                  {Number(refereeInfo.rating || 0).toFixed(1)}
                 </span>
                 <span className="text-base font-bold text-[#98F5E1]">/ 5.0 Overall Score</span>
                 <div className="flex items-center gap-1 ml-2 text-amber-400">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} size={18} fill="currentColor" />
-                  ))}
+                  {[1, 2, 3, 4, 5].map((star) => {
+                    const fillStar = Number(refereeInfo.rating || 0) >= star;
+                    return (
+                      <Star key={star} size={18} fill={fillStar ? "currentColor" : "none"} className={fillStar ? "text-amber-400" : "text-gray-500"} />
+                    );
+                  })}
                 </div>
               </div>
 

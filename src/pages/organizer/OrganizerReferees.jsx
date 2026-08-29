@@ -155,13 +155,8 @@ export default function OrganizerReferees() {
     }
   };
 
-  // Filter referees by search query and destroy/remove referee cards that already received requests
+  // Filter referees by search query
   const filteredReferees = referees.filter(r => {
-    const rId = Number(r.userId || r.user_id || r.id);
-    if (sentRefereeIds.includes(rId)) {
-      return false; // Card destroyed once request sent
-    }
-
     const query = searchQuery.toLowerCase();
     const name = (r.referee_name || r.full_name || r.display_name || r.email || '').toLowerCase();
     const district = (r.district || r.location || '').toLowerCase();
@@ -269,10 +264,22 @@ export default function OrganizerReferees() {
                   
                   <div className="p-6 relative pt-0">
                     {/* Avatar */}
-                    <div className="w-16 h-16 rounded-2xl bg-white p-1 absolute -top-8 left-6 shadow-sm">
-                      <div className="w-full h-full rounded-xl bg-[#f4f4f4] flex items-center justify-center font-bold text-lg text-[#00382D] border border-[#e5e5e5]">
-                        {initials}
-                      </div>
+                    <div className="w-16 h-16 rounded-2xl bg-white p-1 absolute -top-8 left-6 shadow-sm border-2 border-white flex items-center justify-center overflow-hidden">
+                      <img 
+                        src={
+                          (referee.profile_picture && referee.profile_picture.trim() !== '') 
+                            ? referee.profile_picture 
+                            : (referee.profilePicture && referee.profilePicture.trim() !== '')
+                            ? referee.profilePicture
+                            : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'Referee')}&backgroundColor=eaf1ec`
+                        } 
+                        alt={name} 
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'Referee')}&backgroundColor=eaf1ec`;
+                        }}
+                        className="w-full h-full object-cover rounded-xl bg-emerald-50"
+                      />
                     </div>
                     
                     {/* Live Status Badge */}
@@ -329,18 +336,28 @@ export default function OrganizerReferees() {
                     <ChevronRight size={14} className="text-[#888888]" />
                   </button>
 
-                  <button 
-                    onClick={() => handleOpenInviteModal(referee)}
-                    disabled={!isAvailable}
-                    className={`w-full py-2.5 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm ${
-                      isAvailable 
-                        ? 'bg-[#00382D] hover:bg-[#002b22] cursor-pointer' 
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    <Send size={13} />
-                    {isAvailable ? 'Send Request for Tournament' : 'Currently Unavailable'}
-                  </button>
+                  {sentRefereeIds.includes(userId) ? (
+                    <button 
+                      disabled
+                      className="w-full py-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs cursor-not-allowed"
+                    >
+                      <CheckCircle2 size={13} className="text-emerald-600" />
+                      Request Sent / Invited
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => handleOpenInviteModal(referee)}
+                      disabled={!isAvailable}
+                      className={`w-full py-2.5 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm ${
+                        isAvailable 
+                          ? 'bg-[#00382D] hover:bg-[#002b22] cursor-pointer' 
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      <Send size={13} />
+                      {isAvailable ? 'Send Request for Tournament' : 'Currently Unavailable'}
+                    </button>
+                  )}
                 </div>
 
               </div>
