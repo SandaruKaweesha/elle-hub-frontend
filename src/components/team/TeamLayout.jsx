@@ -1,3 +1,4 @@
+import NotificationDropdown from '../common/NotificationDropdown';
 import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import ImageCropperModal from "../ImageCropperModal";
@@ -250,60 +251,7 @@ export default function TeamLayout() {
                 )}
               </button>
 
-              {showNotifications && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}></div>
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-[#e5e5e5] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                    <div className="p-3.5 px-4 border-b border-[#e5e5e5] flex items-center justify-between bg-white">
-                      <h3 className="font-bold text-sm text-[#111111]">Notifications</h3>
-                      <div className="flex items-center gap-3">
-                        <button onClick={handleMarkAllAsRead} className="text-xs text-[#08733e] font-semibold hover:underline">
-                          Mark all read
-                        </button>
-                        <button 
-                          onClick={() => setShowNotifications(false)}
-                          className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                          title="Close"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="max-h-[320px] overflow-y-auto">
-                      {notifications.length > 0 ? (
-                        notifications.slice(0, 8).map((notif, idx) => (
-                          <div 
-                             key={notif.notification_id || idx}
-                             onClick={() => { setShowNotifications(false); navigate('/team/notifications'); }}
-                             className={`p-3.5 border-b border-gray-100 transition-colors cursor-pointer flex gap-3 ${Number(notif.is_read) === 0 ? 'bg-emerald-50/40 hover:bg-emerald-50/70' : 'hover:bg-gray-50'}`}
-                          >
-                             <div className="w-8 h-8 rounded-full bg-[#eaf1ec] text-[#08733e] flex items-center justify-center shrink-0 mt-0.5">
-                               <Trophy size={14} />
-                             </div>
-                             <div className="min-w-0 flex-1">
-                               <p className="text-xs font-bold text-[#111111] leading-tight truncate">{notif.title}</p>
-                               <p className="text-xs text-[#555555] mt-1 leading-snug line-clamp-2">{notif.message}</p>
-                               <span className="text-[10px] text-gray-400 mt-1 block font-medium">
-                                 {notif.created_at || notif.received_at || 'Recently'}
-                               </span>
-                             </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="p-6 text-center text-sm text-[#666666] font-medium">No notifications yet</div>
-                      )}
-                    </div>
-                    <div className="p-3 bg-gray-50 text-center border-t border-[#e5e5e5]">
-                      <button 
-                         onClick={() => { setShowNotifications(false); navigate('/team/notifications'); }}
-                         className="text-xs font-bold text-[#00382D] hover:underline"
-                      >
-                         View all notifications →
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
+              <NotificationDropdown rolePath="team" isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
             </div>
 
             {/* Settings */}

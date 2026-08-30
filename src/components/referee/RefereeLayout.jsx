@@ -1,3 +1,4 @@
+import NotificationDropdown from '../common/NotificationDropdown';
 import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import api from "../../services/api";
@@ -223,14 +224,7 @@ export default function RefereeLayout() {
               <Menu size={24} />
             </button>
 
-            <div className="relative w-full max-w-md hidden md:block">
-              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#888888]" />
-              <input 
-                type="text" 
-                placeholder="Search matches or tournaments..." 
-                className="w-full pl-10 pr-4 py-2 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#00382D] transition-all"
-              />
-            </div>
+
           </div>
 
           <div className="flex items-center gap-4">
@@ -250,87 +244,9 @@ export default function RefereeLayout() {
                 )}
               </button>
 
-              {showNotifications && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}></div>
-                  <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-[#e5e5e5] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                    <div className="p-4 bg-gray-50 border-b border-[#e5e5e5] flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Bell size={18} className="text-[#08733e]" />
-                        <h3 className="font-extrabold text-sm text-gray-900">Officiating Alerts</h3>
-                        {unreadNotifCount > 0 && (
-                          <span className="bg-emerald-100 text-[#08733e] text-[10px] font-bold px-2 py-0.5 rounded-full">
-                            {unreadNotifCount} new
-                          </span>
-                        )}
-                      </div>
-                      {unreadNotifCount > 0 && (
-                        <button 
-                          onClick={markAllRead}
-                          className="text-[11px] font-bold text-[#08733e] hover:underline cursor-pointer"
-                        >
-                          Mark all read
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
-                      {notifications.length === 0 ? (
-                        <div className="p-6 text-center text-gray-400 space-y-1">
-                          <Bell size={28} className="mx-auto text-gray-300 mb-2" />
-                          <p className="text-xs font-bold text-gray-700">No Officiating Alerts</p>
-                          <p className="text-[11px]">Match requests & referee updates will show here.</p>
-                        </div>
-                      ) : (
-                        notifications.map(n => {
-                          const isUnread = Number(n.is_read) === 0;
-                          return (
-                            <div 
-                              key={n.notification_id}
-                              onClick={() => {
-                                markSingleRead(n.notification_id);
-                                setShowNotifications(false);
-                                navigate('/referee/notifications');
-                              }}
-                              className={`p-3.5 hover:bg-gray-50 transition-colors cursor-pointer text-left ${isUnread ? 'bg-emerald-50/50' : 'opacity-75'}`}
-                            >
-                              <div className="flex justify-between items-start gap-2">
-                                <h4 className={`text-xs ${isUnread ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
-                                  {n.title}
-                                </h4>
-                                {isUnread && (
-                                  <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0 mt-1"></span>
-                                )}
-                              </div>
-                              <p className="text-[11px] text-gray-600 mt-1 line-clamp-2">{n.message}</p>
-                              <span className="text-[9px] text-gray-400 mt-1.5 block font-mono">
-                                {n.created_at || n.received_at}
-                              </span>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-
-                    <div className="p-2.5 bg-gray-50 border-t border-gray-200 text-center">
-                      <button 
-                        onClick={() => {
-                          setShowNotifications(false);
-                          navigate('/referee/notifications');
-                        }} 
-                        className="text-xs font-extrabold text-[#08733e] hover:underline cursor-pointer"
-                      >
-                        View All Officiating Feed →
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
+              <NotificationDropdown rolePath="referee" isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
             </div>
 
-
-            <div className="w-[1px] h-8 bg-[#e5e5e5] hidden sm:block"></div>
-            
             {/* User Profile Pill */}
             <div 
               className="flex items-center gap-3 cursor-pointer select-none"

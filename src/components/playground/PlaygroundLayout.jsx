@@ -1,3 +1,4 @@
+import NotificationDropdown from '../common/NotificationDropdown';
 import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import api from "../../services/api";
@@ -201,33 +202,9 @@ export default function PlaygroundLayout() {
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
               </button>
 
-              {showNotifications && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}></div>
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-[#e5e5e5] z-50 overflow-hidden animate-in fade-in">
-                    <div className="p-4 border-b border-[#e5e5e5] flex items-center justify-between">
-                      <h3 className="font-bold text-xs text-[#111111]">Playground Notifications</h3>
-                      <div className="flex items-center gap-2.5">
-                        <button className="text-[11px] text-[#00382D] font-bold hover:underline">Mark all read</button>
-                        <button 
-                          onClick={() => setShowNotifications(false)}
-                          className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
-                          title="Close notifications"
-                        >
-                          <X size={15} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="p-4 text-center text-xs text-[#666666]">
-                      No new venue requests.
-                    </div>
-                  </div>
-                </>
-              )}
+              <NotificationDropdown rolePath="playground" isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
             </div>
 
-            <div className="w-[1px] h-8 bg-[#e5e5e5] hidden sm:block"></div>
-            
             {/* User Profile Pill -> Navigates to Settings */}
             <div 
               className="flex items-center gap-3 cursor-pointer select-none"
