@@ -525,7 +525,7 @@ export default function OrganizerSettings() {
 
       {/* --- ACCOUNT DELETION CONFIRMATION MODAL --- */}
       {showDeletionConfirmModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[999999] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-[#e5e5e5]">
             <div className="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mb-4">
               <Trash2 size={24} />

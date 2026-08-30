@@ -210,6 +210,9 @@ export default function OrganizerRequests() {
   );
 
   const filteredTeamRequests = teamRequests.filter(r => {
+    if ((r.initiated_by || r.initiatedBy || '').toUpperCase() === 'ORGANIZER') {
+      return false;
+    }
     const tourney = tournamentsList.find(t => String(t.tournament_id) === String(r.tournament_id));
     if (tourney && ((tourney.status || '').toUpperCase() === 'COMPLETED' || tourney.is_finalized === 1 || tourney.is_finalized === '1')) {
       return false;
@@ -219,6 +222,9 @@ export default function OrganizerRequests() {
   });
 
   const filteredRefereeRequests = refereeRequests.filter(r => {
+    if ((r.initiated_by || r.initiatedBy || '').toUpperCase() === 'ORGANIZER') {
+      return false;
+    }
     const tourney = tournamentsList.find(t => String(t.tournament_id) === String(r.tournament_id));
     if (tourney && ((tourney.status || '').toUpperCase() === 'COMPLETED' || tourney.is_finalized === 1 || tourney.is_finalized === '1')) {
       return false;
@@ -228,6 +234,9 @@ export default function OrganizerRequests() {
   });
 
   const filteredSponsorRequests = sponsorRequests.filter(r => {
+    if ((r.initiated_by || r.initiatedBy || '').toUpperCase() === 'ORGANIZER') {
+      return false;
+    }
     const tourney = tournamentsList.find(t => String(t.tournament_id) === String(r.tournament_id));
     if (tourney && ((tourney.status || '').toUpperCase() === 'COMPLETED' || tourney.is_finalized === 1 || tourney.is_finalized === '1')) {
       return false;
@@ -237,6 +246,9 @@ export default function OrganizerRequests() {
   });
 
   const filteredPlaygroundRequests = playgroundRequests.filter(r => {
+    if ((r.initiated_by || r.initiatedBy || '').toUpperCase() === 'ORGANIZER') {
+      return false;
+    }
     const tourney = tournamentsList.find(t => String(t.tournament_id) === String(r.tournament_id));
     if (tourney && ((tourney.status || '').toUpperCase() === 'COMPLETED' || tourney.is_finalized === 1 || tourney.is_finalized === '1')) {
       return false;
@@ -522,7 +534,7 @@ export default function OrganizerRequests() {
 
       {/* Details Card Modal */}
       {showDetailsModal && selectedRequest && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[999999] bg-black/60 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full shadow-lg border border-[#e5e5e5] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             
             {/* Modal Header */}

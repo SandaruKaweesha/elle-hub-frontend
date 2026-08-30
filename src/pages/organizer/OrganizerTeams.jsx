@@ -8,6 +8,7 @@ export default function OrganizerTeams() {
   const [organizerTournaments, setOrganizerTournaments] = useState([]);
   
   const [loading, setLoading] = useState(true);
+  const [errorModalMsg, setErrorModalMsg] = useState(null);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -377,7 +378,7 @@ export default function OrganizerTeams() {
 
       {/* Invite Team Modal */}
       {showInviteModal && selectedTeamToInvite && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[999999] bg-black/60 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full shadow-lg border border-[#e5e5e5] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="bg-[#002c21] p-6 text-white text-center relative">
               <button 
@@ -448,7 +449,7 @@ export default function OrganizerTeams() {
 
             {/* View Full Team Profile Popup Modal */}
       {showRosterModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[999999] bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden my-auto relative space-y-0">
             
             {/* Cover Image Header with Dark Emerald Gradient & Avatar */}
@@ -650,7 +651,7 @@ export default function OrganizerTeams() {
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[999999] bg-black/60 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 md:p-8 max-w-md w-full shadow-lg border border-[#e5e5e5] animate-in fade-in zoom-in-95 duration-200">
             <h3 className="text-xl font-bold text-[#111111] mb-2 font-['Poppins']">
               {confirmAction?.type === 'APPROVE' ? 'Accept Join Request' : 'Reject Join Request'}
@@ -684,6 +685,37 @@ export default function OrganizerTeams() {
         </div>
       )}
 
-    </div>
+    
+      {/* ERROR POP-UP MODAL CARD */}
+      {errorModalMsg && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-rose-200 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 border-b border-rose-100 pb-4">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold shrink-0">
+                <AlertCircle size={22} />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-gray-900">Request Notice</h3>
+                <p className="text-xs text-rose-600 font-semibold">Action Cannot Be Processed</p>
+              </div>
+            </div>
+            <div className="bg-rose-50/70 border border-rose-200 p-4 rounded-2xl">
+              <p className="text-xs font-bold text-rose-900 leading-relaxed">
+                {errorModalMsg}
+              </p>
+            </div>
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => setErrorModalMsg(null)}
+                className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-extrabold shadow-md transition-all cursor-pointer"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+</div>
   );
 }

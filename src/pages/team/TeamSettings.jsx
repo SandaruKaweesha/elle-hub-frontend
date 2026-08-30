@@ -914,7 +914,7 @@ function TeamSettings() {
 
       {/* --- ADD / EDIT PLAYER MODAL --- */}
       {showPlayerModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-[#e5e5e5] relative">
             <button 
               onClick={() => setShowPlayerModal(false)}
@@ -1010,7 +1010,7 @@ function TeamSettings() {
 
       {/* --- DELETE PLAYER CONFIRMATION MODAL --- */}
       {deletingPlayer && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-[#e5e5e5] text-center relative">
             <div className="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
               <Trash2 size={24} />
@@ -1045,7 +1045,7 @@ function TeamSettings() {
 
       {/* --- ACCOUNT DELETION REQUEST CONFIRMATION MODAL --- */}
       {showDeletionConfirmModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 relative animate-in fade-in zoom-in duration-200">
             <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-2">
               <Trash2 size={24} />

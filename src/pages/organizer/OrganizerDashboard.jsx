@@ -23,7 +23,8 @@ import {
   Edit3,
   Trash2,
   Save,
-  Loader2
+  Loader2,
+  Lock
 } from "lucide-react";
 import KnockoutBracketDisplay from "../../components/organizer/KnockoutBracketDisplay";
 
@@ -522,6 +523,15 @@ function OrganizerDashboard() {
                         <span className="w-full text-center py-1.5 bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-black uppercase rounded-xl">
                           Deletion Request Pending Admin Review
                         </span>
+                      ) : Boolean(Number(t.is_finalized) === 1 || Number(t.is_draw_finalized) === 1 || t.is_finalized || t.is_draw_finalized || ['FINALIZED', 'COMPLETED', 'FINISHED', 'ACTIVE', 'ONGOING'].includes((t.status || '').toUpperCase())) ? (
+                        <button 
+                          disabled
+                          type="button"
+                          title="Tournament setup is finalized. Deletion request is locked."
+                          className="w-full py-1.5 bg-gray-100 text-gray-400 border border-gray-200 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 cursor-not-allowed"
+                        >
+                          <Lock size={13} /> Finalized (Deletion Locked)
+                        </button>
                       ) : (
                         <button 
                           type="button"
@@ -559,7 +569,7 @@ function OrganizerDashboard() {
 
       {/* COMPLETED TOURNAMENT DETAILS POP-UP MODAL CARD */}
       {selectedCompletedTournament && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl border border-[#e5e5e5] shadow-2xl max-w-4xl w-full p-6 md:p-8 space-y-6 animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
             
             {/* Modal Header */}
@@ -960,7 +970,7 @@ function OrganizerDashboard() {
     
       {/* TOURNAMENT DELETION REQUEST CONFIRMATION MODAL */}
       {deletingTournament && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl border border-[#e5e5e5] shadow-2xl max-w-md w-full p-6 space-y-5 animate-in zoom-in-95 duration-200">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
               <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
