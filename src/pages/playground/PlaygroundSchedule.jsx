@@ -13,7 +13,7 @@ import {
   X,
   ChevronRight,
   Building2,
-  UserCheck
+  UserCheck, LogOut, Lock
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -34,6 +34,32 @@ export default function PlaygroundSchedule() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("Active");
+
+  // Leave / Withdraw State
+  const [leaveLoadingId, setLeaveLoadingId] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
+
+  const handleWithdrawVenue = async (tId) => {
+    try {
+      setLeaveLoadingId(tId);
+      setError(null);
+      const res = await api.post('/tournament/playground-request/leave', { tournamentId: tId });
+      if (res.data && res.data.success !== false) {
+        setSuccessMsg(res.data.message || "You have withdrawn venue hosting successfully.");
+        setShowModal(false);
+        setSelectedItem(null);
+        fetchSchedule();
+        setTimeout(() => setSuccessMsg(null), 4000);
+      } else {
+        throw new Error(res.data.message || "Failed to withdraw venue hosting.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || err.message || "Operation failed.");
+    } finally {
+      setLeaveLoadingId(null);
+    }
+  };
 
   // Selected Detail Modal
   const [selectedItem, setSelectedItem] = useState(null);
@@ -67,6 +93,7 @@ export default function PlaygroundSchedule() {
 
           return {
             id: r.request_id || r.tournament_id,
+            tournamentId: r.tournament_id,
             tournament: r.tournament_title || 'National Elle Championship',
             venue: r.location || 'Official Playground Venue',
             date: r.tournament_held_date || r.start_date || '2026-08-28',
@@ -75,7 +102,8 @@ export default function PlaygroundSchedule() {
             organizer: r.organizer_name || 'Elle Sports Association',
             contact: r.contact_number || '0778975961',
             status: displayStatus,
-            initiatedBy: r.initiated_by
+            initiatedBy: r.initiated_by,
+            raw: r
           };
         });
 
@@ -284,7 +312,13 @@ export default function PlaygroundSchedule() {
                 key={item.id}
                 className="group rounded-2xl border border-[#e5e5e5] bg-white p-5 shadow-sm transition-all duration-300 hover:border-[#00382D]/30 hover:shadow-md"
               >
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      {successMsg && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-2xl flex items-center gap-2 text-xs font-bold shadow-sm animate-in fade-in duration-200">
+          <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+          <span>{successMsg}</span>
+        </div>
+      )}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   
                   {/* Left Column: Date Badge + Tournament Info */}
                   <div className="flex items-start gap-4">
@@ -330,8 +364,8 @@ export default function PlaygroundSchedule() {
                     </div>
                   </div>
 
-                  {/* Right Column: Status + View Details */}
-                  <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-3 md:border-t-0 md:pt-0 md:justify-end">
+                  {/* Right Column: Status + Withdraw + View Details */}
+                  <div className="flex items-center justify-between gap-2.5 border-t border-gray-100 pt-3 md:border-t-0 md:pt-0 md:justify-end flex-wrap">
                     <span
                       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
                         STATUS_STYLES[item.status] || "bg-gray-100 text-gray-700"
@@ -340,13 +374,37 @@ export default function PlaygroundSchedule() {
                       {(item.status || 'PENDING').toUpperCase()}
                     </span>
 
+                    {item.status !== 'Completed' && item.status !== 'Declined' && (
+                      Boolean(Number(item.raw?.is_draw_finalized) === 1 || Number(item.raw?.is_finalized) === 1 || item.raw?.isDrawFinalized || item.raw?.isFinalized || ['FINALIZED', 'COMPLETED', 'FINISHED'].includes((item.raw?.tournament_status || item.raw?.status_tournament || item.raw?.status || '').toUpperCase())) ? (
+                        <span
+                          title="Tournament setup has been finalized by organizer. Venue booking is locked."
+                          className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-100 px-3.5 py-1.5 text-xs font-bold text-gray-400 cursor-not-allowed"
+                        >
+                          <Lock size={13} /> Finalized
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={leaveLoadingId === (item.tournamentId || item.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleWithdrawVenue(item.tournamentId || item.id);
+                          }}
+                          className="flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3.5 py-1.5 text-xs font-bold text-rose-600 transition-all hover:bg-rose-100 cursor-pointer shadow-2xs disabled:opacity-50"
+                          title="Withdraw Venue Hosting"
+                        >
+                          <LogOut size={13} /> Withdraw
+                        </button>
+                      )
+                    )}
+
                     <button
                       type="button"
                       onClick={() => {
                         setSelectedItem(item);
                         setShowModal(true);
                       }}
-                      className="flex items-center gap-1 rounded-full border border-[#00382D] px-4 py-1.5 text-xs font-bold text-[#00382D] transition-all hover:bg-[#00382D] hover:text-white cursor-pointer"
+                      className="flex items-center gap-1 rounded-full border border-[#00382D] px-4 py-1.5 text-xs font-bold text-[#00382D] transition-all hover:bg-[#00382D] hover:text-white cursor-pointer shadow-2xs"
                     >
                       View Details
                       <ChevronRight size={14} />
@@ -362,7 +420,7 @@ export default function PlaygroundSchedule() {
 
       {/* Details Popup Modal */}
       {showModal && selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 border border-gray-100">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div className="flex items-center gap-2 text-[#00382D]">
@@ -413,12 +471,35 @@ export default function PlaygroundSchedule() {
               </div>
             </div>
 
-            <button
-              onClick={() => setShowModal(false)}
-              className="w-full py-3 bg-[#00382D] text-white text-xs font-bold rounded-xl hover:bg-[#002a22] transition-colors cursor-pointer shadow-sm"
-            >
-              Close Details
-            </button>
+            <div className="flex gap-2">
+              {selectedItem.status !== 'Completed' && selectedItem.status !== 'Declined' && (
+                Boolean(Number(selectedItem.raw?.is_draw_finalized) === 1 || Number(selectedItem.raw?.is_finalized) === 1 || selectedItem.raw?.isDrawFinalized || selectedItem.raw?.isFinalized || ['FINALIZED', 'COMPLETED', 'FINISHED'].includes((selectedItem.raw?.tournament_status || selectedItem.raw?.status_tournament || selectedItem.raw?.status || '').toUpperCase())) ? (
+                  <button
+                    disabled
+                    type="button"
+                    title="Tournament is finalized. Venue booking locked."
+                    className="flex-1 py-3 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl border border-gray-200 flex items-center justify-center gap-1.5 cursor-not-allowed"
+                  >
+                    <Lock size={14} /> Finalized (Leave Locked)
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={leaveLoadingId === (selectedItem.tournamentId || selectedItem.id)}
+                    onClick={() => handleWithdrawVenue(selectedItem.tournamentId || selectedItem.id)}
+                    className="flex-1 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-xl border border-rose-200/80 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-50"
+                  >
+                    {leaveLoadingId === (selectedItem.tournamentId || selectedItem.id) ? "Processing..." : <><LogOut size={14} /> Withdraw Venue</>}
+                  </button>
+                )
+              )}
+              <button
+                onClick={() => setShowModal(false)}
+                className="py-3 px-5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

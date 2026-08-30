@@ -13,7 +13,7 @@ import {
   X, 
   Loader2,
   Users,
-  Award
+  Award, LogOut, Lock
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -26,6 +26,32 @@ export default function SponsorMyTournaments() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTab, setFilterTab] = useState("ALL"); // "ALL", "ACTIVE", "COMPLETED"
+
+  // Leave / Withdraw State
+  const [leaveLoadingId, setLeaveLoadingId] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
+
+  const handleWithdrawSponsorship = async (tId) => {
+    try {
+      setLeaveLoadingId(tId);
+      setError(null);
+      const res = await api.post('/tournament/sponsor-request/leave', { tournamentId: tId });
+      if (res.data && res.data.success !== false) {
+        setSuccessMsg(res.data.message || "You have withdrawn your sponsorship request successfully.");
+        setShowModal(false);
+        setSelectedTournament(null);
+        fetchMySponsoredTournaments();
+        setTimeout(() => setSuccessMsg(null), 4000);
+      } else {
+        throw new Error(res.data.message || "Failed to withdraw sponsorship request.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || err.message || "Operation failed.");
+    } finally {
+      setLeaveLoadingId(null);
+    }
+  };
 
   // Details Modal State
   const [selectedTournament, setSelectedTournament] = useState(null);
@@ -251,19 +277,55 @@ export default function SponsorMyTournaments() {
                 </p>
               </div>
 
-              <div className="pt-2 flex items-center justify-between">
+              <div className="pt-2 flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-xs font-extrabold text-[#08733e] flex items-center gap-1">
                   <BadgeCheck size={16} /> Official Sponsor
                 </span>
-                <button
-                  onClick={() => {
-                    setSelectedTournament(t);
-                    setShowModal(true);
-                  }}
-                  className="bg-[#00382D] hover:bg-[#002b22] text-white text-xs font-bold px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
-                >
-                  <Eye size={14} /> View Details
-                </button>
+
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const isFinalized = Boolean(
+                      Number(t.raw?.is_draw_finalized) === 1 || 
+                      Number(t.raw?.is_finalized) === 1 || 
+                      t.raw?.isDrawFinalized || 
+                      t.raw?.isFinalized || 
+                      ['FINALIZED', 'COMPLETED', 'FINISHED', 'ACTIVE', 'ONGOING'].includes((t.raw?.tournament_status || t.raw?.status || '').toUpperCase())
+                    );
+
+                    if (isFinalized) {
+                      return (
+                        <span 
+                          title="The tournament setup has been finalized by organizer. Sponsorship is locked."
+                          className="px-3 py-2 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl border border-gray-200 flex items-center gap-1 cursor-not-allowed"
+                        >
+                          <Lock size={13} /> Finalized
+                        </span>
+                      );
+                    } else {
+                      return (
+                        <button
+                          type="button"
+                          disabled={leaveLoadingId === t.id}
+                          onClick={() => handleWithdrawSponsorship(t.id)}
+                          className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl border border-rose-200/80 transition-all cursor-pointer shadow-2xs flex items-center gap-1.5 disabled:opacity-50"
+                          title="Withdraw Sponsorship"
+                        >
+                          <LogOut size={13} /> Withdraw
+                        </button>
+                      );
+                    }
+                  })()}
+
+                  <button
+                    onClick={() => {
+                      setSelectedTournament(t);
+                      setShowModal(true);
+                    }}
+                    className="bg-[#00382D] hover:bg-[#002b22] text-white text-xs font-bold px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Eye size={14} /> View Details
+                  </button>
+                </div>
               </div>
             </div>
           ))}

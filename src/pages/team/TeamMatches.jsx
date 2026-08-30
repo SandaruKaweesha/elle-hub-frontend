@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Trophy, Calendar, MapPin, ArrowRight, Loader2, ShieldCheck, Lock, 
   AlertCircle, Users, Swords, CheckCircle2, Search, Clock, 
-  XCircle, Info, Filter, ArrowLeft, RefreshCw
+  XCircle, Info, Filter, LogOut, ArrowLeft, RefreshCw
 } from 'lucide-react';
 import api from '../../services/api';
 import KnockoutBracketDisplay from '../../components/organizer/KnockoutBracketDisplay';
@@ -18,6 +18,43 @@ export default function TeamMatches() {
   // Filtering & Search states
   const [activeTab, setActiveTab] = useState('ALL'); // 'ALL', 'APPROVED', 'PENDING', 'REJECTED'
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Leave / Cancel tournament states
+  const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
+  const [tournamentToLeave, setTournamentToLeave] = useState(null);
+  const [leaveLoading, setLeaveLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState(null);
+
+  const handleConfirmLeave = async () => {
+    if (!tournamentToLeave) return;
+    const tId = tournamentToLeave.tournament_id;
+    try {
+      setLeaveLoading(true);
+      setError(null);
+      const isApproved = tournamentToLeave.request_status === 'APPROVED' || tournamentToLeave.request_status === 'ACCEPTED';
+      const endpoint = isApproved ? '/tournament/request/leave' : '/tournament/request/cancel';
+      const res = await api.post(endpoint, { tournamentId: tId });
+      
+      if (res.data && res.data.success !== false) {
+        setSuccessMsg(res.data.message || (isApproved ? "You have left the tournament successfully." : "Join request cancelled successfully."));
+        setShowLeaveConfirmModal(false);
+        setTournamentToLeave(null);
+        if (selectedMatch?.tournament_id === tId) {
+          setSelectedMatch(null);
+        }
+        fetchAllAppliedMatches();
+        setTimeout(() => setSuccessMsg(null), 4000);
+      } else {
+        throw new Error(res.data.message || "Failed to update tournament registration.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || err.message || "Operation failed.");
+      setShowLeaveConfirmModal(false);
+    } finally {
+      setLeaveLoading(false);
+    }
+  };
 
   // Match Draw state for selected tournament
   const [drawDetails, setDrawDetails] = useState(null);
@@ -187,6 +224,12 @@ export default function TeamMatches() {
     <div className="space-y-6 lg:space-y-8 pb-12 animate-in fade-in duration-300">
       
       {/* Header */}
+            {successMsg && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-2xl flex items-center gap-2 text-xs font-bold shadow-sm animate-in fade-in duration-200">
+          <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+          <span>{successMsg}</span>
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-[#111111] tracking-tight">Team Matches & Tournament Draw</h1>
@@ -437,58 +480,174 @@ export default function TeamMatches() {
                       {t.tournament_title}
                     </h3>
                     
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                      <Calendar size={13} className="text-gray-400 shrink-0" />
-                      <span>{formatDate(t.tournament_held_date)}</span>
+                    <div className="flex items-center justify-between text-xs text-gray-500 font-medium mt-2.5 pt-2 border-t border-gray-100">
+                      <span className="flex items-center gap-1.5">
+                        <Calendar size={13} className="text-[#08733e] shrink-0" />
+                        <span className="font-bold text-gray-700">{formatDate(t.tournament_held_date)}</span>
+                      </span>
+
+                      {(() => {
+                        const isDrawFinalized = Boolean(
+                          Number(t.is_draw_finalized) === 1 || 
+                          Number(t.is_finalized) === 1 || 
+                          t.isDrawFinalized === true || 
+                          t.isFinalized === true ||
+                          ['FINALIZED', 'COMPLETED', 'FINISHED'].includes((t.tournament_status || t.status || '').toUpperCase())
+                        );
+
+                        if (isDrawFinalized) {
+                          return (
+                            <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-2xs">
+                              <CheckCircle2 size={11} className="text-emerald-600" /> Draw Ready
+                            </span>
+                          );
+                        } else {
+                          return (
+                            <span className="px-2.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-2xs">
+                              <Lock size={11} className="text-amber-600" /> Draw Pending
+                            </span>
+                          );
+                        }
+                      })()}
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-gray-500 flex items-center gap-1 truncate max-w-[110px]">
-                      <MapPin size={12} className="text-gray-400 shrink-0" />
-                      {t.location}
-                    </span>
+                  {/* Footer Actions */}
+                  <div className="pt-3 border-t border-gray-100 flex items-center gap-2">
                     {(() => {
                       const isDrawFinalized = Boolean(
                         Number(t.is_draw_finalized) === 1 || 
                         Number(t.is_finalized) === 1 || 
                         t.isDrawFinalized === true || 
-                        t.isFinalized === true
+                        t.isFinalized === true ||
+                        ['FINALIZED', 'COMPLETED', 'FINISHED'].includes((t.tournament_status || t.status || '').toUpperCase())
                       );
 
                       if (isApproved) {
-                        if (isDrawFinalized) {
-                          return (
-                            <span className="flex items-center gap-1 text-xs font-extrabold text-[#08733e]">
-                              View Fixtures <ArrowRight size={14} />
-                            </span>
-                          );
-                        } else {
-                          return (
-                            <span className="flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-xl shadow-2xs">
-                              <Lock size={12} className="text-amber-600" /> Draw Pending
-                            </span>
-                          );
-                        }
-                      }
-                      if (isPending) {
                         return (
-                          <span className="flex items-center gap-1 text-xs font-bold text-amber-700">
-                            Under Review <Info size={14} />
-                          </span>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleSelectTournament(t)}
+                              className="flex-1 py-2.5 px-3 bg-[#00382D] hover:bg-[#002a22] text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <span>View Matches</span> <ArrowRight size={13} />
+                            </button>
+
+                            {isDrawFinalized ? (
+                              <button
+                                disabled
+                                type="button"
+                                title="The tournament setup has been finalized by organizer. Participant list is locked."
+                                className="px-3 py-2.5 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl border border-gray-200 flex items-center justify-center gap-1 cursor-not-allowed"
+                              >
+                                <Lock size={13} /> Locked
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTournamentToLeave(t);
+                                  setShowLeaveConfirmModal(true);
+                                }}
+                                className="px-3 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl border border-rose-200/80 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                                title="Leave Tournament"
+                              >
+                                <LogOut size={13} /> Leave
+                              </button>
+                            )}
+                          </>
+                        );
+                      } else if (isPending) {
+                        return (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleSelectTournament(t)}
+                              className="flex-1 py-2.5 px-3 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <span>View Details</span> <ArrowRight size={13} />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTournamentToLeave(t);
+                                setShowLeaveConfirmModal(true);
+                              }}
+                              className="px-3 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl border border-rose-200/80 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                              title="Cancel Application"
+                            >
+                              <LogOut size={13} /> Cancel
+                            </button>
+                          </>
+                        );
+                      } else {
+                        return (
+                          <div className="w-full py-2.5 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl text-center border border-rose-200">
+                            Application Declined
+                          </div>
                         );
                       }
-                      return (
-                        <span className="flex items-center gap-1 text-xs font-bold text-rose-700">
-                          Declined <Info size={14} />
-                        </span>
-                      );
                     })()}
                   </div>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+      {/* Leave Tournament Confirmation Modal */}
+      {showLeaveConfirmModal && tournamentToLeave && (
+        <div className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 text-center animate-in fade-in zoom-in duration-200 border border-gray-100">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto text-red-600 shadow-xs">
+              <LogOut size={28} />
+            </div>
+            
+            <div>
+              <h3 className="text-xl font-black text-gray-900">
+                {tournamentToLeave.request_status === 'APPROVED' || tournamentToLeave.request_status === 'ACCEPTED'
+                  ? 'Leave Tournament?'
+                  : 'Cancel Join Request?'}
+              </h3>
+              <p className="text-xs text-gray-600 font-semibold mt-1.5 leading-relaxed">
+                {tournamentToLeave.request_status === 'APPROVED' || tournamentToLeave.request_status === 'ACCEPTED'
+                  ? `Are you sure you want to withdraw your team from '${tournamentToLeave.tournament_title}'? The organizer will be notified immediately.`
+                  : `Are you sure you want to cancel your application for '${tournamentToLeave.tournament_title}'?`}
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                disabled={leaveLoading}
+                onClick={() => { setShowLeaveConfirmModal(false); setTournamentToLeave(null); }}
+                className="flex-1 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold text-xs rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Keep Registration
+              </button>
+              <button
+                type="button"
+                disabled={leaveLoading}
+                onClick={handleConfirmLeave}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition-colors shadow-sm flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {leaveLoading ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <LogOut size={14} /> Yes, Leave
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

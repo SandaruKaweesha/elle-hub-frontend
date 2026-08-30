@@ -364,7 +364,7 @@ export default function SponsorTournaments() {
 
       {/* Details Popup Modal */}
       {showModal && selectedTourney && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 relative animate-in fade-in zoom-in duration-200">
             <button 
               onClick={() => setShowModal(false)}
@@ -438,6 +438,39 @@ export default function SponsorTournaments() {
                 <span className="font-bold text-[#111111]">{selectedTourney.maximum_referee_limit || selectedTourney.referee_limit || selectedTourney.referees_needed || 4} Certified Referees</span>
               </div>
 
+              {selectedTourney.prize_details && (
+                <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl space-y-1">
+                  <span className="text-amber-900 font-extrabold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                    🏆 Prize Details
+                  </span>
+                  <p className="text-xs text-amber-900/90 font-medium leading-relaxed">
+                    {selectedTourney.prize_details || selectedTourney.prizeDetails}
+                  </p>
+                </div>
+              )}
+
+              {selectedTourney.rules && (
+                <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl space-y-1">
+                  <span className="text-emerald-900 font-extrabold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                    📜 Rules & Format
+                  </span>
+                  <p className="text-xs text-emerald-900/90 font-medium leading-relaxed">
+                    {selectedTourney.rules}
+                  </p>
+                </div>
+              )}
+
+              {selectedTourney.description && (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                  <span className="text-slate-700 font-extrabold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                    📝 Tournament Description
+                  </span>
+                  <p className="text-xs text-slate-700 font-medium leading-relaxed">
+                    {selectedTourney.description}
+                  </p>
+                </div>
+              )}
+
 
 
             </div>
@@ -452,7 +485,7 @@ export default function SponsorTournaments() {
                 Close
               </button>
 
-              {!getSponsorshipStatus(selectedTourney.tournament_id || selectedTourney.id) && (
+              {!getSponsorshipRequestObj(selectedTourney.tournament_id || selectedTourney.id) && (
                 <button
                   type="button"
                   onClick={() => {

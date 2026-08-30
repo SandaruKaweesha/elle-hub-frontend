@@ -15,7 +15,7 @@ import {
   Check, 
   Eye, 
   Trophy, 
-  Building2 
+  Building2, LogOut, Lock
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -31,6 +31,31 @@ export default function PlaygroundRequests() {
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+
+  // Leave / Withdraw Venue State
+  const [leaveLoadingId, setLeaveLoadingId] = useState(null);
+
+  const handleWithdrawVenue = async (tId) => {
+    try {
+      setLeaveLoadingId(tId);
+      setError(null);
+      const res = await api.post('/tournament/playground-request/leave', { tournamentId: tId });
+      if (res.data && res.data.success !== false) {
+        setSuccessMsg(res.data.message || "You have withdrawn venue hosting successfully.");
+        setShowModal(false);
+        setSelectedReq(null);
+        fetchRequests();
+        setTimeout(() => setSuccessMsg(null), 4000);
+      } else {
+        throw new Error(res.data.message || "Failed to withdraw venue hosting.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || err.message || "Operation failed.");
+    } finally {
+      setLeaveLoadingId(null);
+    }
+  };
 
   // Details Modal State
   const [selectedReq, setSelectedReq] = useState(null);
@@ -62,14 +87,22 @@ export default function PlaygroundRequests() {
     fetchRequests();
   }, [userId]);
 
-  // Separate requests into SENT (initiated by PLAYGROUND) and RECEIVED (initiated by ORGANIZER)
-  const sentRequests = useMemo(() => {
-    return requests.filter(r => (r.initiated_by || '').toUpperCase() !== 'ORGANIZER');
+  // Filter out completed/finished/cancelled tournaments from active requests
+  const activeRequests = useMemo(() => {
+    return requests.filter(r => {
+      const tStatus = (r.tournament_status || r.t_status || '').toString().toUpperCase();
+      return tStatus !== 'COMPLETED' && tStatus !== 'FINISHED' && tStatus !== 'CANCELLED';
+    });
   }, [requests]);
 
+  // Separate active requests into SENT (initiated by PLAYGROUND) and RECEIVED (initiated by ORGANIZER)
+  const sentRequests = useMemo(() => {
+    return activeRequests.filter(r => (r.initiated_by || '').toUpperCase() !== 'ORGANIZER');
+  }, [activeRequests]);
+
   const receivedRequests = useMemo(() => {
-    return requests.filter(r => (r.initiated_by || '').toUpperCase() === 'ORGANIZER');
-  }, [requests]);
+    return activeRequests.filter(r => (r.initiated_by || '').toUpperCase() === 'ORGANIZER');
+  }, [activeRequests]);
 
   const currentTabRequests = activeTab === "SENT" ? sentRequests : receivedRequests;
 

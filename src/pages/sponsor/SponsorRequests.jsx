@@ -17,7 +17,7 @@ import {
   BadgeDollarSign,
   XCircle,
   Users,
-  UserCheck
+  UserCheck, LogOut, Lock
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -33,6 +33,31 @@ export default function SponsorRequests() {
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+
+  // Leave / Withdraw State
+  const [leaveLoadingId, setLeaveLoadingId] = useState(null);
+
+  const handleWithdrawSponsorship = async (tId) => {
+    try {
+      setLeaveLoadingId(tId);
+      setError(null);
+      const res = await api.post('/tournament/sponsor-request/leave', { tournamentId: tId });
+      if (res.data && res.data.success !== false) {
+        setSuccessMsg(res.data.message || "You have withdrawn your sponsorship request successfully.");
+        setShowModal(false);
+        setSelectedReq(null);
+        fetchRequests();
+        setTimeout(() => setSuccessMsg(null), 4000);
+      } else {
+        throw new Error(res.data.message || "Failed to withdraw sponsorship request.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || err.message || "Operation failed.");
+    } finally {
+      setLeaveLoadingId(null);
+    }
+  };
 
   // Details Modal State
   const [selectedReq, setSelectedReq] = useState(null);
