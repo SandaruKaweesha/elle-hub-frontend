@@ -165,7 +165,7 @@ export default function PlaygroundDashboard() {
       
       {/* Header Banner */}
       <div className="relative overflow-hidden bg-gradient-to-r from-[#00382D] to-[#08733e] rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="space-y-2 max-w-xl relative z-10">
+        <div className="space-y-2 max-w-xl">
           <span className="px-3 py-1 bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-xs font-extrabold rounded-full tracking-wider uppercase inline-block">
             Official Ground Venue Dashboard
           </span>
@@ -177,7 +177,7 @@ export default function PlaygroundDashboard() {
           </p>
         </div>
 
-        <div className="relative z-10 bg-white/10 backdrop-blur-xs p-4 rounded-xl border border-white/10 flex items-center gap-4 shrink-0">
+        <div className="bg-white/10 p-4 p-4 rounded-xl border border-white/10 flex items-center gap-4 shrink-0">
           <div className="w-12 h-12 rounded-xl bg-white text-[#00382D] flex items-center justify-center font-extrabold text-xl shadow-xs">
             <Building2 size={24} />
           </div>

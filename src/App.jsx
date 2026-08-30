@@ -1,3 +1,4 @@
+import SponsorMyTournaments from "./pages/sponsor/SponsorMyTournaments";
 import PlaygroundNotifications from './pages/playground/PlaygroundNotifications';
 import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
@@ -206,6 +207,7 @@ function App() {
         <Route path="requests" element={<PlaygroundRequests />} />
         <Route path="history" element={<PlaygroundHistory />} />
         <Route path="settings" element={<PlaygroundSettings />} />
+        <Route path="notifications" element={<PlaygroundNotifications />} />
       </Route>
 
       {/* Sponsor Routes */}
@@ -217,6 +219,7 @@ function App() {
         <Route index element={<SponsorDashboard />} />
         <Route path="dashboard" element={<SponsorDashboard />} />
         <Route path="tournaments" element={<SponsorTournaments />} />
+        <Route path="my-tournaments" element={<SponsorMyTournaments />} />
         <Route path="requests" element={<SponsorRequests />} />
         <Route path="schedule" element={<SponsorSchedule />} />
         <Route path="history" element={<SponsorHistory />} />

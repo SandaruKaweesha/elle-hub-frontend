@@ -169,7 +169,7 @@ export default function PlaygroundLayout() {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         {/* Top Header */}
-        <header className="h-16 lg:h-20 bg-white border-b border-[#e5e5e5] flex items-center justify-between px-4 lg:px-8 z-10 shrink-0">
+        <header className="h-16 lg:h-20 bg-white border-b border-[#e5e5e5] flex items-center justify-between px-4 lg:px-8 relative z-[9999] shrink-0">
           
           <div className="flex items-center gap-3 flex-1">
             <button 
@@ -180,14 +180,7 @@ export default function PlaygroundLayout() {
             </button>
 
             {/* Global Search */}
-            <div className="relative max-w-md w-full hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input 
-                type="text" 
-                placeholder="Search ground schedules, tournaments..." 
-                className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all"
-              />
-            </div>
+            
           </div>
 
           <div className="flex items-center gap-3 lg:gap-5 relative">
@@ -199,7 +192,7 @@ export default function PlaygroundLayout() {
                 className={`relative p-2 text-[#666666] hover:bg-gray-100 rounded-full transition-colors ${showNotifications ? 'bg-gray-100' : ''}`}
               >
                 <Bell size={20} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#08733e] rounded-full border border-white"></span>
               </button>
 
               <NotificationDropdown rolePath="playground" isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
@@ -233,7 +226,7 @@ export default function PlaygroundLayout() {
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-[400px] p-6 text-center transform transition-all">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
               <LogOut size={32} />

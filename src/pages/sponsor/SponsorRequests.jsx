@@ -48,7 +48,12 @@ export default function SponsorRequests() {
 
       const response = await api.get(`/sponsor/${userId}/requests`);
       if (response.data && response.data.success !== false) {
-        setRequests(response.data.data || []);
+        const list = response.data.data || [];
+        const activeOnly = list.filter(r => {
+          const tStatus = (r.tournament_status || r.status_tournament || r.t_status || '').toUpperCase();
+          return tStatus !== 'COMPLETED' && tStatus !== 'FINISHED';
+        });
+        setRequests(activeOnly);
       } else {
         throw new Error(response.data.message || "Failed to load sponsorship requests.");
       }

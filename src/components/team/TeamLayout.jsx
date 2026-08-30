@@ -222,7 +222,7 @@ export default function TeamLayout() {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         {/* Top Header */}
-        <header className="h-16 lg:h-20 bg-white border-b border-[#e5e5e5] flex items-center justify-between px-4 lg:px-8 z-10 shrink-0">
+        <header className="h-16 lg:h-20 bg-white border-b border-[#e5e5e5] flex items-center justify-between px-4 lg:px-8 relative z-[9999] shrink-0">
           
           <div className="flex items-center gap-3 flex-1">
             <button 
@@ -235,7 +235,7 @@ export default function TeamLayout() {
 
           <div className="flex items-center gap-3 lg:gap-5 relative">
             {/* Notifications */}
-            <div className="relative">
+            <div className="relative z-[100]">
               <button 
                 onClick={() => {
                   setShowNotifications(!showNotifications);
@@ -291,7 +291,7 @@ export default function TeamLayout() {
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-[400px] p-6 text-center transform transition-all animate-in fade-in zoom-in duration-200">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
               <LogOut size={32} />
@@ -320,7 +320,7 @@ export default function TeamLayout() {
 
       {/* Notification Details Modal */}
       {selectedNotification && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-[500px] p-6 transform transition-all animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-4">

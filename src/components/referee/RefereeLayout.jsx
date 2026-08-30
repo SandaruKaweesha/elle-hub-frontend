@@ -214,7 +214,7 @@ export default function RefereeLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         {/* Top Header */}
-        <header className="h-[72px] bg-white border-b border-[#e5e5e5] flex items-center justify-between px-4 lg:px-8 shrink-0">
+        <header className="h-[72px] bg-white border-b border-[#e5e5e5] flex items-center justify-between px-4 lg:px-8 relative z-[9999] shrink-0">
           
           <div className="flex items-center gap-4 flex-1">
             <button 
@@ -238,7 +238,7 @@ export default function RefereeLayout() {
               >
                 <Bell size={20} />
                 {unreadNotifCount > 0 && (
-                  <span className="absolute top-1 right-1 min-w-[16px] h-[16px] bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-0.5 border border-white animate-pulse">
+                  <span className="absolute top-1 right-1 min-w-[16px] h-[16px] bg-[#08733e] text-white text-[9px] font-black rounded-full flex items-center justify-center px-0.5 border border-white animate-pulse">
                     {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
                   </span>
                 )}
@@ -276,7 +276,7 @@ export default function RefereeLayout() {
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-[400px] p-6 text-center transform transition-all">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
               <LogOut size={32} />

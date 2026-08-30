@@ -160,7 +160,6 @@ export default function AdminUsers() {
         <div className="flex gap-2 flex-wrap justify-end w-full md:w-auto">
           {[
             { key: 'ALL', label: 'All Users' },
-            { key: 'DELETION_PENDING', label: `Deletion Requests (${users.filter(u => (u.status || '').toUpperCase() === 'DELETION_PENDING').length})` },
             { key: 'TEAM', label: 'Teams' },
             { key: 'SPONSOR', label: 'Sponsors' },
             { key: 'REFEREE', label: 'Referees' },

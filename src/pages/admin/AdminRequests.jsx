@@ -615,7 +615,7 @@ export default function AdminRequests() {
 
       {/* Tournament Details Modal */}
       {showDetailsModal && selectedTournament && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full shadow-lg border border-[#e5e5e5] overflow-hidden animate-in fade-in zoom-in-95 duration-200 font-medium">
             
             {/* Modal Header */}
@@ -657,6 +657,29 @@ export default function AdminRequests() {
                     <Calendar size={14} className="text-gray-400" />
                     {formatDate(selectedTournament.tournament_held_date)}
                   </span>
+                </div>
+              </div>
+
+              {/* Organizer Contact Info */}
+              <div className="bg-[#f8f7f4] p-4 rounded-2xl border border-gray-200 space-y-2">
+                <span className="block text-[10px] text-gray-500 font-black uppercase tracking-wider">Organizer Contact Info</span>
+                <div className="flex items-center justify-between text-xs font-bold text-gray-800 flex-wrap gap-2">
+                  <span className="flex items-center gap-1.5 text-sm font-extrabold text-[#08733e]">
+                    <UserPlus size={15} />
+                    {selectedTournament.organizer_name || selectedTournament.organization_name || 'Elle Organizer'}
+                  </span>
+                  {(selectedTournament.contact_number || selectedTournament.contactNumber) && (
+                    <span className="flex items-center gap-1 text-gray-700 bg-white px-2.5 py-1 rounded-lg border border-gray-200 font-semibold">
+                      <Phone size={13} className="text-[#08733e]" />
+                      {selectedTournament.contact_number || selectedTournament.contactNumber}
+                    </span>
+                  )}
+                  {selectedTournament.email && (
+                    <span className="flex items-center gap-1 text-gray-700 bg-white px-2.5 py-1 rounded-lg border border-gray-200 font-semibold">
+                      <Mail size={13} className="text-[#08733e]" />
+                      {selectedTournament.email}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -712,7 +735,7 @@ export default function AdminRequests() {
 
       {/* User Details Modal */}
       {showUserDetailsModal && selectedUserForDetails && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full shadow-lg border border-[#e5e5e5] overflow-hidden animate-in fade-in zoom-in-95 duration-200 font-medium">
             
             {/* Modal Header */}
@@ -831,7 +854,7 @@ export default function AdminRequests() {
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 font-medium">
+        <div className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 font-medium">
           <div className="bg-white rounded-2xl p-6 md:p-8 max-w-md w-full shadow-lg border border-[#e5e5e5] animate-in fade-in zoom-in-95 duration-200">
             <h3 className="text-xl font-bold text-[#111111] mb-2">
               {confirmAction?.type === 'APPROVE' && 'Approve Tournament'}

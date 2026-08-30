@@ -121,38 +121,43 @@ export default function TeamMatches() {
     return images[index % images.length];
   };
 
-  // Filter tournaments: Only include tournaments where the organizer HAS finalized the draw (is_draw_finalized === 1 or is_finalized === 1)
-  const finalizedMatchesOnly = appliedTournaments.filter(t => {
-    const isFinal = Boolean(
-      Number(t.is_draw_finalized) === 1 || 
-      Number(t.is_finalized) === 1 || 
-      t.isDrawFinalized === true || 
-      t.isFinalized === true
-    );
-    return isFinal;
+  // Filter tournaments: Include all active/ongoing applied tournaments, excluding completed ones
+  const activeAppliedTournaments = appliedTournaments.filter(t => {
+    const tStatus = (t.tournament_status || t.status || '').toString().toUpperCase();
+    const isCompleted = tStatus === 'COMPLETED' || tStatus === 'FINISHED' || tStatus === 'CANCELLED';
+    return !isCompleted;
   });
 
   // Filter tournaments by active tab and search query
-  const filteredTournaments = finalizedMatchesOnly.filter(t => {
-    const s = t.request_status;
+  const filteredTournaments = activeAppliedTournaments.filter(t => {
+    const s = (t.request_status || t.status || 'PENDING').toUpperCase();
     const statusMatch = 
       activeTab === 'ALL' ||
       (activeTab === 'APPROVED' && (s === 'APPROVED' || s === 'ACCEPTED')) ||
       (activeTab === 'PENDING' && s === 'PENDING') ||
-      (activeTab === 'REJECTED' && s === 'REJECTED');
+      (activeTab === 'REJECTED' && (s === 'REJECTED' || s === 'DECLINED'));
 
     const searchLower = searchTerm.toLowerCase();
-    const titleMatch = (t.tournament_title || '').toLowerCase().includes(searchLower);
+    const titleMatch = (t.tournament_title || t.title || '').toLowerCase().includes(searchLower);
     const locationMatch = (t.location || '').toLowerCase().includes(searchLower);
 
     return statusMatch && (titleMatch || locationMatch);
   });
 
   const counts = {
-    ALL: finalizedMatchesOnly.length,
-    APPROVED: finalizedMatchesOnly.filter(t => t.request_status === 'APPROVED' || t.request_status === 'ACCEPTED').length,
-    PENDING: finalizedMatchesOnly.filter(t => t.request_status === 'PENDING').length,
-    REJECTED: finalizedMatchesOnly.filter(t => t.request_status === 'REJECTED').length
+    ALL: activeAppliedTournaments.length,
+    APPROVED: activeAppliedTournaments.filter(t => {
+      const s = (t.request_status || t.status || '').toUpperCase();
+      return s === 'APPROVED' || s === 'ACCEPTED';
+    }).length,
+    PENDING: activeAppliedTournaments.filter(t => {
+      const s = (t.request_status || t.status || '').toUpperCase();
+      return s === 'PENDING';
+    }).length,
+    REJECTED: activeAppliedTournaments.filter(t => {
+      const s = (t.request_status || t.status || '').toUpperCase();
+      return s === 'REJECTED' || s === 'DECLINED';
+    }).length
   };
 
     const renderStatusBadge = (status) => {
@@ -206,8 +211,7 @@ export default function TeamMatches() {
               {[
                 { key: 'ALL', label: 'All Applied' },
                 { key: 'APPROVED', label: 'Approved Matches' },
-                { key: 'PENDING', label: 'Pending Approval' },
-                { key: 'REJECTED', label: 'Rejected' }
+                { key: 'PENDING', label: 'Pending Approval' }
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -256,7 +260,7 @@ export default function TeamMatches() {
           <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
           <p className="text-red-800 text-sm font-semibold">{error}</p>
         </div>
-      ) : finalizedMatchesOnly.length === 0 ? (
+      ) : activeAppliedTournaments.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 px-6 bg-white rounded-2xl border border-[#e5e5e5] text-center">
           <div className="w-16 h-16 bg-[#eaf1ec] rounded-full flex items-center justify-center mb-4 text-[#08733e] border border-[#bbf7d0]">
             <Trophy size={28} />

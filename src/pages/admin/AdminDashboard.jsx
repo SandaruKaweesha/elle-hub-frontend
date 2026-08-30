@@ -31,11 +31,8 @@ function AdminDashboard() {
     PLAYGROUND: 0
   });
 
-  const [pendingItems, setPendingItems] = useState([
-    { id: 'sample_1', type: 'TOURNAMENT', name: 'Emerald Elite Open', subtitle: 'Regional Elle Championship - Tier 1', date: 'Oct 12, 2026', status: 'Needs Review', statusColor: 'text-red-600 bg-red-600', isApproved: false },
-    { id: 'sample_2', type: 'USER', name: 'Marcus Sterling', subtitle: 'Certified Referee Application', date: 'Oct 11, 2026', status: 'In Queue', statusColor: 'text-gray-500 bg-gray-400', isApproved: false },
-    { id: 'sample_3', type: 'TOURNAMENT', name: "Coastal Masters '26", subtitle: 'Elle Charity Championship Event', date: 'Oct 10, 2026', status: 'Urgent', statusColor: 'text-orange-500 bg-orange-500', isApproved: false }
-  ]);
+  const [pendingItems, setPendingItems] = useState([]);
+  const [loadingPending, setLoadingPending] = useState(true);
 
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
@@ -516,8 +513,26 @@ function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-sm">
-              {pendingItems.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+              {loadingPending ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-gray-400">
+                    <Loader2 size={24} className="animate-spin mx-auto text-[#08733e] mb-2" />
+                    <p className="text-xs font-semibold">Loading real pending requests...</p>
+                  </td>
+                </tr>
+              ) : pendingItems.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-gray-400 space-y-2">
+                    <CheckCircle2 size={36} className="mx-auto text-emerald-600 mb-2" />
+                    <p className="text-sm font-bold text-gray-800">All Pending Approvals Cleared!</p>
+                    <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                      There are currently no user registrations or tournament creation requests waiting for admin review.
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                pendingItems.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 text-xs font-bold rounded uppercase tracking-wider ${
                       item.type === 'TOURNAMENT' ? 'bg-emerald-100 text-emerald-800' : 'bg-teal-100 text-teal-800'
@@ -569,7 +584,7 @@ function AdminDashboard() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

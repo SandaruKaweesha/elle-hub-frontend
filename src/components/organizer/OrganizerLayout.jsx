@@ -201,7 +201,7 @@ function OrganizerLayout() {
                   {link.label}
                 </div>
                 {link.id === 'messages' && unreadCount > 0 && (
-                  <span className="px-2 py-0.5 text-[10px] font-extrabold bg-red-500 text-white rounded-full">
+                  <span className="px-2 py-0.5 text-[10px] font-extrabold bg-[#08733e] text-white rounded-full">
                     {unreadCount}
                   </span>
                 )}
@@ -236,7 +236,7 @@ function OrganizerLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         {/* Top Header */}
-        <header className="h-[72px] bg-white border-b border-[#e5e5e5] flex items-center justify-between px-4 lg:px-8 shrink-0">
+        <header className="h-[72px] bg-white border-b border-[#e5e5e5] flex items-center justify-between px-4 lg:px-8 relative z-[9999] shrink-0">
           
           <div className="flex items-center gap-4 flex-1">
             <button 
@@ -254,7 +254,7 @@ function OrganizerLayout() {
               <Link to="/organizer/messages" className="relative p-2 text-[#666666] hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
                 <MessageSquare size={20} />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#08733e] text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">
                     {unreadCount}
                   </span>
                 )}
@@ -306,7 +306,7 @@ function OrganizerLayout() {
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-[400px] p-6 text-center transform transition-all">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
               <LogOut size={32} />
@@ -324,7 +324,7 @@ function OrganizerLayout() {
               </button>
               <button 
                 onClick={handleLogout}
-                className="flex-1 px-4 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-colors shadow-sm"
+                className="flex-1 px-4 py-3 bg-[#08733e] text-white font-semibold rounded-xl hover:bg-red-700 transition-colors shadow-sm"
               >
                 Yes, Logout
               </button>

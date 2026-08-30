@@ -55,8 +55,8 @@ export default function NotificationDropdown({ rolePath, isOpen, onClose }) {
 
   return (
     <>
-      <div className="fixed inset-0 z-40" onClick={onClose}></div>
-      <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-[#e5e5e5] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 font-['Poppins']">
+      <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white opacity-100 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] border border-[#e5e5e5] z-[99999] overflow-hidden animate-in fade-in zoom-in-95 duration-200 font-['Poppins']" onClick={onClose}></div>
+      <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white opacity-100 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] border border-[#e5e5e5] z-[99999] overflow-hidden animate-in fade-in zoom-in-95 duration-200 font-['Poppins']">
         
         {/* Header */}
         <div className="p-3.5 px-4 bg-white border-b border-[#e5e5e5] flex items-center justify-between">

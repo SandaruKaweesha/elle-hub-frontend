@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, CheckCircle2, AlertCircle, X, Send, Briefcase, DollarSign, Phone, Mail, User, ChevronRight, ExternalLink, MessageSquare } from 'lucide-react';
+import { Trophy, Search, MapPin, CheckCircle2, AlertCircle, X, Send, Briefcase, DollarSign, Phone, Mail, User, ChevronRight, ExternalLink, MessageSquare } from 'lucide-react';
 import api from '../../services/api';
 
 export default function OrganizerSponsors() {
@@ -16,6 +16,7 @@ export default function OrganizerSponsors() {
   // Profile Modal states
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedSponsorProfile, setSelectedSponsorProfile] = useState(null);
+  const [sponsorTournaments, setSponsorTournaments] = useState([]);
 
   // Request Modal state
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -81,7 +82,7 @@ export default function OrganizerSponsors() {
         const list = tournamentsRes.data.data || [];
         const activeOnly = list.filter(t => 
           t && 
-          (t.approval_status || '').toString().toUpperCase() === 'APPROVED' && 
+          
           (t.status || 'ACTIVE').toString().toUpperCase() !== 'COMPLETED' && 
           (t.status || 'ACTIVE').toString().toUpperCase() !== 'CANCELLED'
         );
@@ -96,9 +97,27 @@ export default function OrganizerSponsors() {
     }
   };
 
-  const handleOpenProfile = (sponsor) => {
+  const handleOpenProfile = async (sponsor) => {
     setSelectedSponsorProfile(sponsor);
+    setSponsorTournaments([]);
     setShowProfileModal(true);
+
+    const sUserId = sponsor.userId || sponsor.user_id || sponsor.id;
+    if (sUserId) {
+      try {
+        const res = await api.get(`/sponsor/${sUserId}/requests`);
+        if (res.data && res.data.success !== false) {
+          const allReqs = res.data.data || [];
+          const acceptedOnly = allReqs.filter(r => 
+            (r.status || '').toUpperCase() === 'ACCEPTED' || 
+            (r.status || '').toUpperCase() === 'APPROVED'
+          );
+          setSponsorTournaments(acceptedOnly);
+        }
+      } catch (e) {
+        console.error("Error fetching sponsored tournaments for profile:", e);
+      }
+    }
   };
 
   const handleOpenInviteModal = (sponsor) => {
@@ -335,7 +354,7 @@ export default function OrganizerSponsors() {
 
       {/* --- SPONSOR PROFILE MODAL --- */}
       {showProfileModal && selectedSponsorProfile && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-[#e5e5e5] relative">
             <button 
               onClick={() => setShowProfileModal(false)}
@@ -382,6 +401,13 @@ export default function OrganizerSponsors() {
                 <span className="text-gray-500 font-medium flex items-center gap-2"><MapPin size={15} /> Address / Location:</span>
                 <span className="font-bold">{selectedSponsorProfile.sponsor_address || selectedSponsorProfile.address || 'Sri Lanka'}</span>
               </div>
+
+              <div className="flex justify-between items-center pt-1">
+                <span className="text-gray-500 font-medium flex items-center gap-2"><Trophy size={15} className="text-[#08733e]" /> Sponsored Events:</span>
+                <span className="px-3 py-1 text-xs font-black bg-[#08733e] text-white rounded-full shadow-2xs">
+                  {sponsorTournaments.length} {sponsorTournaments.length === 1 ? 'Tournament' : 'Tournaments'}
+                </span>
+              </div>
             </div>
 
             <div className="mt-6 grid grid-cols-3 gap-2">
@@ -418,7 +444,7 @@ export default function OrganizerSponsors() {
 
       {/* --- INVITATION / REQUEST SPONSOR MODAL --- */}
       {showInviteModal && selectedSponsor && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-[#e5e5e5]">
             
             <div className="flex items-center justify-between pb-4 border-b border-[#e5e5e5] mb-6">

@@ -103,9 +103,12 @@ export default function TeamRequests() {
     }
   };
 
+  // Filter out completed tournaments from active requests
+  const activeRequests = requests.filter(r => (r.tournament_status || '').toUpperCase() !== 'COMPLETED');
+
   // Split requests by category
-  const sentRequests = requests.filter(r => (r.initiated_by || 'TEAM').toUpperCase() === 'TEAM');
-  const receivedInvites = requests.filter(r => (r.initiated_by || 'TEAM').toUpperCase() === 'ORGANIZER');
+  const sentRequests = activeRequests.filter(r => (r.initiated_by || 'TEAM').toUpperCase() === 'TEAM');
+  const receivedInvites = activeRequests.filter(r => (r.initiated_by || 'TEAM').toUpperCase() === 'ORGANIZER');
 
   const currentRequestsList = activeTabCategory === 'SENT' ? sentRequests : receivedInvites;
 
@@ -246,7 +249,7 @@ export default function TeamRequests() {
             {filteredRequests.map((r) => {
               const status = r.status.toUpperCase();
               const tournamentStatus = (r.tournament_status || 'ACTIVE').toUpperCase();
-              const isFinalized = tournamentStatus !== 'ACTIVE';
+              const isFinalized = Number(r.is_finalized || r.is_draw_finalized) === 1 || ['FINALIZED', 'COMPLETED', 'FINISHED'].includes((r.tournament_status || '').toUpperCase());
 
               return (
                 <div key={`${r.tournament_id}-${r.team_user_id}`} className="p-6 hover:bg-[#f8f7f4]/40 transition-colors group">
@@ -366,7 +369,7 @@ export default function TeamRequests() {
 
       {/* Custom Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[999999] bg-black/60 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 md:p-8 max-w-md w-full shadow-lg border border-[#e5e5e5] animate-in fade-in zoom-in-95 duration-200">
             <h3 className="text-xl font-bold text-[#111111] mb-2 font-['Poppins']">
               {confirmAction?.type === 'CANCEL' && 'Cancel Application'}

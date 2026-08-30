@@ -98,7 +98,7 @@ export default function OrganizerPlaygrounds() {
         const list = Array.isArray(rawT) ? rawT : [];
         const activeOnly = list.filter(t => 
           t && 
-          (t.approval_status || '').toString().toUpperCase() === 'APPROVED' && 
+          
           (t.status || 'ACTIVE').toString().toUpperCase() !== 'COMPLETED' && 
           (t.status || 'ACTIVE').toString().toUpperCase() !== 'CANCELLED'
         );
