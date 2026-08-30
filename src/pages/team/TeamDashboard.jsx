@@ -127,19 +127,10 @@ function TeamDashboard() {
 
   const getStatusDisplay = (statusStr, startDate, endDate) => {
     const s = (statusStr || '').toUpperCase();
-    if (s === 'COMPLETED') return 'COMPLETED';
-    if (s === 'ONGOING' || s === 'LIVE') return 'LIVE NOW';
-    if (s === 'SCHEDULED' || s === 'UPCOMING') return 'UPCOMING';
-
-    if (startDate) {
-      const today = new Date();
-      const start = new Date(startDate);
-      const end = endDate ? new Date(endDate) : start;
-      if (today < start) return 'UPCOMING';
-      if (today >= start && today <= end) return 'LIVE NOW';
-      if (today > end) return 'COMPLETED';
-    }
-    return 'UPCOMING';
+    if (s === 'COMPLETED' || s === 'FINISHED') return 'COMPLETED';
+    if (s === 'ONGOING' || s === 'LIVE') return 'ONGOING';
+    if (s === 'CANCELLED') return 'CANCELLED';
+    return 'ONGOING';
   };
 
   const parseTournamentDate = (t) => {

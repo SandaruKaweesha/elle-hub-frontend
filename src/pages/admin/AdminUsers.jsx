@@ -85,6 +85,7 @@ export default function AdminUsers() {
   const getStatusStyle = (status) => {
     const s = (status || '').toUpperCase();
     if (s === 'APPROVED') return 'bg-[#f0fdf4] text-[#166534] border-[#bbf7d0]';
+    if (s === 'DELETION_PENDING' || s === 'DELETION_REQUESTED') return 'bg-rose-100 text-rose-800 border-rose-300 font-extrabold animate-pulse';
     if (s === 'REJECTED') return 'bg-[#fef2f2] text-[#991b1b] border-[#fecaca]';
     return 'bg-[#fffbeb] text-[#d97706] border-[#fde68a]'; // PENDING
   };
@@ -99,7 +100,11 @@ export default function AdminUsers() {
                           u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (u.contact_number || '').includes(searchQuery);
 
-    const matchesRole = roleFilter === 'ALL' || (u.role || '').toUpperCase() === roleFilter;
+    const matchesRole = roleFilter === 'ALL' 
+      ? true 
+      : roleFilter === 'DELETION_PENDING' 
+        ? (u.status || '').toUpperCase() === 'DELETION_PENDING'
+        : (u.role || '').toUpperCase() === roleFilter;
 
     return matchesSearch && matchesRole;
   });
@@ -155,6 +160,7 @@ export default function AdminUsers() {
         <div className="flex gap-2 flex-wrap justify-end w-full md:w-auto">
           {[
             { key: 'ALL', label: 'All Users' },
+            { key: 'DELETION_PENDING', label: `Deletion Requests (${users.filter(u => (u.status || '').toUpperCase() === 'DELETION_PENDING').length})` },
             { key: 'TEAM', label: 'Teams' },
             { key: 'SPONSOR', label: 'Sponsors' },
             { key: 'REFEREE', label: 'Referees' },
@@ -269,13 +275,45 @@ export default function AdminUsers() {
 
                     {/* Actions */}
                     <td className="p-5 text-center" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => triggerDelete(u)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
-                        title="Delete User Account"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {(u.status || '').toUpperCase() === 'DELETION_PENDING' ? (
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => triggerDelete(u)}
+                            className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-extrabold transition-all shadow-xs cursor-pointer"
+                            title="Approve Deletion Request & Permanently Purge Account"
+                          >
+                            Approve Deletion
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                setError(null);
+                                setSuccessMsg(null);
+                                const res = await api.put(`/user/updateStatus/${u.user_id}`, { status: 'APPROVED' });
+                                if (res.data && res.data.success !== false) {
+                                  setSuccessMsg(`Account deletion request rejected. User ${u.display_name} has been retained as Approved.`);
+                                  fetchUsers();
+                                  setTimeout(() => setSuccessMsg(null), 4000);
+                                }
+                              } catch (err) {
+                                setError("Failed to reject deletion request.");
+                              }
+                            }}
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-extrabold transition-all shadow-xs cursor-pointer"
+                            title="Reject Deletion Request & Retain Account as Approved"
+                          >
+                            Keep Account
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => triggerDelete(u)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                          title="Delete User Account"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </td>
 
                   </tr>

@@ -84,8 +84,37 @@ function OrganizerLayout() {
           }
         })
         .catch(err => console.error("Error fetching user data from DB:", err));
+
+      fetchUserNotifications(targetId);
     }
   }, []);
+
+  const [notifications, setNotifications] = useState([]);
+  const [notifUnreadCount, setNotifUnreadCount] = useState(0);
+
+  const fetchUserNotifications = async (userId) => {
+    try {
+      const response = await api.get(`/user/${userId}/notifications`);
+      if (response.data && response.data.success !== false) {
+        setNotifications(response.data.data || []);
+        setNotifUnreadCount(response.data.unread_count || 0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user notifications", error);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    if (targetId) {
+      try {
+        await api.put(`/user/${targetId}/notifications/read-all`);
+        setNotifUnreadCount(0);
+        setNotifications(prev => prev.map(n => ({ ...n, is_read: 1 })));
+      } catch (err) {
+        console.error("Failed to mark all notifications as read", err);
+      }
+    }
+  };
 
   // Real-time unread messages count fetcher
   useEffect(() => {
@@ -233,77 +262,71 @@ function OrganizerLayout() {
               {/* Notifications Dropdown */}
               <div className="relative">
                 <button 
-                  onClick={() => { setShowNotifications(!showNotifications); setShowSettings(false); }}
+                  onClick={() => { 
+                    setShowNotifications(!showNotifications); 
+                    setShowSettings(false); 
+                    if (!showNotifications && targetId) fetchUserNotifications(targetId);
+                  }}
                   className={`relative p-2 text-[#666666] hover:bg-gray-100 rounded-full transition-colors ${showNotifications ? 'bg-gray-100' : ''}`}
                 >
                   <Bell size={20} />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                  {notifUnreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 min-w-[16px] h-[16px] px-1 bg-[#08733e] text-white text-[9px] font-black rounded-full border-2 border-white flex items-center justify-center">
+                      {notifUnreadCount > 9 ? '9+' : notifUnreadCount}
+                    </span>
+                  )}
                 </button>
                 
                 {showNotifications && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}></div>
                     <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-[#e5e5e5] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                      <div className="p-4 border-b border-[#e5e5e5] flex items-center justify-between">
+                      <div className="p-3.5 px-4 border-b border-[#e5e5e5] flex items-center justify-between bg-white">
                         <div className="flex items-center gap-2">
                           <Bell size={18} className="text-[#08733e]" />
-                          <h3 className="font-bold text-[#111111]">Notifications</h3>
+                          <h3 className="font-bold text-sm text-[#111111]">Notifications</h3>
                         </div>
                         <div className="flex items-center gap-3">
-                          <button className="text-xs text-[#08733e] font-medium hover:underline">Mark all read</button>
+                          <button onClick={handleMarkAllAsRead} className="text-xs text-[#08733e] font-semibold hover:underline">Mark all read</button>
                           <button 
-                            onClick={() => { if (typeof setShowNotifDropdown === 'function') setShowNotifDropdown(false); else if (typeof setShowNotifications === 'function') setShowNotifications(false); }} 
-                            className="text-gray-400 hover:text-gray-700 hover:bg-gray-200/80 p-1.5 rounded-full transition-colors cursor-pointer flex items-center justify-center"
-                            title="Close notifications"
+                            onClick={() => setShowNotifications(false)} 
+                            className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-1 rounded-lg transition-colors cursor-pointer"
+                            title="Close"
                           >
                             <X size={16} />
                           </button>
                         </div>
                       </div>
-                      <div className="max-h-[300px] overflow-y-auto">
-                        <div 
-                           onClick={() => { setShowNotifications(false); navigate('/organizer/notifications'); }}
-                           className="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3"
-                        >
-                           <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                             <Trophy size={14} />
-                           </div>
-                           <div>
-                             <p className="text-sm text-[#333333] font-medium leading-tight">Your tournament <span className="font-bold">National Championship</span> was approved.</p>
-                             <p className="text-xs text-[#888888] mt-1">2 hours ago</p>
-                           </div>
-                        </div>
-                        <div 
-                           onClick={() => { setShowNotifications(false); navigate('/organizer/notifications'); }}
-                           className="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3"
-                        >
-                           <div className="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center shrink-0">
-                             <Users size={14} />
-                           </div>
-                           <div>
-                             <p className="text-sm text-[#333333] font-medium leading-tight">New team registration request from <span className="font-bold">Lions Club</span>.</p>
-                             <p className="text-xs text-[#888888] mt-1">5 hours ago</p>
-                           </div>
-                        </div>
-                        <div 
-                           onClick={() => { setShowNotifications(false); navigate('/organizer/notifications'); }}
-                           className="p-4 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3 opacity-60"
-                        >
-                           <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center shrink-0">
-                             <Shield size={14} />
-                           </div>
-                           <div>
-                             <p className="text-sm text-[#333333] font-medium leading-tight">System maintenance completed successfully.</p>
-                             <p className="text-xs text-[#888888] mt-1">1 day ago</p>
-                           </div>
-                        </div>
+                      <div className="max-h-[320px] overflow-y-auto">
+                        {notifications.length > 0 ? (
+                          notifications.slice(0, 8).map((notif, idx) => (
+                            <div 
+                               key={notif.notification_id || idx}
+                               onClick={() => { setShowNotifications(false); navigate('/organizer/notifications'); }}
+                               className={`p-3.5 border-b border-gray-100 transition-colors cursor-pointer flex gap-3 ${Number(notif.is_read) === 0 ? 'bg-emerald-50/40 hover:bg-emerald-50/70' : 'hover:bg-gray-50'}`}
+                            >
+                               <div className="w-8 h-8 rounded-full bg-[#eaf1ec] text-[#08733e] flex items-center justify-center shrink-0 mt-0.5">
+                                 <Trophy size={14} />
+                               </div>
+                               <div className="min-w-0 flex-1">
+                                 <p className="text-xs font-bold text-[#111111] leading-tight truncate">{notif.title}</p>
+                                 <p className="text-xs text-[#555555] mt-1 leading-snug line-clamp-2">{notif.message}</p>
+                                 <span className="text-[10px] text-gray-400 mt-1 block font-medium">
+                                   {notif.created_at || notif.received_at || 'Recently'}
+                                 </span>
+                               </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-6 text-center text-sm text-[#666666] font-medium">No notifications yet</div>
+                        )}
                       </div>
                       <div className="p-3 bg-gray-50 text-center border-t border-[#e5e5e5]">
                         <button 
-                           onClick={() => { setShowNotifications(false); navigate('/organizer/notifications'); }}
-                           className="text-sm font-medium text-[#666666] hover:text-[#111111]"
+                          onClick={() => { setShowNotifications(false); navigate('/organizer/notifications'); }}
+                          className="text-xs font-bold text-[#00382D] hover:underline"
                         >
-                           View all notifications
+                          View all notifications →
                         </button>
                       </div>
                     </div>
