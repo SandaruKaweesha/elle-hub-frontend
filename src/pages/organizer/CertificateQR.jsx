@@ -16,8 +16,12 @@ export default function CertificateQR() {
   const [generatedLink, setGeneratedLink] = useState('');
   const [generatedId, setGeneratedId] = useState('');
 
-  // Auto-fill state
+  // Auto-fill and participating teams state
   const [tournamentAwards, setTournamentAwards] = useState([]);
+  const [participatingTeams, setParticipatingTeams] = useState([]);
+  const [sponsorName, setSponsorName] = useState('Dialog');
+  const [tournamentDate, setTournamentDate] = useState('');
+  const [tournamentWinners, setTournamentWinners] = useState({ champion: '', runnerUp: '' });
 
   const isFormComplete = tournament && certType && recipient;
 
@@ -52,23 +56,80 @@ export default function CertificateQR() {
     }
   };
 
-  // Fetch awards when a tournament is selected
+  // Fetch awards, participating teams, and draw results (champion & runner-up) when a tournament is selected
   useEffect(() => {
     if (selectedTournamentId) {
-      const fetchAwards = async () => {
+      const fetchTournamentDetails = async () => {
         try {
-          const res = await tournamentResultsAPI.getResults(selectedTournamentId);
-          if (res.data.success !== false) {
-            setTournamentAwards(res.data.data || []);
+          const [awardsRes, teamsRes, drawRes] = await Promise.all([
+            tournamentResultsAPI.getResults(selectedTournamentId).catch(() => null),
+            api.get(`/tournament/${selectedTournamentId}/team-requests`).catch(() => null),
+            api.get(`/tournament/${selectedTournamentId}/draw`).catch(() => null)
+          ]);
+
+          if (awardsRes && awardsRes.data && awardsRes.data.success !== false) {
+            setTournamentAwards(awardsRes.data.data || []);
+          } else {
+            setTournamentAwards([]);
+          }
+
+          let approvedTeams = [];
+          if (teamsRes && teamsRes.data && teamsRes.data.success !== false) {
+            const list = teamsRes.data.data || [];
+            approvedTeams = list.filter(t => {
+              const st = (t.status || '').toUpperCase();
+              return st === 'APPROVED' || st === 'ACCEPTED';
+            });
+            setParticipatingTeams(approvedTeams);
+          } else {
+            setParticipatingTeams([]);
+          }
+
+          let champ = '';
+          let runner = '';
+
+          if (drawRes && drawRes.data && drawRes.data.data) {
+            const drawData = drawRes.data.data.drawData || {};
+            const bw = drawData.bracketWinners || {};
+            const ms = drawData.matchScores || {};
+
+            champ = bw.champion || drawData.winner || (ms.champion && ms.champion.winner) || '';
+            runner = bw.runnerUp || '';
+
+            if (!runner && ms.champion) {
+              const sfA = bw.groupA_SF;
+              const sfB = bw.groupB_SF;
+              const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+              const normChamp = norm(champ);
+
+              if (sfA && norm(sfA) !== normChamp) runner = sfA;
+              else if (sfB && norm(sfB) !== normChamp) runner = sfB;
+            }
+          }
+
+          setTournamentWinners({ champion: champ, runnerUp: runner });
+
+          // Auto-select team based on existing certType if set
+          if (certType) {
+            const typeUpper = certType.toUpperCase();
+            if ((typeUpper.includes('WINNER') || typeUpper.includes('CHAMPION')) && champ) {
+              setRecipient(champ);
+            } else if (typeUpper.includes('RUNNER') && runner) {
+              setRecipient(runner);
+            }
           }
         } catch (err) {
-          console.error("Failed to fetch tournament awards", err);
+          console.error("Failed to fetch tournament details", err);
           setTournamentAwards([]);
+          setParticipatingTeams([]);
+          setTournamentWinners({ champion: '', runnerUp: '' });
         }
       };
-      fetchAwards();
+      fetchTournamentDetails();
     } else {
       setTournamentAwards([]);
+      setParticipatingTeams([]);
+      setTournamentWinners({ champion: '', runnerUp: '' });
     }
   }, [selectedTournamentId]);
 
@@ -109,18 +170,20 @@ export default function CertificateQR() {
     if (isFormComplete) {
       setLoading(true);
       try {
-        const response = await certificateAPI.generate({
+        const targetId = selectedTournamentId || (tournaments.find(x => x.title === tournament)?.tournament_id) || 1;
+        const response = await api.post(`/tournament/${targetId}/certificates/generate`, {
+          tournamentId: targetId,
           tournament,
           cert_type: certType,
           recipient
         });
 
-        if (response.data.success) {
+        if (response.data && response.data.success) {
           setIsGenerated(true);
-          const verifyUrl = `${window.location.origin}${response.data.data.verify_link}`;
+          const rawLink = response.data.data.verify_link || `/verify-certificate/${response.data.data.id}`;
+          const verifyUrl = rawLink.startsWith('http') ? rawLink : `${window.location.origin}${rawLink}`;
           setGeneratedLink(verifyUrl);
-          setGeneratedId(response.data.data.id);
-          // Refresh history
+          setGeneratedId(response.data.data.id || response.data.data.token);
           fetchHistory();
         }
       } catch (error) {
@@ -168,6 +231,10 @@ export default function CertificateQR() {
     }
   };
 
+    const isTeamLocked = (certType || '').toUpperCase().includes('WINNER') || 
+                       (certType || '').toUpperCase().includes('CHAMPION') || 
+                       (certType || '').toUpperCase().includes('RUNNER');
+
   return (
     <div className="h-full flex flex-col gap-6 font-['Poppins']">
       <div className="bg-white rounded-2xl border border-[#e5e5e5] p-8 shadow-sm flex flex-col animate-in fade-in duration-300 relative overflow-hidden shrink-0">
@@ -198,45 +265,30 @@ export default function CertificateQR() {
           {/* Input Section */}
           <div className="flex-1 w-full space-y-5">
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-sm font-bold text-[#111111] mb-2">Select Tournament</label>
-                <div className="relative">
-                  <Trophy size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#888888]" />
-                  <select 
-                    value={tournament}
-                    onChange={handleTournamentChange}
-                    className="w-full pl-11 pr-4 py-3.5 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all font-medium appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled>Choose a tournament...</option>
-                    {tournaments.map(t => (
-                      <option key={t.tournament_id || t.id} value={t.title}>{t.title}</option>
-                    ))}
-                    {/* Fallbacks if DB is empty for demo */}
-                    {tournaments.length === 0 && (
-                      <option value="National Elle Championship 2026">National Elle Championship 2026</option>
-                    )}
-                  </select>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-bold text-[#111111] mb-2">Auto-fill from Results</label>
-                <div className="relative">
-                  <Zap size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#f59e0b]" />
-                  <select 
-                    onChange={handleAutoFill}
-                    disabled={tournamentAwards.length === 0}
-                    className="w-full pl-11 pr-4 py-3.5 bg-[#fffbeb] border border-[#fde68a] text-[#92400e] rounded-xl text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[#f59e0b] transition-all font-medium appearance-none cursor-pointer disabled:opacity-50 disabled:bg-[#f8f7f4] disabled:border-[#e5e5e5] disabled:text-[#888888]"
-                  >
-                    <option value="">{tournamentAwards.length > 0 ? 'Select Award Winner...' : 'No awards saved yet'}</option>
-                    {tournamentAwards.map(award => (
-                      <option key={award.resultId} value={award.resultId}>
-                        {award.awardType.replace(/_/g, ' ')} - {award.recipientName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <div>
+              <label className="block text-sm font-bold text-[#111111] mb-2">Select Tournament</label>
+              <div className="relative">
+                <Trophy size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#888888]" />
+                <select 
+                  value={selectedTournamentId}
+                  onChange={(e) => {
+                    const tId = e.target.value;
+                    setSelectedTournamentId(tId);
+                    const found = tournaments.find(t => String(t.tournament_id || t.id) === String(tId));
+                    setTournament(found ? found.title : '');
+                    setCertType('');
+                    setRecipient('');
+                    setIsGenerated(false);
+                  }}
+                  className="w-full pl-11 pr-4 py-3.5 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all font-medium cursor-pointer"
+                >
+                  <option value="">Choose a tournament...</option>
+                  {tournaments.map(t => (
+                    <option key={t.tournament_id || t.id} value={t.tournament_id || t.id}>
+                      🏆 {t.title}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -247,11 +299,22 @@ export default function CertificateQR() {
                   <Award size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#888888]" />
                   <select 
                     value={certType}
-                    onChange={(e) => { setCertType(e.target.value); setIsGenerated(false); }}
-                    className="w-full pl-11 pr-4 py-3.5 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all font-medium appearance-none cursor-pointer"
+                    onChange={(e) => { 
+                      const newType = e.target.value;
+                      setCertType(newType); 
+                      setIsGenerated(false); 
+                      
+                      const typeUpper = (newType || '').toUpperCase();
+                      if ((typeUpper.includes('WINNER') || typeUpper.includes('CHAMPION')) && tournamentWinners.champion) {
+                        setRecipient(tournamentWinners.champion);
+                      } else if (typeUpper.includes('RUNNER') && tournamentWinners.runnerUp) {
+                        setRecipient(tournamentWinners.runnerUp);
+                      }
+                    }}
+                    className="w-full pl-11 pr-4 py-3.5 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all font-medium cursor-pointer shadow-2xs"
                   >
                     <option value="" disabled>Choose type...</option>
-                    <option value="Winner">Winner</option>
+                    <option value="Winner">Winner (Champion)</option>
                     <option value="Runner-up">Runner-up</option>
                     <option value="Participation">Participation</option>
                     <option value="Best Player">Best Player</option>
@@ -260,49 +323,128 @@ export default function CertificateQR() {
               </div>
 
               <div className="md:col-span-1">
-                <label className="block text-sm font-bold text-[#111111] mb-2">Recipient Name (Team or Player)</label>
-                <div className="relative">
-                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#888888]" />
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Lions Club or Kamal" 
-                    value={recipient}
-                    onChange={(e) => { setRecipient(e.target.value); setIsGenerated(false); }}
-                    className="w-full pl-11 pr-4 py-3.5 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all font-medium"
-                  />
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-bold text-[#111111]">Select the Team</label>
+                  {isTeamLocked ? (
+                    <span className="text-[10px] font-black text-[#00382D] bg-[#e8f8f0] border border-[#bbf7d0] px-2.5 py-0.5 rounded-full shadow-2xs flex items-center gap-1">
+                      🔒 Auto-Locked to Official Result
+                    </span>
+                  ) : participatingTeams.length > 0 ? (
+                    <span className="text-[10px] font-black text-[#00382D] bg-[#f0fdf4] border border-[#bbf7d0] px-2.5 py-0.5 rounded-full shadow-2xs">
+                      {participatingTeams.length} Participating Teams
+                    </span>
+                  ) : null}
+                </div>
+                <div className="space-y-2">
+                  {participatingTeams.length > 0 ? (
+                    <>
+                      <div className="relative">
+                        <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#00382D]" />
+                        <select 
+                          disabled={isTeamLocked}
+                          value={participatingTeams.some(t => (t.team_name || t.teamName) === recipient) ? recipient : (recipient ? '__CUSTOM__' : '')}
+                          onChange={(e) => { 
+                            if (isTeamLocked) return;
+                            const val = e.target.value;
+                            if (val === '__CUSTOM__') {
+                              setRecipient('');
+                            } else {
+                              setRecipient(val);
+                            }
+                            setIsGenerated(false); 
+                          }}
+                          className="w-full pl-11 pr-4 py-3.5 bg-[#f0fdf4] border border-[#bbf7d0] rounded-xl text-sm font-bold text-[#00382D] focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all cursor-pointer shadow-2xs disabled:opacity-85 disabled:bg-[#e8f8f0] disabled:cursor-not-allowed disabled:border-[#bbf7d0]"
+                        >
+                          <option value="">-- Select Participating Team --</option>
+                          {participatingTeams.map((t, idx) => {
+                            const tName = t.team_name || t.teamName;
+                            return (
+                              <option key={t.team_user_id || t.teamUserId || idx} value={tName}>
+                                {tName}
+                              </option>
+                            );
+                          })}
+                          <option value="__CUSTOM__">Type custom player / person name...</option>
+                        </select>
+                      </div>
+
+                      {(!participatingTeams.some(t => (t.team_name || t.teamName) === recipient) || recipient === '__CUSTOM__') && (
+                        <div className="relative animate-in fade-in duration-200">
+                          <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#888888]" />
+                          <input 
+                            type="text" 
+                            placeholder="Type custom player or person name (e.g. Kamal Perera)..." 
+                            value={recipient === '__CUSTOM__' ? '' : recipient}
+                            onChange={(e) => { setRecipient(e.target.value); setIsGenerated(false); }}
+                            className="w-full pl-11 pr-4 py-3.5 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all font-medium"
+                          />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="relative">
+                      <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#888888]" />
+                      <input 
+                        type="text" 
+                        placeholder={selectedTournamentId ? "Type team or player name..." : "Select tournament first..."} 
+                        value={recipient}
+                        onChange={(e) => { setRecipient(e.target.value); setIsGenerated(false); }}
+                        className="w-full pl-11 pr-4 py-3.5 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:border-[#00382D] focus:ring-1 focus:ring-[#00382D] transition-all font-medium"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* System Details Preview Card */}
-            <div className={`p-5 rounded-xl border transition-all duration-300 ${isFormComplete ? 'bg-[#f0fdf4] border-[#bbf7d0]' : 'bg-[#f8f7f4] border-[#e5e5e5] opacity-60'}`}>
-              <h4 className="text-sm font-bold flex items-center gap-2 mb-3">
-                <FileText size={16} className={isFormComplete ? 'text-[#166534]' : 'text-[#888888]'} /> 
-                <span className={isFormComplete ? 'text-[#166534]' : 'text-[#666666]'}>System Encoded Data</span>
+            <div className={`p-5 rounded-xl border transition-all duration-300 ${isFormComplete ? 'bg-[#f0fdf4] border-[#bbf7d0]' : 'bg-[#f8f7f4] border-[#e5e5e5]'}`}>
+              <h4 className="text-sm font-bold flex items-center justify-between gap-2 mb-3">
+                <span className="flex items-center gap-2">
+                  <FileText size={16} className={isFormComplete ? 'text-[#166534]' : 'text-[#888888]'} /> 
+                  <span className={isFormComplete ? 'text-[#166534]' : 'text-[#666666]'}>System Encoded Data</span>
+                </span>
+                <span className="text-[10px] font-extrabold text-[#08733e] bg-white border border-[#bbf7d0] px-2 py-0.5 rounded-full">
+                  🛡️ Live Encoded Payload
+                </span>
               </h4>
               
-              {isFormComplete ? (
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between border-b border-[#bbf7d0]/50 pb-2">
-                    <span className="text-[#166534]/70 font-semibold">Tournament ID</span>
-                    <span className="font-bold text-[#166534]">{isGenerated ? generatedId.substring(0, 8) + '...' : 'Will be generated'}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-[#bbf7d0]/50 pb-2">
-                    <span className="text-[#166534]/70 font-semibold">Recipient</span>
-                    <span className="font-bold text-[#166534] truncate max-w-[150px] sm:max-w-[200px] text-right">{recipient}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-[#bbf7d0]/50 pb-2">
-                    <span className="text-[#166534]/70 font-semibold">Award</span>
-                    <span className="font-bold text-[#166534] text-right">{certType}</span>
-                  </div>
-                  <div className="flex justify-between pt-1">
-                    <span className="text-[#166534]/70 font-semibold">Verify Link</span>
-                    <span className="font-bold text-[#166534] text-[11px] sm:text-xs">{isGenerated ? generatedLink : 'Will be generated'}</span>
-                  </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between border-b border-[#bbf7d0]/50 pb-2">
+                  <span className="text-[#166534]/70 font-semibold">Tournament</span>
+                  <span className="font-bold text-[#166534] text-right">{tournament || 'Not selected'}</span>
                 </div>
-              ) : (
-                <p className="text-xs text-[#888888] italic">Fill out all fields above to fetch system data.</p>
-              )}
+                <div className="flex justify-between border-b border-[#bbf7d0]/50 pb-2">
+                  <span className="text-[#166534]/70 font-semibold">Recipient / Winner</span>
+                  <span className="font-bold text-[#166534] truncate max-w-[170px] text-right">{recipient || 'Not selected'}</span>
+                </div>
+                <div className="flex justify-between border-b border-[#bbf7d0]/50 pb-2">
+                  <span className="text-[#166534]/70 font-semibold">Award Type</span>
+                  <span className="font-bold text-[#166534] text-right">{certType || 'Not selected'}</span>
+                </div>
+                <div className="flex justify-between border-b border-[#bbf7d0]/50 pb-2">
+                  <span className="text-[#166534]/70 font-semibold">Tournament Date</span>
+                  <span className="font-bold text-[#166534] text-right">{tournamentDate || '2026-09-05'}</span>
+                </div>
+                <div className="flex justify-between border-b border-[#bbf7d0]/50 pb-2">
+                  <span className="text-[#166534]/70 font-semibold">Official Sponsor</span>
+                  <span className="font-bold text-[#166534] text-right flex items-center gap-1">
+                    🏆 {sponsorName || 'Dialog'}
+                  </span>
+                </div>
+                <div className="flex justify-between border-b border-[#bbf7d0]/50 pb-2">
+                  <span className="text-[#166534]/70 font-semibold">Verification Token</span>
+                  <span className="font-bold text-[#166534] font-mono text-xs text-right">
+                    {isGenerated ? generatedId : 'Will be generated'}
+                  </span>
+                </div>
+                <div className="flex justify-between pt-1">
+                  <span className="text-[#166534]/70 font-semibold">Verify Link</span>
+                  <span className="font-bold text-[#166534] text-[11px] sm:text-xs truncate max-w-[200px] text-right">
+                    {isGenerated ? generatedLink : 'Will be generated'}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <button 
@@ -322,13 +464,21 @@ export default function CertificateQR() {
                 <div className="animate-in zoom-in duration-300 flex flex-col items-center w-full h-full justify-center relative">
                   {/* Real QR Code UI */}
                   <div className="w-56 h-56 bg-white p-4 rounded-xl shadow-lg border border-[#e5e5e5] flex items-center justify-center relative">
-                     <QRCodeCanvas 
-                        id="certificate-qr-code" 
-                        value={`🏆 OFFICIAL ELLE HUB E-CERTIFICATE\n==================\nRecipient: ${recipient}\nAward: ${certType}\nTournament: ${tournament}\nToken: ${generatedId}\n==================\nStatus: 100% Genuine & Verified by Elle Hub`} 
-                        size={192} 
-                        level="M" 
-                        includeMargin={false}
-                     />
+                     <a 
+                       href={generatedLink} 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       title="Click to open Public Verification Site in new tab"
+                       className="cursor-pointer transition-transform hover:scale-105"
+                     >
+                       <QRCodeCanvas 
+                          id="certificate-qr-code" 
+                          value={generatedLink || `${window.location.origin}/verify-certificate/${generatedId}`} 
+                          size={192} 
+                          level="M" 
+                          includeMargin={false}
+                       />
+                     </a>
                   </div>
 
                   <div className="absolute -top-3 -right-3 text-[#166534] bg-[#f0fdf4] p-1.5 rounded-full shadow-md animate-in zoom-in delay-150 border border-[#bbf7d0]">
