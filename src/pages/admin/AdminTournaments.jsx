@@ -61,7 +61,11 @@ export default function AdminTournaments() {
                           (t.organizer_name || '').toLowerCase().includes(searchQuery.toLowerCase());
                           
     const matchesStatus = statusFilter === 'ALL' || (t.status || '').toUpperCase() === statusFilter;
-    const matchesApproval = approvalFilter === 'ALL' || (t.approval_status || '').toUpperCase() === approvalFilter;
+    const matchesApproval = approvalFilter === 'ALL' 
+      ? true 
+      : approvalFilter === 'DELETION_PENDING'
+        ? (t.deletion_status || '').toUpperCase() === 'DELETION_PENDING'
+        : (t.approval_status || '').toUpperCase() === approvalFilter;
     
     return matchesSearch && matchesStatus && matchesApproval;
   });
@@ -129,8 +133,9 @@ export default function AdminTournaments() {
               className="w-full h-11 px-4 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-xs font-bold text-gray-600 outline-none cursor-pointer focus:border-[#00382D] transition-all"
             >
               <option value="ALL">Approval: All</option>
-              <option value="PENDING">Pending</option>
+              <option value="PENDING">Creation Pending</option>
               <option value="APPROVED">Approved</option>
+              <option value="DELETION_PENDING">Deletion Requested ⚠️</option>
               <option value="REJECTED">Rejected</option>
             </select>
           </div>
@@ -166,6 +171,7 @@ export default function AdminTournaments() {
                   <th className="p-5 text-xs font-bold uppercase tracking-wider text-gray-500">Max Teams</th>
                   <th className="p-5 text-xs font-bold uppercase tracking-wider text-gray-500">Status</th>
                   <th className="p-5 text-xs font-bold uppercase tracking-wider text-gray-500">Approval</th>
+                  <th className="p-5 text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -210,6 +216,60 @@ export default function AdminTournaments() {
                         {getApprovalIcon(t.approval_status)}
                         {t.approval_status}
                       </span>
+                      {(t.deletion_status || '').toUpperCase() === 'DELETION_PENDING' && (
+                        <span className="mt-1 flex text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300 animate-pulse w-fit">
+                          Deletion Requested
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="p-5 text-center">
+                      {(t.deletion_status || '').toUpperCase() === 'DELETION_PENDING' ? (
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={async () => {
+                              if (!window.confirm(`Approve deletion of tournament '${t.title}'? This action cannot be undone.`)) return;
+                              try {
+                                setError(null);
+                                const res = await api.post(`/admin/tournament/${t.tournament_id}/approve-deletion`);
+                                if (res.data && res.data.success !== false) {
+                                  fetchTournaments();
+                                } else {
+                                  setError(res.data.message || "Failed to approve tournament deletion.");
+                                }
+                              } catch (err) {
+                                setError("Error approving tournament deletion.");
+                              }
+                            }}
+                            className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-extrabold transition-all shadow-xs cursor-pointer"
+                            title="Approve & Permanently Delete Tournament"
+                          >
+                            Approve Deletion
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                setError(null);
+                                const res = await api.post(`/admin/tournament/${t.tournament_id}/reject-deletion`);
+                                if (res.data && res.data.success !== false) {
+                                  fetchTournaments();
+                                } else {
+                                  setError(res.data.message || "Failed to reject deletion request.");
+                                }
+                              } catch (err) {
+                                setError("Error rejecting deletion request.");
+                              }
+                            }}
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-extrabold transition-all shadow-xs cursor-pointer"
+                            title="Reject Deletion Request & Keep Tournament Active"
+                          >
+                            Keep Tournament
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400 font-medium">Standard</span>
+                      )}
                     </td>
 
                   </tr>

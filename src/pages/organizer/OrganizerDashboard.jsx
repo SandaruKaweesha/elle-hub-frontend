@@ -44,6 +44,34 @@ function OrganizerDashboard() {
   const [completedDrawData, setCompletedDrawData] = useState(null);
   const [completedTeams, setCompletedTeams] = useState([]);
 
+  // Deletion Request State
+  const [deletingTournament, setDeletingTournament] = useState(null);
+  const [isSubmittingDeletion, setIsSubmittingDeletion] = useState(false);
+
+  const handleRequestTournamentDeletion = async () => {
+    if (!deletingTournament) return;
+    try {
+      setIsSubmittingDeletion(true);
+      setError(null);
+      setSuccessMsg(null);
+      const res = await api.post(`/organizer/tournament/${deletingTournament.tournament_id || deletingTournament.id}/request-deletion`);
+      if (res.data && res.data.success !== false) {
+        setSuccessMsg("Tournament deletion request submitted to Admin for approval.");
+        setDeletingTournament(null);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => setSuccessMsg(null), 4000);
+      } else {
+        throw new Error(res.data.message || "Failed to request tournament deletion.");
+      }
+    } catch (err) {
+      console.error("Deletion request error:", err);
+      setError(err.response?.data?.message || err.message || "Could not request tournament deletion.");
+      setDeletingTournament(null);
+    } finally {
+      setIsSubmittingDeletion(false);
+    }
+  };
+
   useEffect(() => {
     const loadDashboard = async () => {
       setLoading(true);
@@ -467,20 +495,35 @@ function OrganizerDashboard() {
                       <FileText size={14} /> View Details
                     </button>
                   ) : (t.approval_status || '').toUpperCase() === 'APPROVED' ? (
-                    <div className="flex gap-2">
-                      <button 
-                        type="button"
-                        onClick={() => setSelectedDetailsTournament(t)}
-                        className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-extrabold transition-colors flex items-center justify-center gap-1 border border-slate-200 shadow-xs cursor-pointer"
-                      >
-                        View Details
-                      </button>
-                      <Link 
-                        to={`/organizer/tournaments/manage/${t.tournament_id || t.id}`}
-                        className="flex-1 py-2.5 bg-[#00382D] hover:bg-[#002a22] text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-sm cursor-pointer"
-                      >
-                        Manage
-                      </Link>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <button 
+                          type="button"
+                          onClick={() => setSelectedDetailsTournament(t)}
+                          className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-extrabold transition-colors flex items-center justify-center gap-1 border border-slate-200 shadow-xs cursor-pointer"
+                        >
+                          View Details
+                        </button>
+                        <Link 
+                          to={`/organizer/tournaments/manage/${t.tournament_id || t.id}`}
+                          className="flex-1 py-2 bg-[#00382D] hover:bg-[#002a22] text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+                        >
+                          Manage
+                        </Link>
+                      </div>
+                      {(t.deletion_status || '').toUpperCase() === 'DELETION_PENDING' ? (
+                        <span className="w-full text-center py-1.5 bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-black uppercase rounded-xl">
+                          Deletion Request Pending Admin Review
+                        </span>
+                      ) : (
+                        <button 
+                          type="button"
+                          onClick={() => setDeletingTournament(t)}
+                          className="w-full py-1.5 text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl text-[11px] font-bold transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <Trash2 size={13} /> Request Deletion
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <button 
@@ -892,8 +935,48 @@ function OrganizerDashboard() {
           </div>
         </div>
       )}
+    
+      {/* TOURNAMENT DELETION REQUEST CONFIRMATION MODAL */}
+      {deletingTournament && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-[#e5e5e5] shadow-2xl max-w-md w-full p-6 space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                <Trash2 size={20} />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-gray-900">Request Tournament Deletion</h3>
+                <p className="text-xs text-gray-500 font-semibold">Admin Approval Required</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-600 leading-relaxed font-medium">
+              Are you sure you want to request deletion for tournament <strong className="text-gray-900">{deletingTournament.title}</strong>? 
+              A deletion request will be sent to the System Administrator for review and final approval.
+            </p>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeletingTournament(null)}
+                disabled={isSubmittingDeletion}
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleRequestTournamentDeletion}
+                disabled={isSubmittingDeletion}
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+              >
+                {isSubmittingDeletion ? "Submitting..." : "Submit Deletion Request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
 export default OrganizerDashboard;

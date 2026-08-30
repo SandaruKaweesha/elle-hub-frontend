@@ -178,6 +178,8 @@ function Tournaments() {
                 date={formatDate(tournament.tournament_held_date || tournament.start_date)}
                 prize={tournament.prize_details ? (isNaN(tournament.prize_details) ? tournament.prize_details : `LKR ${Number(tournament.prize_details).toLocaleString()}`) : "TBD"}
                 status={tournament.status || tournament.approval_status || "Active"}
+                location={tournament.location || tournament.district || tournament.region || "Sri Lanka"}
+                maxTeams={tournament.maximum_team_limit || 16}
                 buttonText="View Details"
               />
             ))}
