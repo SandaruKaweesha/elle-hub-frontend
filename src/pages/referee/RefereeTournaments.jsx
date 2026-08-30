@@ -30,6 +30,7 @@ export default function RefereeTournaments() {
   const [refereeRequestsMap, setRefereeRequestsMap] = useState({}); // { tournamentId: status }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [errorModalMsg, setErrorModalMsg] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -52,7 +53,7 @@ export default function RefereeTournaments() {
       }
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || err.message || "Operation failed.");
+      setErrorModalMsg(err.response?.data?.message || err.message || "Operation failed.");
     } finally {
       setLeaveLoadingId(null);
     }
@@ -156,12 +157,12 @@ export default function RefereeTournaments() {
 
   const handleApplyAsReferee = async (tournamentId, tournamentTitle) => {
     if (!refereeUserId) {
-      setError("Please log in as an official referee to request officiating.");
+      setErrorModalMsg("Please log in as an official referee to request officiating.");
       return;
     }
 
     if (accountStatus !== 'APPROVED') {
-      setError("Your referee account registration is currently pending admin approval. You cannot apply for tournaments until an admin approves your account.");
+      setErrorModalMsg("Your referee account registration is currently pending admin approval. You cannot apply for tournaments until an admin approves your account.");
       return;
     }
 
@@ -185,7 +186,7 @@ export default function RefereeTournaments() {
       }
     } catch (err) {
       console.error("Apply as referee error:", err);
-      setError(err.response?.data?.message || err.message || "Could not dispatch officiating request.");
+      setErrorModalMsg(err.response?.data?.message || err.message || "Could not dispatch officiating request.");
     } finally {
       setApplyLoadingId(null);
     }
@@ -226,17 +227,7 @@ export default function RefereeTournaments() {
         </div>
       )}
 
-      {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-center justify-between text-sm shadow-sm">
-          <div className="flex items-center gap-2">
-            <AlertCircle size={18} className="shrink-0" />
-            <span>{error}</span>
-          </div>
-          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
-            <X size={16} />
-          </button>
-        </div>
-      )}
+
 
       {successMsg && (
         <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl flex items-center justify-between text-sm shadow-sm">
@@ -558,6 +549,27 @@ export default function RefereeTournaments() {
         </div>
       )}
 
-    </div>
+    
+      {/* Error / Request Notice Pop-up Modal */}
+      {errorModalMsg && (
+        <div className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100 shadow-2xs">
+              <AlertCircle size={26} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Request Notice ⚠️</h3>
+            <p className="text-gray-600 text-sm mb-6 leading-relaxed font-medium">
+              {errorModalMsg}
+            </p>
+            <button
+              onClick={() => setErrorModalMsg(null)}
+              className="w-full py-2.5 bg-[#00382D] hover:bg-[#002820] text-white font-bold rounded-xl text-sm transition-all shadow-sm active:scale-[0.98] cursor-pointer"
+            >
+              Understand & Close
+            </button>
+          </div>
+        </div>
+      )}
+</div>
   );
 }

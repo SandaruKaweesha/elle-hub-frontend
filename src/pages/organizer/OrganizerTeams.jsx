@@ -334,17 +334,23 @@ export default function OrganizerTeams() {
                   </div>
 
                   {/* Key Stats Box */}
-                  <div className="bg-[#f9faf9] border border-[#e8efe9] rounded-xl p-3.5 grid grid-cols-2 gap-3 my-4 shadow-2xs">
+                  <div className="bg-[#f9faf9] border border-[#e8efe9] rounded-xl p-3.5 grid grid-cols-3 gap-2 my-4 shadow-2xs">
                     <div className="flex flex-col justify-center">
-                      <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mb-1">Contact Number</p>
-                      <p className="font-bold text-gray-800 flex items-center gap-1.5 text-xs truncate leading-none">
-                        <Phone size={13} className="text-[#08733e] shrink-0" /> {team.contact_number || 'N/A'}
+                      <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mb-1">Contact</p>
+                      <p className="font-bold text-gray-800 flex items-center gap-1 text-[11px] truncate leading-none" title={team.contact_number}>
+                        <Phone size={11} className="text-[#08733e] shrink-0" /> {team.contact_number || 'N/A'}
                       </p>
                     </div>
                     <div className="flex flex-col justify-center">
                       <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mb-1">Rating</p>
-                      <p className="font-black text-gray-900 flex items-center gap-1.5 text-xs leading-none">
-                        <Star size={13} className="text-amber-500 fill-amber-500 shrink-0" /> {team.rating ? parseFloat(team.rating).toFixed(1) : '0.0'}
+                      <p className="font-black text-gray-900 flex items-center gap-1 text-[11px] leading-none">
+                        <Star size={12} className="text-amber-500 fill-amber-500 shrink-0" /> {team.rating ? parseFloat(team.rating).toFixed(1) : '0.0'}
+                      </p>
+                    </div>
+                    <div className="flex flex-col justify-center">
+                      <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mb-1">Points</p>
+                      <p className="font-black text-[#08733e] flex items-center gap-1 text-[11px] leading-none">
+                        <Trophy size={12} className="text-[#08733e] shrink-0" /> {team.points || 0} pts
                       </p>
                     </div>
                   </div>

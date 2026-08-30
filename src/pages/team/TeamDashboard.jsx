@@ -49,50 +49,70 @@ function TeamDashboard() {
 
   useEffect(() => {
     const fetchTeamStats = async () => {
-      if (!teamUserId) {
+      let activeUserId = teamUserId;
+
+      if (!activeUserId) {
+        try {
+          const profileRes = await api.get('/user/profile');
+          if (profileRes.data && profileRes.data.data) {
+            const p = profileRes.data.data;
+            activeUserId = p.userId || p.user_id || p.id;
+          }
+        } catch (e) {
+          console.warn("Could not resolve profile user_id:", e);
+        }
+      }
+
+      if (!activeUserId) {
         setLoadingStats(false);
         return;
       }
+
       try {
         setLoadingStats(true);
         const [statsRes, rankingsRes] = await Promise.all([
-          api.get(`/team/${teamUserId}/stats`),
-          api.get('/rankings')
+          api.get(`/team/${activeUserId}/stats`),
+          api.get('/rankings').catch(() => null)
         ]);
 
         let calculatedRank = 'Unranked';
-        if (rankingsRes.data && rankingsRes.data.success !== false) {
+        if (rankingsRes && rankingsRes.data && rankingsRes.data.success !== false) {
           const rankingsList = rankingsRes.data.data || [];
-          const foundIndex = rankingsList.findIndex(t => Number(t.id || t.user_id) === Number(teamUserId));
-          if (foundIndex !== -1 && (rankingsList[foundIndex].played > 0 || rankingsList[foundIndex].won > 0)) {
+          const foundIndex = rankingsList.findIndex(t => Number(t.id || t.user_id) === Number(activeUserId));
+          if (foundIndex !== -1 && (rankingsList[foundIndex].played > 0 || rankingsList[foundIndex].won > 0 || rankingsList[foundIndex].points > 0)) {
             calculatedRank = `#${foundIndex + 1}`;
           }
         }
 
         if (statsRes.data && statsRes.data.success && statsRes.data.data) {
           const d = statsRes.data.data;
-          const played = d.played ?? 0;
-          const won = d.won ?? 0;
-          const losses = d.losses ?? 0;
-          const winRate = d.win_rate ?? (played > 0 ? Math.round((won / played) * 100) : 0);
-          const points = d.points ?? (won * 100 + played * 25);
-          const stars = (d.stars ?? (played > 0 ? Math.min(5.0, Math.max(1.0, (won / played) * 5.0)) : 0)).toFixed(1);
-          const fairPlay = (d.fair_play ?? (played > 0 ? Math.min(5.0, 4.0 + won * 0.2) : 0)).toFixed(1);
-          const discipline = (d.discipline ?? (played > 0 ? 5.0 : 0)).toFixed(1);
-          const reviewsCount = d.reviews_count ?? (played > 0 ? played * 3 : 0);
+          const played = Number(d.played ?? d.matches_played ?? 0);
+          const won = Number(d.won ?? d.wins ?? 0);
+          const losses = Number(d.losses ?? 0);
+          const winRate = Number(d.win_rate ?? d.winRate ?? (played > 0 ? Math.round((won / played) * 100) : 0));
+          const points = Number(d.points ?? 0);
+          const numRating = Number(d.rating ?? d.stars ?? 0);
+          const stars = numRating > 0 ? numRating.toFixed(1) : (played > 0 ? '2.5' : '0.0');
+          const fairPlay = Number(d.fair_play ?? d.fairPlay ?? (played > 0 ? 4.5 : 0.0)).toFixed(1);
+          const discipline = Number(d.discipline ?? (played > 0 ? 4.5 : 0.0)).toFixed(1);
+          const reviewsCount = Number(d.reviews_count ?? d.reviewsCount ?? (played > 0 ? played * 3 : 0));
+          const rankPos = d.rank_position || d.rank;
+          const rankDisplay = (rankPos && Number(rankPos) > 0) ? `#${rankPos}` : (calculatedRank !== 'Unranked' ? calculatedRank : 'Unranked');
 
           setStats({
             played,
             wins: won,
             losses,
             winRate,
-            goalProgress: d.goal_progress ?? 0,
+            tournamentsPlayed: Number(d.tournaments_played ?? d.tournamentsPlayed ?? 0),
+            tournamentsWon: Number(d.tournaments_won ?? d.tournamentsWon ?? 0),
+            goalProgress: d.goal_progress ?? (played > 0 ? Math.min(100, Math.round((played / 10) * 100)) : 0),
             points,
             stars,
             fairPlay,
             discipline,
             reviewsCount,
-            rank: calculatedRank
+            rank: rankDisplay
           });
         }
       } catch (error) {
@@ -264,24 +284,28 @@ function TeamDashboard() {
                       className={star <= Math.round(Number(stats.stars || 0)) ? "fill-amber-400 text-amber-400" : "fill-amber-400/40 text-amber-400"} 
                     />
                   ))}
-                  <span className="text-[11px] text-gray-300 font-semibold ml-2">({stats.reviewsCount || 0} Reviews)</span>
+                  
                 </div>
               </div>
             </div>
 
             {/* Criteria Breakdown */}
-            <div className="mt-5 pt-4 border-t border-white/15 grid grid-cols-3 gap-2 text-center">
+            <div className="mt-5 pt-4 border-t border-white/15 grid grid-cols-4 gap-2 text-center">
               <div className="bg-white/5 backdrop-blur-xs p-2 rounded-xl border border-white/10">
                 <span className="text-[9px] text-gray-300 font-bold uppercase block">Win Rate</span>
                 <span className="text-xs font-black text-[#98F5E1]">{stats.winRate || 0}%</span>
               </div>
               <div className="bg-white/5 backdrop-blur-xs p-2 rounded-xl border border-white/10">
+                <span className="text-[9px] text-gray-300 font-bold uppercase block">Points</span>
+                <span className="text-xs font-black text-amber-300">{stats.points || 0} pts</span>
+              </div>
+              <div className="bg-white/5 backdrop-blur-xs p-2 rounded-xl border border-white/10">
                 <span className="text-[9px] text-gray-300 font-bold uppercase block">Fair Play</span>
-                <span className="text-xs font-black text-amber-300">{stats.fairPlay || '0.0'} ★</span>
+                <span className="text-xs font-black text-emerald-300">{stats.fairPlay || '0.0'} ★</span>
               </div>
               <div className="bg-white/5 backdrop-blur-xs p-2 rounded-xl border border-white/10">
                 <span className="text-[9px] text-gray-300 font-bold uppercase block">Discipline</span>
-                <span className="text-xs font-black text-emerald-300">{stats.discipline || '0.0'} ★</span>
+                <span className="text-xs font-black text-cyan-300">{stats.discipline || '0.0'} ★</span>
               </div>
             </div>
           </div>
@@ -317,6 +341,25 @@ function TeamDashboard() {
                 <span className="text-xl font-black text-[#111111] mt-0.5">
                   {loadingStats ? "..." : `${stats.winRate}%`}
                 </span>
+              </div>
+            </div>
+
+            {/* Tournaments Performance Breakdown */}
+            <div className="pt-3 border-t border-[#e5e5e5] mb-3">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-[11px] font-extrabold text-[#111111] uppercase tracking-wider flex items-center gap-1">
+                  <Trophy size={13} className="text-[#08733e]" /> Tournament Summary
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="bg-[#f0fdf4] border border-emerald-200/60 p-2 rounded-xl">
+                  <span className="text-[10px] text-gray-500 font-bold uppercase block">Tourneys Joined</span>
+                  <span className="text-sm font-black text-[#00382D]">{loadingStats ? "..." : (stats.tournamentsPlayed || 0)}</span>
+                </div>
+                <div className="bg-amber-50 border border-amber-200/60 p-2 rounded-xl">
+                  <span className="text-[10px] text-gray-500 font-bold uppercase block">Titles Won 🏆</span>
+                  <span className="text-sm font-black text-amber-700">{loadingStats ? "..." : (stats.tournamentsWon || 0)}</span>
+                </div>
               </div>
             </div>
 
