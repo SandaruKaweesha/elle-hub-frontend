@@ -353,17 +353,30 @@ export default function ManageTournament() {
       setError(null);
       setSuccessMsg(null);
 
+      // Determine team user IDs to save (use selectedTeams or fallback to all approved team requests)
+      const approvedTeamIds = teamRequests
+        .filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED')
+        .map(r => parseInt(r.team_user_id || r.user_id, 10));
+
+      const finalTeamIds = selectedTeams.length > 0 ? selectedTeams.map(uid => parseInt(uid, 10)) : approvedTeamIds;
+
+      const approvedRefIds = refereeRequests
+        .filter(r => (r.status || '').toUpperCase() === 'APPROVED' || (r.status || '').toUpperCase() === 'ACCEPTED')
+        .map(r => parseInt(r.referee_user_id || r.user_id, 10));
+
+      const finalRefIds = selectedReferees.length > 0 ? selectedReferees.map(uid => parseInt(uid, 10)) : approvedRefIds;
+
       // Save assignments
       const payload = {
-        refereeUserIds: selectedReferees.map(uid => parseInt(uid, 10)),
-        teamUserIds: selectedTeams.map(uid => parseInt(uid, 10))
+        refereeUserIds: finalRefIds,
+        teamUserIds: finalTeamIds
       };
       await api.post(`/tournament/${id}/assignments`, payload).catch(() => {});
 
       // Finalize & Generate Match Draw
       const response = await api.post(`/tournament/${id}/finalize`);
       if (response.data && response.data.success) {
-        setSuccessMsg("Tournament setup finalized successfully! Match draw generated.");
+        setSuccessMsg("Tournament setup finalized successfully! Match draw generated with all participating teams.");
         setShowFinalizeSummaryModal(false);
         await loadTournamentData();
       } else {
@@ -1138,7 +1151,7 @@ export default function ManageTournament() {
 
       {/* FINALIZED SUMMARY POP-UP MODAL CARD */}
       {showFinalizeSummaryModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl border border-[#e5e5e5] shadow-2xl max-w-3xl w-full p-6 md:p-8 space-y-6 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             
             {/* Modal Header */}

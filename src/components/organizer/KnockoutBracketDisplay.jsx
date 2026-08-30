@@ -731,7 +731,7 @@ export default function KnockoutBracketDisplay({
 
       {/* SCORE ENTRY POP-UP MODAL CARD */}
       {activeModalMatch && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl border border-[#e5e5e5] shadow-2xl max-w-md w-full p-6 space-y-6 animate-in zoom-in-95 duration-200">
             
             {/* Modal Header */}
@@ -855,7 +855,7 @@ export default function KnockoutBracketDisplay({
 
       {/* TOURNAMENT COMPLETION & PODIUM SUMMARY POP-UP MODAL CARD */}
       {showCompletionModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl border border-[#e5e5e5] shadow-2xl max-w-lg w-full p-6 md:p-8 space-y-6 animate-in zoom-in-95 duration-200">
             
             {/* Modal Header */}

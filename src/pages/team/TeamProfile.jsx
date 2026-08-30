@@ -729,7 +729,7 @@ export default function TeamProfile() {
 
       {/* ADD PLAYER MODAL */}
       {showAddModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative animate-in fade-in zoom-in-95 duration-200">
             <button 
               onClick={() => setShowAddModal(false)}
@@ -815,7 +815,7 @@ export default function TeamProfile() {
 
       {/* EDIT PLAYER MODAL */}
       {showEditModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative animate-in fade-in zoom-in-95 duration-200">
             <button 
               onClick={() => setShowEditModal(false)}
@@ -898,7 +898,7 @@ export default function TeamProfile() {
 
       {/* DELETE CONFIRMATION MODAL */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center animate-in fade-in zoom-in-95 duration-200">
             <div className="w-14 h-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash2 size={28} />
@@ -930,7 +930,7 @@ export default function TeamProfile() {
 
       {/* Deletion Request Confirmation Modal */}
       {showDeletionConfirmModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[999999] bg-black/60 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 md:p-8 max-w-md w-full shadow-lg border border-[#e5e5e5] text-center animate-in fade-in zoom-in-95 duration-200 font-medium">
             <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
               <Trash2 size={28} />

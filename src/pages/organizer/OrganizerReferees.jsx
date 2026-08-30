@@ -20,6 +20,7 @@ export default function OrganizerReferees() {
   const [selectedRefereeToInvite, setSelectedRefereeToInvite] = useState(null); // { userId, name }
   const [selectedTournamentId, setSelectedTournamentId] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [errorModalMsg, setErrorModalMsg] = useState(null);
 
   // Sent Referee IDs state to destroy cards after sending request
   const [sentRefereeIds, setSentRefereeIds] = useState([]);
@@ -85,7 +86,7 @@ export default function OrganizerReferees() {
         const list = tournamentsRes.data.data || [];
         const activeOnly = list.filter(t => 
           t && 
-          (t.approval_status || '').toString().toUpperCase() === 'APPROVED' && 
+          
           (t.status || 'ACTIVE').toString().toUpperCase() !== 'COMPLETED' && 
           (t.status || 'ACTIVE').toString().toUpperCase() !== 'CANCELLED'
         );
@@ -149,7 +150,10 @@ export default function OrganizerReferees() {
       }
     } catch (err) {
       console.error("Invitation error:", err);
-      setError(err.response?.data?.message || err.message || "Could not dispatch referee invitation.");
+      const errMsg = err.response?.data?.message || err.message || "Could not dispatch referee invitation.";
+      setError(null);
+      setShowInviteModal(false);
+      setErrorModalMsg(errMsg);
     } finally {
       setInviteLoading(false);
     }
@@ -180,17 +184,7 @@ export default function OrganizerReferees() {
       </div>
 
       {/* Notifications Banners */}
-      {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-center justify-between text-sm shadow-sm">
-          <div className="flex items-center gap-2">
-            <AlertCircle size={18} className="shrink-0" />
-            <span>{error}</span>
-          </div>
-          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
-            <X size={16} />
-          </button>
-        </div>
-      )}
+
 
       {successMsg && (
         <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl flex items-center justify-between text-sm shadow-sm">
@@ -336,28 +330,18 @@ export default function OrganizerReferees() {
                     <ChevronRight size={14} className="text-[#888888]" />
                   </button>
 
-                  {sentRefereeIds.includes(userId) ? (
-                    <button 
-                      disabled
-                      className="w-full py-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs cursor-not-allowed"
-                    >
-                      <CheckCircle2 size={13} className="text-emerald-600" />
-                      Request Sent / Invited
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={() => handleOpenInviteModal(referee)}
-                      disabled={!isAvailable}
-                      className={`w-full py-2.5 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm ${
-                        isAvailable 
-                          ? 'bg-[#00382D] hover:bg-[#002b22] cursor-pointer' 
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      }`}
-                    >
-                      <Send size={13} />
-                      {isAvailable ? 'Send Request for Tournament' : 'Currently Unavailable'}
-                    </button>
-                  )}
+                  <button 
+                    onClick={() => handleOpenInviteModal(referee)}
+                    disabled={!isAvailable}
+                    className={`w-full py-2.5 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm ${
+                      isAvailable 
+                        ? 'bg-[#00382D] hover:bg-[#002b22] cursor-pointer' 
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    <Send size={13} />
+                    {isAvailable ? 'Send Request for Tournament' : 'Currently Unavailable'}
+                  </button>
                 </div>
 
               </div>
@@ -368,7 +352,7 @@ export default function OrganizerReferees() {
 
       {/* --- REFEREE PROFILE MODAL --- */}
       {showProfileModal && selectedReferee && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-[#e5e5e5] relative">
             <button 
               onClick={() => setShowProfileModal(false)}
@@ -429,7 +413,7 @@ export default function OrganizerReferees() {
 
       {/* --- INVITATION / REQUEST TOURNAMENT MODAL --- */}
       {showInviteModal && selectedRefereeToInvite && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-[#e5e5e5]">
             
             <div className="flex items-center justify-between pb-4 border-b border-[#e5e5e5] mb-6">
@@ -512,6 +496,37 @@ export default function OrganizerReferees() {
         </div>
       )}
 
-    </div>
+    
+      {/* ERROR POP-UP MODAL CARD */}
+      {errorModalMsg && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-rose-200 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 border-b border-rose-100 pb-4">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold shrink-0">
+                <AlertCircle size={22} />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-gray-900">Request Notice</h3>
+                <p className="text-xs text-rose-600 font-semibold">Action Cannot Be Processed</p>
+              </div>
+            </div>
+            <div className="bg-rose-50/70 border border-rose-200 p-4 rounded-2xl">
+              <p className="text-xs font-bold text-rose-900 leading-relaxed">
+                {errorModalMsg}
+              </p>
+            </div>
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => setErrorModalMsg(null)}
+                className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-extrabold shadow-md transition-all cursor-pointer"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+</div>
   );
 }

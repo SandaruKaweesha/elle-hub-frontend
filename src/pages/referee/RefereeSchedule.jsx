@@ -12,7 +12,7 @@ import {
   XCircle,
   CheckCircle2,
   X,
-  ChevronRight
+  ChevronRight, LogOut, Lock
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -32,7 +32,33 @@ function RefereeSchedule() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Active");
+  const [statusFilter, setStatusFilter] = useState("All");
+
+  // Leave / Withdraw State
+  const [leaveLoading, setLeaveLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState(null);
+
+  const handleLeaveTournament = async (tId) => {
+    try {
+      setLeaveLoading(true);
+      setError(null);
+      const res = await api.post('/tournament/referee-request/leave', { tournamentId: tId });
+      if (res.data && res.data.success !== false) {
+        setSuccessMsg(res.data.message || "You have withdrawn your officiating request successfully.");
+        setShowModal(false);
+        setSelectedItem(null);
+        fetchSchedule();
+        setTimeout(() => setSuccessMsg(null), 4000);
+      } else {
+        throw new Error(res.data.message || "Failed to withdraw officiating request.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || err.message || "Operation failed.");
+    } finally {
+      setLeaveLoading(false);
+    }
+  };
 
   // Selected Detail Modal
   const [selectedItem, setSelectedItem] = useState(null);
@@ -370,7 +396,7 @@ function RefereeSchedule() {
 
       {/* --- SCHEDULE DETAIL MODAL --- */}
       {showModal && selectedItem && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-[#e5e5e5] relative">
             <button 
               onClick={() => setShowModal(false)}
@@ -436,12 +462,33 @@ function RefereeSchedule() {
               </div>
             </div>
 
-            <button 
-              onClick={() => setShowModal(false)}
-              className="w-full py-3 bg-[#00382D] hover:bg-[#002a22] text-white rounded-xl font-bold text-xs transition-colors cursor-pointer"
-            >
-              Close Details
-            </button>
+            <div className="flex gap-2">
+              {selectedItem.isDrawFinalized ? (
+                <button
+                  disabled
+                  type="button"
+                  title="The tournament setup has been finalized by organizer. Officiating list is locked."
+                  className="flex-1 py-3 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl border border-gray-200 flex items-center justify-center gap-1.5 cursor-not-allowed"
+                >
+                  <Lock size={14} /> Finalized (Leave Locked)
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={leaveLoading}
+                  onClick={() => handleLeaveTournament(selectedItem.id)}
+                  className="flex-1 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-xl border border-rose-200/80 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-50"
+                >
+                  {leaveLoading ? "Processing..." : <><LogOut size={14} /> Withdraw Officiating</>}
+                </button>
+              )}
+              <button 
+                onClick={() => setShowModal(false)}
+                className="py-3 px-5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-xs transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

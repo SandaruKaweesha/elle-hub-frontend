@@ -110,33 +110,7 @@ export default function VerifyCertificate() {
           /* VALID CERTIFICATE STATE */
           <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
             
-            {/* Official Verification Badge Banner */}
-            <div className="bg-emerald-700 text-white p-5 rounded-3xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 border border-emerald-600">
-              <div className="flex items-center gap-3.5 text-center md:text-left">
-                <div className="w-12 h-12 rounded-2xl bg-white text-[#08733e] flex items-center justify-center font-black shadow-inner">
-                  <ShieldCheck size={28} />
-                </div>
-                <div>
-                  <div className="flex items-center justify-center md:justify-start gap-2">
-                    <h2 className="text-lg font-black tracking-wide">VERIFIED BY ELLE HUB</h2>
-                    <CheckCircle2 size={18} className="text-emerald-300" />
-                  </div>
-                  <p className="text-xs text-emerald-100 font-medium">
-                    Official Cryptographic Certificate Token: <span className="font-mono font-bold text-white bg-emerald-800 px-2 py-0.5 rounded">{token}</span>
-                  </p>
-                </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={handleDownloadPDF}
-                disabled={downloading}
-                className="px-5 py-2.5 bg-white hover:bg-emerald-50 text-[#08733e] rounded-2xl text-xs font-black transition-all shadow-md flex items-center gap-2 cursor-pointer print:hidden disabled:opacity-50"
-              >
-                {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                {downloading ? "Generating PNG..." : "Download E-Certificate (PNG)"}
-              </button>
-            </div>
 
             {/* Premium Gold Luxury E-Certificate Template Container */}
             <div id="public-certificate-card" className="bg-white rounded-3xl border-8 border-amber-400 p-8 md:p-12 shadow-2xl space-y-8 relative overflow-hidden print:p-6 print:border-4">
@@ -169,9 +143,9 @@ export default function VerifyCertificate() {
                 </h2>
                 <div className="inline-block mt-2">
                   <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${
-                    verificationResult.data.certificate_type === 'CHAMPION' 
+                    verificationResult.data.certificate_type === 'CHAMPION' || verificationResult.data.certificate_type === 'WINNER'
                       ? 'bg-amber-100 text-amber-900 border-2 border-amber-300' 
-                      : verificationResult.data.certificate_type === 'RUNNER_UP'
+                      : verificationResult.data.certificate_type === 'RUNNER_UP' || verificationResult.data.certificate_type === 'RUNNER-UP'
                       ? 'bg-slate-100 text-slate-800 border-2 border-slate-300'
                       : 'bg-emerald-100 text-emerald-900 border-2 border-emerald-300'
                   }`}>
@@ -180,8 +154,54 @@ export default function VerifyCertificate() {
                 </div>
               </div>
 
-              {/* Certificate Metadata & Embedded Live QR Code */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center relative z-10 pt-2">
+              {/* Official Verification Details Summary Table */}
+              <div className="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-5 shadow-xs text-xs space-y-3 relative z-10 text-left">
+                <div className="flex items-center justify-between border-b border-emerald-200/80 pb-2">
+                  <span className="font-extrabold text-[#08733e] uppercase tracking-wider flex items-center gap-1.5 text-xs">
+                    <CheckCircle2 size={16} className="text-emerald-600" /> Verification Status
+                  </span>
+                  <span className="font-black text-emerald-900 bg-emerald-100 px-3 py-0.5 rounded-full border border-emerald-300 text-[11px]">
+                    ✓ OFFICIAL VERIFIED CERTIFICATE
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="bg-white p-2.5 rounded-xl border border-emerald-100 shadow-2xs">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase block">Tournament Name</span>
+                    <span className="font-black text-gray-900 text-sm">{verificationResult.data.tournament_title}</span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-emerald-100 shadow-2xs">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase block">Winner / Recipient</span>
+                    <span className="font-black text-[#08733e] text-sm">{verificationResult.data.recipient_name}</span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-emerald-100 shadow-2xs">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase block">Certificate Award</span>
+                    <span className="font-extrabold text-amber-700 text-xs">{verificationResult.data.certificate_type}</span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-emerald-100 shadow-2xs">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase block">Tournament Date</span>
+                    <span className="font-extrabold text-gray-800 text-xs">{verificationResult.data.issue_date}</span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-emerald-100 shadow-2xs">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase block">Location / Venue</span>
+                    <span className="font-extrabold text-gray-800 text-xs">{verificationResult.data.tournament_location}</span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-emerald-100 shadow-2xs">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase block">Organizer</span>
+                    <span className="font-extrabold text-gray-800 text-xs">{verificationResult.data.organizer_name}</span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-emerald-100 shadow-2xs md:col-span-2">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase block">Official Sponsor</span>
+                    <span className="font-extrabold text-indigo-900 text-xs flex items-center gap-1.5 mt-0.5">
+                      <Trophy size={14} className="text-amber-500" />
+                      {verificationResult.data.sponsor_name || 'Official Tournament Sponsors'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Certificate Metadata & Official Seal */}
+              <div className="flex flex-col md:flex-row justify-between items-center gap-6 relative z-10 pt-2 border-t border-amber-100/60">
                 
                 {/* Left Metadata */}
                 <div className="space-y-2 text-xs text-gray-600 font-medium text-center md:text-left">
@@ -199,23 +219,9 @@ export default function VerifyCertificate() {
                   </div>
                 </div>
 
-                {/* Center QR Code Container */}
-                <div className="flex flex-col items-center justify-center space-y-2">
-                  <div className="p-3 bg-white border-2 border-amber-300 rounded-2xl shadow-md">
-                    <QRCodeSVG 
-                      value={verificationUrl} 
-                      size={110} 
-                      bgColor={"#FFFFFF"} 
-                      fgColor={"#08733e"} 
-                      level={"H"} 
-                    />
-                  </div>
-                  <span className="text-[10px] font-mono text-gray-400 font-bold">Scan to Verify Authenticity</span>
-                </div>
-
                 {/* Right Official Seal */}
                 <div className="text-center md:text-right space-y-1">
-                  <div className="w-16 h-16 rounded-full bg-[#08733e] text-white flex items-center justify-center mx-auto md:ml-auto shadow-md font-black text-xs">
+                  <div className="w-16 h-16 rounded-full bg-[#08733e] text-white flex items-center justify-center mx-auto md:ml-auto shadow-md font-black text-xs border-2 border-emerald-600">
                     OFFICIAL
                   </div>
                   <p className="text-[11px] font-extrabold text-gray-800">Elle Hub Verified Seal</p>

@@ -15,7 +15,7 @@ import {
   Mail,
   ShieldCheck,
   Building,
-  UserCheck
+  UserCheck, LogOut, Lock
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -29,6 +29,31 @@ export default function PlaygroundTournaments() {
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Leave / Withdraw State
+  const [leaveLoadingId, setLeaveLoadingId] = useState(null);
+
+  const handleWithdrawVenue = async (tId) => {
+    try {
+      setLeaveLoadingId(tId);
+      setError(null);
+      const res = await api.post('/tournament/playground-request/leave', { tournamentId: tId });
+      if (res.data && res.data.success !== false) {
+        setSuccessMsg(res.data.message || "You have withdrawn venue hosting successfully.");
+        setShowDetailsModal(false);
+        setSelectedTournament(null);
+        fetchTournamentsData();
+        setTimeout(() => setSuccessMsg(null), 4000);
+      } else {
+        throw new Error(res.data.message || "Failed to withdraw venue hosting.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || err.message || "Operation failed.");
+    } finally {
+      setLeaveLoadingId(null);
+    }
+  };
 
   // Details Modal State & Deep Info
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -243,11 +268,11 @@ export default function PlaygroundTournaments() {
 
                     {myStatus && (
                       <span className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-md border backdrop-blur-md ${
-                        myStatus === 'APPROVED' 
-                          ? 'bg-emerald-500/80 text-white border-emerald-400'
-                          : 'bg-amber-500/80 text-white border-amber-400'
+                        (myStatus === 'APPROVED' || myStatus === 'ACCEPTED')
+                          ? 'bg-emerald-500/90 text-white border-emerald-400'
+                          : 'bg-amber-500/90 text-white border-amber-400'
                       }`}>
-                        {myStatus === 'APPROVED' ? 'Venue Approved' : 'Request Pending'}
+                        {(myStatus === 'APPROVED' || myStatus === 'ACCEPTED') ? 'Venue Reserved' : 'Request Pending'}
                       </span>
                     )}
                     </div>
@@ -287,14 +312,41 @@ export default function PlaygroundTournaments() {
                     <Eye size={14} /> View Details
                   </button>
 
-                  {myStatus === 'PENDING' ? (
-                    <span className="flex-1 py-2.5 bg-amber-100 text-amber-800 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 border border-amber-200">
-                      <Clock size={13} /> Requested
-                    </span>
-                  ) : myStatus === 'APPROVED' ? (
-                    <span className="flex-1 py-2.5 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 border border-emerald-200">
-                      <CheckCircle2 size={13} /> Venue Reserved
-                    </span>
+                  {(myStatus === 'APPROVED' || myStatus === 'ACCEPTED' || myStatus === 'PENDING') ? (
+                    <div className="flex-1 flex items-center gap-2">
+                      <span className={`flex-1 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 border ${
+                        (myStatus === 'APPROVED' || myStatus === 'ACCEPTED')
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                          : 'bg-amber-100 text-amber-800 border-amber-200'
+                      }`}>
+                        {(myStatus === 'APPROVED' || myStatus === 'ACCEPTED') ? (
+                          <><CheckCircle2 size={13} /> Venue Reserved</>
+                        ) : (
+                          <><Clock size={13} /> Pending</>
+                        )}
+                      </span>
+
+                      {Boolean(Number(t.is_draw_finalized) === 1 || Number(t.is_finalized) === 1 || ['FINALIZED', 'COMPLETED', 'FINISHED'].includes((t.status || '').toUpperCase())) ? (
+                        <button
+                          disabled
+                          type="button"
+                          title="Tournament setup finalized by organizer. Venue booking locked."
+                          className="py-2.5 px-3 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl border border-gray-200 cursor-not-allowed"
+                        >
+                          <Lock size={13} />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={leaveLoadingId === tournamentId}
+                          onClick={() => handleWithdrawVenue(tournamentId)}
+                          className="py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
+                          title="Withdraw Venue Hosting"
+                        >
+                          <LogOut size={13} />
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <button
                       type="button"
@@ -324,7 +376,7 @@ export default function PlaygroundTournaments() {
 
       {/* --- TOURNAMENT DETAILS MODAL --- */}
       {showDetailsModal && selectedTournament && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 md:p-8 shadow-2xl border border-gray-100 relative max-h-[90vh] overflow-y-auto">
             
             <button

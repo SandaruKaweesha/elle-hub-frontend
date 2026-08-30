@@ -21,8 +21,10 @@ import {
   CheckCircle2,
   Swords,
   Edit3,
+  Trash2,
   Save,
-  Loader2
+  Loader2,
+  Lock
 } from "lucide-react";
 import KnockoutBracketDisplay from "../../components/organizer/KnockoutBracketDisplay";
 
@@ -144,6 +146,12 @@ function OrganizerDashboard() {
   };
 
     const handleOpenEditModal = (t) => {
+    const isFinalized = Number(t.is_finalized || t.is_draw_finalized || t.isFinalized) === 1 || 
+                        ['FINALIZED', 'COMPLETED', 'FINISHED'].includes((t.status || '').toUpperCase());
+    if (isFinalized) {
+      alert("This tournament has been finalized & locked. Editing details is disabled.");
+      return;
+    }
     const tId = t.tournament_id || t.id;
     setEditingTournament(t);
     setEditForm({
@@ -515,6 +523,15 @@ function OrganizerDashboard() {
                         <span className="w-full text-center py-1.5 bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-black uppercase rounded-xl">
                           Deletion Request Pending Admin Review
                         </span>
+                      ) : Boolean(Number(t.is_finalized) === 1 || Number(t.is_draw_finalized) === 1 || t.is_finalized || t.is_draw_finalized || ['FINALIZED', 'COMPLETED', 'FINISHED', 'ACTIVE', 'ONGOING'].includes((t.status || '').toUpperCase())) ? (
+                        <button 
+                          disabled
+                          type="button"
+                          title="Tournament setup is finalized. Deletion request is locked."
+                          className="w-full py-1.5 bg-gray-100 text-gray-400 border border-gray-200 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 cursor-not-allowed"
+                        >
+                          <Lock size={13} /> Finalized (Deletion Locked)
+                        </button>
                       ) : (
                         <button 
                           type="button"
@@ -526,14 +543,22 @@ function OrganizerDashboard() {
                       )}
                     </div>
                   ) : (
-                    <button 
-                      type="button"
-                      onClick={() => setSelectedDetailsTournament(t)}
-                      className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-extrabold transition-colors flex items-center justify-center gap-1.5 group/btn border border-slate-200 shadow-xs cursor-pointer"
-                    >
-                      View Details
-                      <ChevronRight size={14} className="text-slate-500 group-hover/btn:text-slate-900 transition-colors" />
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        type="button"
+                        onClick={() => setSelectedDetailsTournament(t)}
+                        className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-extrabold transition-colors flex items-center justify-center gap-1 border border-slate-200 shadow-xs cursor-pointer"
+                      >
+                        View Details
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => handleOpenEditModal(t)}
+                        className="flex-1 py-2 bg-[#08733e] hover:bg-[#065b31] text-white rounded-xl text-xs font-extrabold transition-colors flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+                      >
+                        <Edit3 size={13} /> Update
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -544,7 +569,7 @@ function OrganizerDashboard() {
 
       {/* COMPLETED TOURNAMENT DETAILS POP-UP MODAL CARD */}
       {selectedCompletedTournament && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl border border-[#e5e5e5] shadow-2xl max-w-4xl w-full p-6 md:p-8 space-y-6 animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
             
             {/* Modal Header */}
@@ -656,7 +681,7 @@ function OrganizerDashboard() {
 
       {/* --- TOURNAMENT ALL DETAILS POPUP MODAL --- */}
       {selectedDetailsTournament && (
-        <div className="fixed inset-0 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden my-auto relative space-y-0">
             
             {/* Cover Image Header with Dark Gradient & Badges */}
@@ -782,13 +807,20 @@ function OrganizerDashboard() {
                 Close
               </button>
 
-              <button
-                type="button"
-                onClick={() => handleOpenEditModal(selectedDetailsTournament)}
-                className="px-6 py-2.5 bg-[#08733e] hover:bg-[#065b31] text-white rounded-xl text-xs font-extrabold transition-all shadow-md flex items-center gap-2 cursor-pointer"
-              >
-                <Edit3 size={15} /> Update Tournament
-              </button>
+              {((selectedDetailsTournament.is_finalized || selectedDetailsTournament.is_draw_finalized || selectedDetailsTournament.isFinalized) == 1 || 
+                ['FINALIZED', 'COMPLETED', 'FINISHED'].includes((selectedDetailsTournament.status || '').toUpperCase())) ? (
+                <span className="px-4 py-2 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-xs">
+                  🔒 Finalized & Locked (Editing Disabled)
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleOpenEditModal(selectedDetailsTournament)}
+                  className="px-6 py-2.5 bg-[#08733e] hover:bg-[#065b31] text-white rounded-xl text-xs font-extrabold transition-all shadow-md flex items-center gap-2 cursor-pointer"
+                >
+                  <Edit3 size={15} /> Update Tournament
+                </button>
+              )}
             </div>
 
           </div>
@@ -796,7 +828,7 @@ function OrganizerDashboard() {
       )}
       {/* --- UPDATE TOURNAMENT MODAL --- */}
       {editingTournament && (
-        <div className="fixed inset-0 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-xl w-full border border-slate-200 shadow-2xl overflow-hidden my-auto p-6 md:p-8 space-y-6 relative">
             
             {/* Header */}
@@ -938,7 +970,7 @@ function OrganizerDashboard() {
     
       {/* TOURNAMENT DELETION REQUEST CONFIRMATION MODAL */}
       {deletingTournament && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl border border-[#e5e5e5] shadow-2xl max-w-md w-full p-6 space-y-5 animate-in zoom-in-95 duration-200">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
               <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">

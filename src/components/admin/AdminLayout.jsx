@@ -1,3 +1,4 @@
+import NotificationDropdown from '../common/NotificationDropdown';
 import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import api from "../../services/api";
@@ -219,7 +220,7 @@ function AdminLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         {/* Top Header */}
-        <header className="h-[72px] bg-white flex items-center justify-between px-4 lg:px-8 shrink-0 border-b border-[#e5e7eb]">
+        <header className="h-[72px] bg-white flex items-center justify-between px-4 lg:px-8 relative z-[9999] shrink-0 border-b border-[#e5e7eb]">
           
           <div className="flex items-center gap-4 flex-1">
             <button 
@@ -235,106 +236,23 @@ function AdminLayout() {
           {/* Right Header Actions */}
           <div className="flex items-center gap-4 sm:gap-6 shrink-0">
             {/* Notification Bell Dropdown */}
-            <div className="relative">
+            <div className="relative z-[100]">
               <button 
                 onClick={() => setShowNotifDropdown(!showNotifDropdown)}
                 className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors relative cursor-pointer flex items-center justify-center"
                 title="Admin Notifications"
               >
                 <Bell size={20} />
-                {unreadCount > 0 && (
-                  <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center px-1 animate-pulse shadow-sm">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#08733e] rounded-full border border-white"></span>
               </button>
 
-              {/* Notification Popover Dropdown Modal */}
-              {showNotifDropdown && (
-                <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                  <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Bell size={18} className="text-[#08733e]" />
-                      <h3 className="font-extrabold text-sm text-gray-900">Notifications</h3>
-                      {unreadCount > 0 && (
-                        <span className="bg-emerald-100 text-[#08733e] text-[10px] font-bold px-2 py-0.5 rounded-full">
-                          {unreadCount} new
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {unreadCount > 0 && (
-                        <button 
-                          onClick={markAllRead} 
-                          className="text-[11px] font-bold text-[#08733e] hover:underline cursor-pointer"
-                        >
-                          Mark all read
-                        </button>
-                      )}
-                      <button 
-                        onClick={() => setShowNotifDropdown(false)} 
-                        className="text-gray-400 hover:text-gray-700 hover:bg-gray-200/80 p-1.5 rounded-full transition-colors cursor-pointer flex items-center justify-center"
-                        title="Close notifications"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
-                    {notifications.length === 0 ? (
-                      <div className="p-6 text-center text-gray-400 space-y-1">
-                        <Bell size={28} className="mx-auto text-gray-300 mb-2" />
-                        <p className="text-xs font-bold text-gray-700">No Notifications Yet</p>
-                        <p className="text-[11px]">System alerts will appear here in real-time.</p>
-                      </div>
-                    ) : (
-                      notifications.map(n => {
-                        const isUnread = Number(n.is_read) === 0;
-                        return (
-                          <div 
-                            key={n.notification_id}
-                            onClick={() => {
-                              markSingleRead(n.notification_id);
-                              setShowNotifDropdown(false);
-                              navigate('/admin/notifications');
-                            }}
-                            className={`p-3.5 hover:bg-gray-50 transition-colors cursor-pointer text-left ${isUnread ? 'bg-emerald-50/50' : 'opacity-75'}`}
-                          >
-                            <div className="flex justify-between items-start gap-2">
-                              <h4 className={`text-xs ${isUnread ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
-                                {n.title}
-                              </h4>
-                              {isUnread && (
-                                <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0 mt-1"></span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-gray-600 mt-1 line-clamp-2">{n.message}</p>
-                            <span className="text-[9px] text-gray-400 mt-1.5 block font-mono">
-                              {n.created_at || n.received_at}
-                            </span>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-
-                  <div className="p-2.5 bg-gray-50 border-t border-gray-200 text-center">
-                    <button 
-                      onClick={() => {
-                        setShowNotifDropdown(false);
-                        navigate('/admin/notifications');
-                      }} 
-                      className="text-xs font-extrabold text-[#08733e] hover:underline cursor-pointer"
-                    >
-                      View All Notifications Feed →
-                    </button>
-                  </div>
-                </div>
-              )}
+              <NotificationDropdown 
+                rolePath="admin" 
+                isOpen={showNotifDropdown} 
+                onClose={() => setShowNotifDropdown(false)} 
+              />
             </div>
 
-            
             <div className="w-[1px] h-8 bg-gray-200 hidden sm:block"></div>
             
             {/* User Profile Card (Read-Only Click) */}
@@ -362,7 +280,7 @@ function AdminLayout() {
 
       {/* Read-Only Admin Profile Details Modal */}
       {showProfileModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-200 relative space-y-6">
             
             <button 
@@ -450,7 +368,7 @@ function AdminLayout() {
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-[400px] p-6 text-center transform transition-all">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
               <LogOut size={32} />
@@ -468,7 +386,7 @@ function AdminLayout() {
               </button>
               <button 
                 onClick={handleLogout}
-                className="flex-1 px-4 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-colors shadow-sm"
+                className="flex-1 px-4 py-3 bg-[#08733e] text-white font-semibold rounded-xl hover:bg-red-700 transition-colors shadow-sm"
               >
                 Yes, Logout
               </button>

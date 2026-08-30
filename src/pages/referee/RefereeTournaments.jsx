@@ -16,7 +16,9 @@ import {
   UserCheck,
   Phone,
   Mail,
-  ShieldCheck
+  ShieldCheck,
+  LogOut,
+  Lock
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -28,8 +30,34 @@ export default function RefereeTournaments() {
   const [refereeRequestsMap, setRefereeRequestsMap] = useState({}); // { tournamentId: status }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [errorModalMsg, setErrorModalMsg] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Leave / Withdraw State
+  const [leaveLoadingId, setLeaveLoadingId] = useState(null);
+
+  const handleWithdrawOfficiating = async (tId) => {
+    try {
+      setLeaveLoadingId(tId);
+      setError(null);
+      const res = await api.post('/tournament/referee-request/leave', { tournamentId: tId });
+      if (res.data && res.data.success !== false) {
+        setSuccessMsg(res.data.message || "You have withdrawn your officiating request successfully.");
+        setShowDetailsModal(false);
+        setSelectedTournament(null);
+        fetchTournamentsData();
+        setTimeout(() => setSuccessMsg(null), 4000);
+      } else {
+        throw new Error(res.data.message || "Failed to withdraw officiating request.");
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorModalMsg(err.response?.data?.message || err.message || "Operation failed.");
+    } finally {
+      setLeaveLoadingId(null);
+    }
+  };
 
   // Details Modal State & Deep Info
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -129,12 +157,12 @@ export default function RefereeTournaments() {
 
   const handleApplyAsReferee = async (tournamentId, tournamentTitle) => {
     if (!refereeUserId) {
-      setError("Please log in as an official referee to request officiating.");
+      setErrorModalMsg("Please log in as an official referee to request officiating.");
       return;
     }
 
     if (accountStatus !== 'APPROVED') {
-      setError("Your referee account registration is currently pending admin approval. You cannot apply for tournaments until an admin approves your account.");
+      setErrorModalMsg("Your referee account registration is currently pending admin approval. You cannot apply for tournaments until an admin approves your account.");
       return;
     }
 
@@ -158,7 +186,7 @@ export default function RefereeTournaments() {
       }
     } catch (err) {
       console.error("Apply as referee error:", err);
-      setError(err.response?.data?.message || err.message || "Could not dispatch officiating request.");
+      setErrorModalMsg(err.response?.data?.message || err.message || "Could not dispatch officiating request.");
     } finally {
       setApplyLoadingId(null);
     }
@@ -199,17 +227,7 @@ export default function RefereeTournaments() {
         </div>
       )}
 
-      {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-center justify-between text-sm shadow-sm">
-          <div className="flex items-center gap-2">
-            <AlertCircle size={18} className="shrink-0" />
-            <span>{error}</span>
-          </div>
-          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
-            <X size={16} />
-          </button>
-        </div>
-      )}
+
 
       {successMsg && (
         <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl flex items-center justify-between text-sm shadow-sm">
@@ -288,11 +306,11 @@ export default function RefereeTournaments() {
 
                     {existingReqStatus && (
                       <span className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-md border backdrop-blur-md ${
-                        existingReqStatus === 'APPROVED' 
+                        (existingReqStatus === 'APPROVED' || existingReqStatus === 'ACCEPTED')
                           ? 'bg-emerald-500/90 text-white border-emerald-400' 
                           : 'bg-amber-500/90 text-white border-amber-400'
                       }`}>
-                        {existingReqStatus === 'APPROVED' ? 'Confirmed Referee' : 'Request Pending'}
+                        {(existingReqStatus === 'APPROVED' || existingReqStatus === 'ACCEPTED') ? 'Confirmed Referee' : 'Request Pending'}
                       </span>
                     )}
                     </div>
@@ -337,37 +355,69 @@ export default function RefereeTournaments() {
                     View Full Tournament Details
                   </button>
 
-                  <button 
-                    onClick={() => handleApplyAsReferee(tournamentId, title)}
-                    disabled={applyLoadingId === tournamentId || Boolean(existingReqStatus) || accountStatus !== 'APPROVED'}
-                    className={`w-full py-2.5 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm ${
-                      existingReqStatus || accountStatus !== 'APPROVED'
-                        ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
-                        : 'bg-[#00382D] hover:bg-[#002b22] cursor-pointer'
-                    }`}
-                  >
-                    {applyLoadingId === tournamentId ? (
-                      <>
-                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Submitting...
-                      </>
-                    ) : existingReqStatus ? (
-                      <>
-                        <CheckCircle2 size={14} />
-                        {existingReqStatus === 'APPROVED' ? 'Assigned Referee' : 'Request Submitted'}
-                      </>
-                    ) : accountStatus !== 'APPROVED' ? (
-                      <>
-                        <ShieldCheck size={14} />
-                        Pending Admin Approval
-                      </>
-                    ) : (
-                      <>
-                        <Send size={13} />
-                        Request to Officiate
-                      </>
-                    )}
-                  </button>
+                  {existingReqStatus ? (
+                    <div className="flex items-center gap-2 w-full">
+                      <span className={`flex-1 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 border ${
+                        (existingReqStatus === 'APPROVED' || existingReqStatus === 'ACCEPTED')
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                          : 'bg-amber-100 text-amber-800 border-amber-200'
+                      }`}>
+                        {(existingReqStatus === 'APPROVED' || existingReqStatus === 'ACCEPTED') ? (
+                          <><CheckCircle2 size={14} /> Confirmed Referee</>
+                        ) : (
+                          <><Clock size={14} /> Request Pending</>
+                        )}
+                      </span>
+
+                      {Boolean(Number(t.is_draw_finalized) === 1 || Number(t.is_finalized) === 1 || ['FINALIZED', 'COMPLETED', 'FINISHED'].includes((t.status || '').toUpperCase())) ? (
+                        <button
+                          disabled
+                          type="button"
+                          title="Tournament setup finalized by organizer. Officiating locked."
+                          className="py-2.5 px-3 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl border border-gray-200 cursor-not-allowed"
+                        >
+                          <Lock size={13} />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={leaveLoadingId === tournamentId}
+                          onClick={() => handleWithdrawOfficiating(tournamentId)}
+                          className="py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl border border-rose-200/80 transition-all cursor-pointer shadow-2xs"
+                          title="Withdraw Officiating Request"
+                        >
+                          <LogOut size={13} />
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => handleApplyAsReferee(tournamentId, title)}
+                      disabled={applyLoadingId === tournamentId || accountStatus !== 'APPROVED'}
+                      className={`w-full py-2.5 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm ${
+                        accountStatus !== 'APPROVED'
+                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
+                          : 'bg-[#00382D] hover:bg-[#002b22] cursor-pointer'
+                      }`}
+                    >
+                      {applyLoadingId === tournamentId ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Submitting...
+                        </>
+                      ) : accountStatus !== 'APPROVED' ? (
+                        <>
+                          <ShieldCheck size={14} />
+                          Pending Admin Approval
+                        </>
+                      ) : (
+                        <>
+                          <Send size={13} />
+                          Request to Officiate
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
 
               </div>
@@ -378,7 +428,7 @@ export default function RefereeTournaments() {
 
       {/* --- RICH CLEAN COMPACT TOURNAMENT DETAILS MODAL --- */}
       {showDetailsModal && selectedTournament && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-[999999] animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-[#e5e5e5] relative">
             
             {/* Close Button */}
@@ -499,6 +549,27 @@ export default function RefereeTournaments() {
         </div>
       )}
 
-    </div>
+    
+      {/* Error / Request Notice Pop-up Modal */}
+      {errorModalMsg && (
+        <div className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100 shadow-2xs">
+              <AlertCircle size={26} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Request Notice ⚠️</h3>
+            <p className="text-gray-600 text-sm mb-6 leading-relaxed font-medium">
+              {errorModalMsg}
+            </p>
+            <button
+              onClick={() => setErrorModalMsg(null)}
+              className="w-full py-2.5 bg-[#00382D] hover:bg-[#002820] text-white font-bold rounded-xl text-sm transition-all shadow-sm active:scale-[0.98] cursor-pointer"
+            >
+              Understand & Close
+            </button>
+          </div>
+        </div>
+      )}
+</div>
   );
 }
