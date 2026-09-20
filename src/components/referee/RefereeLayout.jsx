@@ -214,7 +214,7 @@ export default function RefereeLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         {/* Top Header */}
-        <header className="h-[72px] bg-white border-b border-[#e5e5e5] flex items-center justify-between px-4 lg:px-8 relative z-[9999] shrink-0">
+        <header className="h-[72px] bg-[#f8f7f4] border-b border-[#e5e5e5] flex items-center justify-between px-4 lg:px-8 relative z-20 shrink-0">
           
           <div className="flex items-center gap-4 flex-1">
             <button 
