@@ -31,8 +31,8 @@ const SRI_LANKAN_DISTRICTS = [
   "Vavuniya",
 ];
 
-const roleFields ={
-     Team: [
+const roleFields = {
+  Team: [
     { label: "Team Name", name: "teamName", type: "text", placeholder: "Enter team name" },
     { label: "Email", name: "email", type: "email", placeholder: "example@gmail.com" },
     { label: "Password", name: "password", type: "password", placeholder: "Enter password" },
@@ -68,12 +68,11 @@ const roleFields ={
     { label: "Profile Picture", name: "profilePicture", type: "file" },
     { label: "Playground Name", name: "playgroundName", type: "text", placeholder: "Enter playground name" },
     { label: "District", name: "district", type: "select", placeholder: "Select District", options: SRI_LANKAN_DISTRICTS },
-    { label: "Location", name: "location", type: "text", placeholder: "Enter location / city" },
+    { label: "City", name: "location", type: "text", placeholder: "Enter city" },
     { label: "Address", name: "address", type: "text", placeholder: "Enter address" },
-    { label: "Playground Area", name: "area", type: "text", placeholder: "e.g. 500 Sq. Ft or 2 Acres" },
+    { label: "Playground Area (Sq. Ft)", name: "area", type: "number", placeholder: "e.g. 500" },
     { label: "Contact Number", name: "contactNumber", type: "tel", placeholder: "+94 7X XXX XXXX" },
   ],
-
 
   Organizer: [
     { label: "Full Name", name: "fullName", type: "text", placeholder: "Enter full name" },
@@ -84,182 +83,282 @@ const roleFields ={
     { label: "Contact Number", name: "contactNumber", type: "tel", placeholder: "+94 7X XXX XXXX" },
     { label: "Address", name: "address", type: "text", placeholder: "Enter address" },
   ],
+
+  Admin: [
+    { label: "Full Name", name: "fullName", type: "text", placeholder: "Enter full name" },
+    { label: "Email", name: "email", type: "email", placeholder: "example@gmail.com" },
+    { label: "Password", name: "password", type: "password", placeholder: "Enter password" },
+    { label: "Profile Picture", name: "profilePicture", type: "file" },
+  ],
 };
 
-function RegisterForm({selectedRole}){
-    const [agreed, setAgreed] = useState(false);
-    const [successMessage, setSuccessMessage] = useState("");
-    const [errorMessage, setErrorMessage] = useState("");
-    const [errors, setErrors] = useState({});
-    const navigate = useNavigate();
-    const fields = roleFields[selectedRole] || [];
+function RegisterForm({ selectedRole }) {
+  const [agreed, setAgreed] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
+  const fields = roleFields[selectedRole] || [];
 
-    const [formData, setFormData] = useState({
-  fullName: "",
-  teamName: "",
-  email: "",
-  password: "",
-  profilePicture: null,
-  contactNumber: "",
-  district: "",
-  address: "",
-  companyName: "",
-  contactPerson: "",
-  experienceYears: "",
-  location: "",
-  area: "",
-  capacity: "",
-  playgroundName: "",
-  organizationName: "",
-});
+  const [formData, setFormData] = useState({
+    fullName: "",
+    teamName: "",
+    email: "",
+    password: "",
+    profilePicture: null,
+    contactNumber: "",
+    district: "",
+    address: "",
+    companyName: "",
+    contactPerson: "",
+    experienceYears: "",
+    location: "",
+    area: "",
+    capacity: "",
+    playgroundName: "",
+    organizationName: "",
+  });
 
- function handleChange(e) {
-  const { name, value, type, files } = e.target;
+  function handleChange(e) {
+    const { name, value, type, files } = e.target;
 
-  if (errors[name]) {
-    setErrors((prev) => {
-      const copy = { ...prev };
-      delete copy[name];
-      return copy;
-    });
-  }
+    if (errors[name]) {
+      setErrors((prev) => {
+        const copy = { ...prev };
+        delete copy[name];
+        return copy;
+      });
+    }
 
-  if (type === "file") {
-    const file = files[0];
-    if (file) {
-      // Validate file extension and MIME type (JPG and PNG allowed only)
-      const fileName = file.name.toLowerCase();
-      const fileType = file.type.toLowerCase();
-      const validTypes = ["image/jpeg", "image/png", "image/jpg"];
-      const validExts = [".jpg", ".jpeg", ".png"];
+    if (type === "file") {
+      const file = files[0];
+      if (file) {
+        const fileName = file.name.toLowerCase();
+        const fileType = file.type.toLowerCase();
+        const validTypes = ["image/jpeg", "image/png", "image/jpg"];
+        const validExts = [".jpg", ".jpeg", ".png"];
 
-      const isTypeValid = validTypes.includes(fileType) || validExts.some((ext) => fileName.endsWith(ext));
+        const isTypeValid = validTypes.includes(fileType) || validExts.some((ext) => fileName.endsWith(ext));
 
-      if (!isTypeValid) {
-        setErrors((prev) => ({
-          ...prev,
-          [name]: "File type is incorrect",
-        }));
+        if (!isTypeValid) {
+          setErrors((prev) => ({
+            ...prev,
+            [name]: "File type is incorrect",
+          }));
+          setFormData((prevData) => ({
+            ...prevData,
+            [name]: null,
+          }));
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFormData((prevData) => ({
+            ...prevData,
+            [name]: reader.result,
+          }));
+        };
+        reader.readAsDataURL(file);
+      } else {
         setFormData((prevData) => ({
           ...prevData,
           [name]: null,
         }));
-        return;
       }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prevData) => ({
-          ...prevData,
-          [name]: reader.result,
-        }));
-      };
-      reader.readAsDataURL(file);
     } else {
       setFormData((prevData) => ({
         ...prevData,
-        [name]: null,
+        [name]: value,
       }));
     }
-  } else {
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
   }
-}
 
-function validateForm() {
-  const fields = roleFields[selectedRole] || [];
-  const tempErrors = {};
-  let isValid = true;
+  function validateForm() {
+    const fields = roleFields[selectedRole] || [];
+    const tempErrors = {};
+    let isValid = true;
 
-  for (let field of fields) {
-    if (!formData[field.name]) {
-      if (field.name === "profilePicture" && errors[field.name] === "File type is incorrect") {
-        tempErrors[field.name] = "File type is incorrect";
-      } else {
-        tempErrors[field.name] = `${field.label} is required`;
+    // List of name fields across all forms that must start with an alphabetic letter
+    const nameFields = ["teamName", "fullName", "organizationName", "companyName", "contactPerson", "playgroundName"];
+
+    for (let field of fields) {
+      const val = formData[field.name];
+
+      // 1. Required Field Check
+      if (!val) {
+        if (field.name === "profilePicture" && errors[field.name] === "File type is incorrect") {
+          tempErrors[field.name] = "File type is incorrect";
+        } else {
+          tempErrors[field.name] = `${field.label} is required`;
+        }
+        isValid = false;
+        continue;
       }
+
+      // 2. Name Starting Alphabetical Letter Check
+      if (nameFields.includes(field.name)) {
+        if (typeof val === "string" && !/^[a-zA-Z]/.test(val.trim())) {
+          tempErrors[field.name] = `${field.label} must start with an alphabetical letter (a-z, A-Z)`;
+          isValid = false;
+        }
+      }
+    }
+
+    // 3. Email Format Validation Check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.email && !emailRegex.test(formData.email.trim())) {
+      tempErrors.email = "Please enter a valid email address (e.g. example@gmail.com)";
       isValid = false;
     }
-  }
 
-  const phoneRegex = /^(\+94|0)[0-9]{9}$/;
+    // 4. Contact Number Format Check (Sri Lankan format)
+    const phoneRegex = /^(\+94|0)[0-9]{9}$/;
+    if (formData.contactNumber && !phoneRegex.test(formData.contactNumber.trim())) {
+      tempErrors.contactNumber = "Enter a valid Sri Lankan phone number (+94XXXXXXXXX or 0XXXXXXXXX)";
+      isValid = false;
+    }
 
-  if (formData.contactNumber && !phoneRegex.test(formData.contactNumber)) {
-    tempErrors.contactNumber = "Enter a valid Sri Lankan phone number (+94XXXXXXXXX or 0XXXXXXXXX)";
-    isValid = false;
-  }
+    // 5. Password Strength Standards Check (Min 6 chars, both letters and numbers required)
+    if (formData.password) {
+      if (formData.password.length < 6) {
+        tempErrors.password = "Password must be at least 6 characters long";
+        isValid = false;
+      } else if (!/[a-zA-Z]/.test(formData.password) || !/[0-9]/.test(formData.password)) {
+        tempErrors.password = "Password must contain both letters and numbers (e.g. Pass123)";
+        isValid = false;
+      }
+    }
 
-  if (formData.password && formData.password.length < 6) {
-    tempErrors.password = "Password must be at least 6 characters";
-    isValid = false;
-  }
+    // 6. Playground Area Numeric Check (Numbers only, e.g. 500)
+    if (selectedRole === "Playground" && formData.area) {
+      if (!/^[0-9]+$/.test(String(formData.area).trim())) {
+        tempErrors.area = "Playground Area must contain numbers only (e.g. 500)";
+        isValid = false;
+      }
+    }
 
-  setErrors(tempErrors);
+    setErrors(tempErrors);
 
-  if (!isValid) {
-    setErrorMessage("Please correct the errors in the form below.");
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  } else {
-    setErrorMessage("");
-  }
-
-  return isValid;
-}
-
-function getRoleFormData() {
-  const fields = roleFields[selectedRole] || [];
-
-  const roleData = {
-    role: selectedRole,
-  };
-
-  fields.forEach((field) => {
-    roleData[field.name] = formData[field.name];
-  });
-
-  return roleData;
-}
-
-function handleSubmit(e) {
-  e.preventDefault();
-
-  if (!validateForm()) {
-    return;
-  }
-
-  const finalData = getRoleFormData();
-  // Backend expects role in uppercase (e.g. "ORGANIZER")
-  finalData.role = finalData.role.toUpperCase();
-
-  console.log("Sending JSON to backend...", finalData);
-  
-  // Call the backend API
-  api.post('/user/register', finalData)
-  .then((response) => {
-    if (response.data && response.data.success === false) {
-      setErrorMessage(response.data.message || "Registration failed. Please try again.");
-      setSuccessMessage("");
+    if (!isValid) {
+      setErrorMessage("Please correct the highlighted errors in the form below.");
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setErrorMessage("");
+    }
+
+    return isValid;
+  }
+
+  function getRoleFormData() {
+    const fields = roleFields[selectedRole] || [];
+
+    const roleData = {
+      role: selectedRole,
+    };
+
+    fields.forEach((field) => {
+      roleData[field.name] = formData[field.name];
+    });
+
+    return roleData;
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    if (!validateForm()) {
       return;
     }
-    console.log("Registration Success:", response.data);
-    setSuccessMessage("Registration successful! Redirecting to login...");
-    setErrorMessage("");
-    setTimeout(() => {
-      navigate('/login');
-    }, 2000);
-  })
-  .catch((error) => {
-    console.error("Registration Error:", error);
-    const serverMessage = error.response && error.response.data && error.response.data.message;
-    setErrorMessage(serverMessage || "Registration failed. Please try again.");
-    setSuccessMessage("");
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-}
+
+    const finalData = getRoleFormData();
+    finalData.role = finalData.role.toUpperCase();
+
+    console.log("Sending JSON to backend...", finalData);
+
+    api.post('/user/register', finalData)
+      .then((response) => {
+        if (response.data && response.data.success === false) {
+          const serverMsg = response.data.message || "Registration failed. Please try again.";
+          setErrorMessage(serverMsg);
+          setSuccessMessage("");
+
+          if (serverMsg.toLowerCase().includes("contact number")) {
+            setErrors((prev) => ({
+              ...prev,
+              contactNumber: "Contact number is already registered in the system.",
+            }));
+          } else if (serverMsg.toLowerCase().includes("email")) {
+            setErrors((prev) => ({
+              ...prev,
+              email: "Email address is already registered in the system.",
+            }));
+          } else if (serverMsg.toLowerCase().includes("area must contain numbers")) {
+            setErrors((prev) => ({
+              ...prev,
+              area: "Playground Area must contain numbers only (e.g. 500).",
+            }));
+          } else if (serverMsg.toLowerCase().includes("name must start")) {
+            const nameFieldsList = ["teamName", "fullName", "organizationName", "companyName", "contactPerson", "playgroundName"];
+            const currentFieldsList = roleFields[selectedRole] || [];
+            const targetField = currentFieldsList.find((f) => nameFieldsList.includes(f.name));
+            if (targetField) {
+              setErrors((prev) => ({
+                ...prev,
+                [targetField.name]: "Must start with an alphabetical letter (a-z, A-Z).",
+              }));
+            }
+          }
+
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+
+        console.log("Registration Success:", response.data);
+        setSuccessMessage("Registration successful! Redirecting to login...");
+        setErrorMessage("");
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      })
+      .catch((error) => {
+        console.error("Registration Error:", error);
+        const serverMessage = error.response && error.response.data && error.response.data.message;
+        const errorText = serverMessage || "Registration failed. Please try again.";
+
+        setErrorMessage(errorText);
+        setSuccessMessage("");
+
+        if (errorText.toLowerCase().includes("contact number")) {
+          setErrors((prev) => ({
+            ...prev,
+            contactNumber: "Contact number is already registered in the system.",
+          }));
+        } else if (errorText.toLowerCase().includes("email")) {
+          setErrors((prev) => ({
+            ...prev,
+            email: "Email address is already registered in the system.",
+          }));
+        } else if (errorText.toLowerCase().includes("area must contain numbers")) {
+          setErrors((prev) => ({
+            ...prev,
+            area: "Playground Area must contain numbers only (e.g. 500).",
+          }));
+        } else if (errorText.toLowerCase().includes("name must start")) {
+          const nameFieldsList = ["teamName", "fullName", "organizationName", "companyName", "contactPerson", "playgroundName"];
+          const currentFieldsList = roleFields[selectedRole] || [];
+          const targetField = currentFieldsList.find((f) => nameFieldsList.includes(f.name));
+          if (targetField) {
+            setErrors((prev) => ({
+              ...prev,
+              [targetField.name]: "Must start with an alphabetical letter (a-z, A-Z).",
+            }));
+          }
+        }
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+  }
 
   return (
     <section className="w-full max-w-[720px] mx-auto border border-[#cfd6d2] rounded-md p-6 md:p-10 bg-[#f8f7f4]">
@@ -285,8 +384,6 @@ function handleSubmit(e) {
         </div>
       )}
 
-      {/* Form Start here */}
-
       <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div>
           <label className="block mb-2 text-[14px] font-semibold text-[#222]">
@@ -301,98 +398,95 @@ function handleSubmit(e) {
         </div>
 
         {fields.map((field) => (
-              <RegisterInput
-                 key={field.name}
-                 label={field.label}
-                 name={field.name}
-                 type={field.type}
-                 placeholder={field.placeholder}
-                 options={field.options}
-                 value={formData[field.name] || ""}
-                 onChange={handleChange}
-                 error={errors[field.name]}
-              />
+          <RegisterInput
+            key={field.name}
+            label={field.label}
+            name={field.name}
+            type={field.type}
+            placeholder={field.placeholder}
+            options={field.options}
+            value={formData[field.name] || ""}
+            onChange={handleChange}
+            error={errors[field.name]}
+          />
         ))}
 
-         {/*ur Terms Agreed*/}
-
         <div className="col-span-1 sm:col-span-2 flex items-start sm:items-center gap-3 mt-3">
-  <input
-    id="terms"
-    type="checkbox"
-    checked={agreed}
-    onChange={(e) => setAgreed(e.target.checked)}
-    className="
-      w-[18px]
-      h-[18px]
-      cursor-pointer
-      accent-[#00783f]
-    "
-  />
+          <input
+            id="terms"
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="
+              w-[18px]
+              h-[18px]
+              cursor-pointer
+              accent-[#00783f]
+            "
+          />
 
-  <label
-    htmlFor="terms"
-    className="text-[13px] text-[#222] cursor-pointer"
-  >
-    I agree to the{" "}
-    <a
-      href="#"
-      className="text-[#006b3c] font-semibold underline hover:text-[#009653]"
-    >
-      Terms of Service
-    </a>{" "}
-    and{" "}
-    <a
-      href="#"
-      className="text-[#006b3c] font-semibold underline hover:text-[#009653]"
-    >
-      Privacy Policy
-    </a>{" "}
-    of The Elle Hub.
-  </label>
-</div>
+          <label
+            htmlFor="terms"
+            className="text-[13px] text-[#222] cursor-pointer"
+          >
+            I agree to the{" "}
+            <a
+              href="#"
+              className="text-[#006b3c] font-semibold underline hover:text-[#009653]"
+            >
+              Terms of Service
+            </a>{" "}
+            and{" "}
+            <a
+              href="#"
+              className="text-[#006b3c] font-semibold underline hover:text-[#009653]"
+            >
+              Privacy Policy
+            </a>{" "}
+            of The Elle Hub.
+          </label>
+        </div>
 
-       <button
-  type="submit"
-  disabled={!agreed}
-  className={`
-    col-span-1 sm:col-span-2
-    mt-6
-    h-[58px]
-    rounded-md
-    text-[22px]
-    font-bold
-    transition-all
-    duration-150
+        <button
+          type="submit"
+          disabled={!agreed}
+          className={`
+            col-span-1 sm:col-span-2
+            mt-6
+            h-[58px]
+            rounded-md
+            text-[22px]
+            font-bold
+            transition-all
+            duration-150
 
-    ${
-      agreed
-        ? `
-          bg-[#003326]
-          text-[#8eb7a7]
-          cursor-pointer
-          hover:bg-[#08733e]
-          hover:shadow-lg
-          hover:-translate-y-[2px]
-          active:translate-y-[2px]
-          active:scale-[0.98]
-          active:shadow-sm
-        `
-        : `
-          bg-[#d8d8d8]
-          text-[#888]
-          cursor-not-allowed
-        `
-    }
-  `}
->
-  Complete Registration
-  <span className="ml-4">→</span>
-</button>
+            ${
+              agreed
+                ? `
+                  bg-[#003326]
+                  text-[#8eb7a7]
+                  cursor-pointer
+                  hover:bg-[#08733e]
+                  hover:shadow-lg
+                  hover:-translate-y-[2px]
+                  active:translate-y-[2px]
+                  active:scale-[0.98]
+                  active:shadow-sm
+                `
+                : `
+                  bg-[#d8d8d8]
+                  text-[#888]
+                  cursor-not-allowed
+                `
+            }
+          `}
+        >
+          Complete Registration
+          <span className="ml-4">➔</span>
+        </button>
       </form>
     </section>
   );
-
 }
 
 export default RegisterForm;
