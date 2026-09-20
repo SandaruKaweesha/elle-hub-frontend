@@ -1,3 +1,12 @@
+
+const getVerifyUrl = (certId) => {
+  if (!certId) return "";
+  const isLocalHost = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+  const baseHost = isLocalHost
+    ? "https://sandarukaweesha.github.io/elle-hub-frontend"
+    : `${window.location.origin}${window.location.pathname.replace(/\/$/, "")}`;
+  return `${baseHost}/#/verify-certificate/${certId}`;
+};
 import React, { useState, useEffect } from 'react';
 import { QrCode, Download, CheckCircle2, Trophy, User, Award, FileText, Loader2, Zap } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -181,7 +190,8 @@ export default function CertificateQR() {
         if (response.data && response.data.success) {
           setIsGenerated(true);
           const rawLink = response.data.data.verify_link || `/verify-certificate/${response.data.data.id}`;
-          const verifyUrl = rawLink.startsWith('http') ? rawLink : `${window.location.origin}${rawLink}`;
+          const certId = response.data.data.id || response.data.data.token;
+          const verifyUrl = getVerifyUrl(certId);
           setGeneratedLink(verifyUrl);
           setGeneratedId(response.data.data.id || response.data.data.token);
           fetchHistory();
@@ -473,7 +483,7 @@ export default function CertificateQR() {
                      >
                        <QRCodeCanvas 
                           id="certificate-qr-code" 
-                          value={generatedLink || `${window.location.origin}/verify-certificate/${generatedId}`} 
+                          value={generatedLink || getVerifyUrl(generatedId)} 
                           size={192} 
                           level="M" 
                           includeMargin={false}
@@ -522,7 +532,7 @@ export default function CertificateQR() {
             {qrHistory.map(item => (
               <div key={item.id} className="bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl p-4 flex gap-4 items-center shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:border-[#00382D]/30 transition-colors">
                 <div className="w-16 h-16 bg-white p-1 rounded-lg border border-[#e5e5e5] shrink-0">
-                  <QRCodeCanvas id={`qr-canvas-${item.id}`} value={`${window.location.origin}/verify/${item.id}`} size={54} level="H" includeMargin={false} />
+                  <QRCodeCanvas id={`qr-canvas-${item.id}`} value={getVerifyUrl(item.id)} size={54} level="H" includeMargin={false} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-[#111111] truncate">{item.recipient}</p>
