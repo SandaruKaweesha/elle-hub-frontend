@@ -4,7 +4,7 @@ const getBaseURL = () => {
   if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
     return `${window.location.protocol}//${window.location.hostname}/elle-hub-backend`;
   }
-  return import.meta.env.VITE_API_URL || 'https://quick-ways-shop.loca.lt/elle-hub-backend';
+  return import.meta.env.VITE_API_URL || 'https://zbfex-103-77-64-145.free.pinggy.net/elle-hub-backend';
 };
 
 // Create an Axios instance for XAMPP / PHP backend
