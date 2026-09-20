@@ -16,6 +16,11 @@ export default function CertificateModal({ certificate, onClose }) {
   const tournamentTitle = certificate.tournament_title || 'ELLE HUB TOURNAMENT';
 
   // Rich formatted text payload so ANY phone camera displays details directly on screen when scanned
+  const isLocalHost = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+  const publicVerifyUrl = isLocalHost
+    ? `https://sandarukaweesha.github.io/elle-hub-frontend/#/verify-certificate/${token}`
+    : `${window.location.origin}${window.location.pathname.replace(/\/$/, "")}/#/verify-certificate/${token}`;
+
   const qrTextPayload = `🏆 OFFICIAL ELLE HUB E-CERTIFICATE
 ================================
 Recipient: ${recipient}
@@ -202,7 +207,7 @@ Status: 100% Genuine & Verified by Elle Hub`;
             <div className="flex flex-col items-center justify-center space-y-1">
               <div className="p-2 bg-white border border-amber-300 rounded-xl shadow-xs">
                 <QRCodeSVG 
-                  value={qrTextPayload} 
+                  value={publicVerifyUrl} 
                   size={105} 
                   bgColor={"#FFFFFF"} 
                   fgColor={"#08733e"} 
