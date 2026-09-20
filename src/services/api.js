@@ -13,6 +13,7 @@ const api = axios.create({
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
+    'X-Pinggy-No-Screen': 'true',
   },
 });
 
