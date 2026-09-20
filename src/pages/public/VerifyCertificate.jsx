@@ -23,6 +23,7 @@ export default function VerifyCertificate() {
   const urlDate = searchParams.get('date');
   const urlSponsor = searchParams.get('sponsor');
   const urlLocation = searchParams.get('location');
+  const urlOrganizer = searchParams.get('organizer');
 
   const hasUrlPayload = Boolean(urlRecipient || urlTournament || urlAward);
 
@@ -50,6 +51,7 @@ export default function VerifyCertificate() {
         tournament_location: urlLocation || 'Senkadagala',
         certificate_type: (urlAward || 'WINNER').toUpperCase(),
         issue_date: urlDate || new Date().toISOString().split('T')[0],
+        organizer_name: urlOrganizer || 'Minuka Foundation (Official Organizer)',
         sponsor_name: urlSponsor || 'Dialog',
         created_at: new Date().toISOString()
       }
@@ -197,7 +199,7 @@ export default function VerifyCertificate() {
                     <CheckCircle2 size={16} className="text-emerald-600" /> Verification Status
                   </span>
                   <span className="font-black text-emerald-900 bg-emerald-100 px-3 py-0.5 rounded-full border border-emerald-300 text-[11px]">
-                    âœ“ OFFICIAL VERIFIED CERTIFICATE
+                    OFFICIAL VERIFIED CERTIFICATE
                   </span>
                 </div>
 
@@ -224,7 +226,7 @@ export default function VerifyCertificate() {
                   </div>
                   <div className="bg-white p-2.5 rounded-xl border border-emerald-100 shadow-2xs">
                     <span className="text-[10px] text-gray-500 font-bold uppercase block">Organizer</span>
-                    <span className="font-extrabold text-gray-800 text-xs">{verificationResult.data.organizer_name}</span>
+                    <span className="font-extrabold text-gray-800 text-xs">{verificationResult.data.organizer_name || urlOrganizer || 'Minuka Foundation (Official Organizer)'}</span>
                   </div>
                   <div className="bg-white p-2.5 rounded-xl border border-emerald-100 shadow-2xs md:col-span-2">
                     <span className="text-[10px] text-gray-500 font-bold uppercase block">Official Sponsor</span>
@@ -243,7 +245,7 @@ export default function VerifyCertificate() {
                 <div className="space-y-2 text-xs text-gray-600 font-medium text-center md:text-left">
                   <div className="flex items-center justify-center md:justify-start gap-1.5 text-gray-800 font-bold">
                     <Building2 size={14} className="text-[#08733e]" />
-                    <span>Issued By: {verificationResult.data.organizer_name}</span>
+                    <span>Issued By: {verificationResult.data.organizer_name || urlOrganizer || 'Minuka Foundation (Official Organizer)'}</span>
                   </div>
                   <div className="flex items-center justify-center md:justify-start gap-1.5">
                     <MapPin size={14} className="text-[#08733e]" />
