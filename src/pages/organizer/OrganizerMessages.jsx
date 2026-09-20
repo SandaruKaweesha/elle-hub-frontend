@@ -14,7 +14,8 @@ import {
   AlertCircle,
   RefreshCw,
   Info,
-  Lock
+  Lock,
+  X
 } from "lucide-react";
 import api from "../../services/api";
 
@@ -55,10 +56,8 @@ export default function OrganizerMessages() {
         });
         setContacts(sortedList);
 
-        // Auto select first contact if none selected
-        if (sortedList.length > 0 && !selectedContact) {
-          setSelectedContact(sortedList[0]);
-        } else if (selectedContact) {
+        // Update selected contact data if active, but do NOT auto-select if user closed chat
+        if (selectedContact) {
           const updated = sortedList.find(c => c.user_id === selectedContact.user_id);
           if (updated) setSelectedContact(updated);
         }
@@ -101,22 +100,26 @@ export default function OrganizerMessages() {
   useEffect(() => {
     if (selectedContact) {
       fetchConversation(selectedContact.user_id);
+    } else {
+      setMessages([]);
     }
-  }, [selectedContact]);
+  }, [selectedContact?.user_id]);
 
   // Scroll to bottom when messages update
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (selectedContact && messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [messages.length, selectedContact]);
 
-  // Real-time polling every 4 seconds
+  // Fast & Silent real-time polling every 1.5 seconds (1500ms)
   useEffect(() => {
     const interval = setInterval(() => {
       fetchContacts(true);
       if (selectedContact) {
         fetchConversation(selectedContact.user_id, true);
       }
-    }, 4000);
+    }, 1500);
     return () => clearInterval(interval);
   }, [userId, selectedContact]);
 
@@ -144,104 +147,91 @@ export default function OrganizerMessages() {
       }
     } catch (err) {
       console.error("Send message error:", err);
-      setError(err.response?.data?.message || "An error occurred while sending your message.");
+      setError(err.response?.data?.message || "Error sending message.");
     } finally {
       setIsSending(false);
     }
   };
 
-  // Filter contacts by search
-  const filteredContacts = contacts.filter((c) =>
-    (c.display_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (c.contact_person || "").toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredContacts = contacts.filter(c => 
+    (c.display_name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="space-y-6 pb-12 font-['Poppins'] animate-in fade-in duration-300">
+    <div className="w-full bg-white rounded-2xl border border-[#e5e5e5] shadow-sm overflow-hidden flex flex-col min-h-[calc(100vh-140px)] animate-in fade-in duration-300 font-['Poppins']">
       
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Page Title Bar */}
+      <div className="p-6 border-b border-[#e5e5e5] bg-[#fdfdfc] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="bg-[#00382D]/10 text-[#00382D] p-2 rounded-xl">
-              <MessageSquare size={24} />
-            </span>
-            <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">Sponsor Communications</h1>
-          </div>
-          <p className="text-[#666666] text-sm mt-1">
-            Private 1-on-1 messaging channel with Tournament Sponsors.
-          </p>
+          <h2 className="text-xl font-bold text-[#111111] flex items-center gap-2">
+            <MessageSquare className="text-[#00382D]" size={22} />
+            Sponsor Communications
+          </h2>
+          <p className="text-[#666666] text-xs mt-1">Private 1-on-1 messaging channel with Tournament Sponsors.</p>
         </div>
 
-        <button
-          onClick={() => { fetchContacts(); if (selectedContact) fetchConversation(selectedContact.user_id); }}
-          className="px-4 py-2 bg-white border border-[#e5e5e5] rounded-xl text-xs font-bold text-[#333333] hover:bg-gray-50 transition-colors flex items-center gap-2 self-start sm:self-auto cursor-pointer shadow-2xs"
+        <button 
+          onClick={() => {
+            fetchContacts();
+            if (selectedContact) fetchConversation(selectedContact.user_id);
+          }}
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-[#00382D] bg-[#f0fdf4] hover:bg-[#dcfce7] border border-[#bbf7d0] rounded-xl transition-colors shrink-0 w-fit cursor-pointer"
         >
-          <RefreshCw size={14} className={loadingContacts ? "animate-spin text-[#00382D]" : "text-[#00382D]"} />
+          <RefreshCw size={14} className={loadingContacts ? "animate-spin" : ""} />
           Refresh Messages
         </button>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-center justify-between text-sm shadow-sm">
-          <div className="flex items-center gap-2">
-            <AlertCircle size={18} className="shrink-0" />
-            <span>{error}</span>
-          </div>
-          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 cursor-pointer">
-            &times;
-          </button>
+        <div className="m-4 p-4 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl flex items-center justify-between">
+          <span className="flex items-center gap-2"><AlertCircle size={16} /> {error}</span>
+          <button onClick={() => setError(null)} className="text-red-500 font-bold hover:text-red-700">Dismiss</button>
         </div>
       )}
 
-      {/* Main Messaging Layout */}
-      <div className="bg-white rounded-3xl border border-[#e5e5e5] shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[640px] h-[calc(100vh-250px)]">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0">
         
-        {/* Left Panel: Contact List */}
-        <div className="lg:col-span-4 border-r border-[#e5e5e5] flex flex-col bg-[#fcfbf9]">
+        {/* Left Panel: Contacts List */}
+        <div className="lg:col-span-4 border-r border-[#e5e5e5] flex flex-col bg-[#fbfbfa]">
           
           {/* Search Box */}
-          <div className="p-4 border-b border-[#e5e5e5]">
+          <div className="p-4 border-b border-[#e5e5e5] bg-white">
             <div className="relative">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#888888]" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
                 placeholder="Search sponsors..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#e5e5e5] rounded-2xl text-xs font-semibold text-[#111111] focus:outline-none focus:border-[#00382D] transition-colors"
+                className="w-full pl-9 pr-4 py-2 bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl text-xs font-medium text-[#111111] focus:outline-none focus:border-[#00382D]"
               />
             </div>
           </div>
 
-          {/* Contact List */}
-          <div className="flex-1 overflow-y-auto divide-y divide-[#f0efeb]">
-            {loadingContacts ? (
-              <div className="py-12 text-center">
-                <div className="w-8 h-8 border-3 border-[#00382D] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                <p className="text-xs text-[#666666] font-medium">Loading sponsors...</p>
-              </div>
+          {/* Contacts List */}
+          <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
+            {loadingContacts && contacts.length === 0 ? (
+              <div className="py-12 text-center text-xs text-gray-400 font-medium">Loading sponsor directory...</div>
             ) : filteredContacts.length === 0 ? (
-              <div className="py-12 text-center px-4">
-                <Building2 size={36} className="mx-auto text-gray-300 mb-2" />
-                <p className="text-xs font-bold text-[#555555]">No Sponsors Found</p>
-                <p className="text-[11px] text-[#888888] mt-1">Sponsors will appear here when registered on the platform.</p>
-              </div>
+              <div className="py-12 text-center text-xs text-gray-400 font-medium px-4">No sponsor messaging channels found.</div>
             ) : (
               filteredContacts.map((contact) => {
                 const isSelected = selectedContact?.user_id === contact.user_id;
                 return (
                   <div
                     key={contact.user_id}
-                    onClick={() => setSelectedContact(contact)}
-                    className={`p-4 transition-all cursor-pointer flex items-start gap-3.5 ${
+                    onClick={() => {
+                      setSelectedContact(contact);
+                      fetchConversation(contact.user_id);
+                    }}
+                    className={`p-4 flex items-center gap-3.5 cursor-pointer transition-all ${
                       isSelected
-                        ? "bg-[#00382D]/10 border-l-4 border-[#00382D]"
+                        ? "bg-[#eaf1ec] border-l-4 border-[#00382D]"
                         : "hover:bg-white"
                     }`}
                   >
                     <div className="relative shrink-0">
-                      <div className="w-11 h-11 rounded-2xl bg-white border border-[#e5e5e5] overflow-hidden shadow-2xs flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-2xl bg-white border border-[#e5e5e5] overflow-hidden shadow-2xs">
                         <img
                           src={contact.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${contact.display_name}`}
                           alt={contact.display_name}
@@ -249,7 +239,7 @@ export default function OrganizerMessages() {
                         />
                       </div>
                       {contact.unread_count > 0 && (
-                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-600 text-white font-extrabold text-[10px] rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-xs">
                           {contact.unread_count}
                         </span>
                       )}
@@ -284,43 +274,61 @@ export default function OrganizerMessages() {
         </div>
 
         {/* Right Panel: Chat Conversation */}
-        <div className="lg:col-span-8 flex flex-col bg-white">
+        <div className="lg:col-span-8 flex flex-col bg-white min-h-[400px]">
           {selectedContact ? (
             <>
-              {/* Active Header */}
+              {/* Active Header with Close Chat Button */}
               <div className="p-4 border-b border-[#e5e5e5] bg-[#fdfdfc] flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-2xl bg-white border border-[#e5e5e5] overflow-hidden shadow-2xs">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl bg-white border border-[#e5e5e5] overflow-hidden shadow-2xs shrink-0">
                     <img
                       src={selectedContact.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedContact.display_name}`}
                       alt={selectedContact.display_name}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-extrabold text-[#111111]">{selectedContact.display_name}</h3>
-                    <div className="flex items-center gap-3 text-[11px] text-[#666666] mt-0.5">
-                      <span className="flex items-center gap-1 text-amber-700 font-bold">
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-extrabold text-[#111111] truncate">{selectedContact.display_name}</h3>
+                    <div className="flex items-center gap-3 text-[11px] text-[#666666] mt-0.5 flex-wrap">
+                      <span className="flex items-center gap-1 text-amber-700 font-bold shrink-0">
                         <ShieldCheck size={12} /> Verified Sponsor
                       </span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <Phone size={12} className="text-[#00382D]" /> {selectedContact.contact_number}
-                      </span>
+                      {selectedContact.contact_number && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center gap-1 shrink-0">
+                            <Phone size={12} className="text-[#00382D]" /> {selectedContact.contact_number}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="hidden sm:flex items-center gap-2">
-                  <span className="px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-extrabold rounded-full uppercase tracking-wider">
-                    Official Sponsor Communication
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="hidden md:inline-block px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-extrabold rounded-full uppercase tracking-wider">
+                    Official Communication
                   </span>
+                  
+                  {/* Close Active Chat Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedContact(null);
+                      setMessages([]);
+                    }}
+                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-bold border border-gray-200 hover:border-red-200 shadow-2xs"
+                    title="Close current chat tab"
+                  >
+                    <X size={16} />
+                    <span className="hidden sm:inline">Close Chat</span>
+                  </button>
                 </div>
               </div>
 
               {/* Messages Content */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-[#fbfbfa]">
-                {loadingMessages ? (
+              <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-[#fbfbfa] max-h-[500px]">
+                {loadingMessages && messages.length === 0 ? (
                   <div className="py-20 text-center">
                     <div className="w-8 h-8 border-3 border-[#00382D] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
                     <p className="text-xs text-[#666666] font-medium">Loading conversation history...</p>
@@ -366,38 +374,41 @@ export default function OrganizerMessages() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Message Input Box / Lock Banner */}
+              {/* Message Input Box */}
               <form onSubmit={handleSendMessage} className="p-4 border-t border-[#e5e5e5] bg-white flex items-center gap-3">
-                  <input
-                    type="text"
-                    placeholder={`Type a message to ${selectedContact.display_name}...`}
-                    value={newMessageText}
-                    onChange={(e) => setNewMessageText(e.target.value)}
-                    className="flex-1 px-4 py-3 bg-[#f8f7f4] border border-[#e5e5e5] rounded-2xl text-xs font-semibold text-[#111111] focus:outline-none focus:border-[#00382D] transition-colors"
-                  />
+                <input
+                  type="text"
+                  placeholder={`Type a message to ${selectedContact.display_name}...`}
+                  value={newMessageText}
+                  onChange={(e) => setNewMessageText(e.target.value)}
+                  className="flex-1 px-4 py-3 bg-[#f8f7f4] border border-[#e5e5e5] rounded-2xl text-xs font-semibold text-[#111111] focus:outline-none focus:border-[#00382D] transition-colors"
+                />
 
-                  <button
-                    type="submit"
-                    disabled={!newMessageText.trim() || isSending}
-                    className="px-5 py-3 bg-[#00382D] text-white text-xs font-bold rounded-2xl hover:bg-[#002a22] transition-colors flex items-center gap-2 shrink-0 cursor-pointer disabled:opacity-40 shadow-xs"
-                  >
-                    {isSending ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      <>
-                        <span>Send</span>
-                        <Send size={14} />
-                      </>
-                    )}
-                  </button>
-                </form>
+                <button
+                  type="submit"
+                  disabled={!newMessageText.trim() || isSending}
+                  className="px-5 py-3 bg-[#00382D] text-white text-xs font-bold rounded-2xl hover:bg-[#002a22] transition-colors flex items-center gap-2 shrink-0 cursor-pointer disabled:opacity-40 shadow-xs"
+                >
+                  {isSending ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      <span>Send</span>
+                      <Send size={14} />
+                    </>
+                  )}
+                </button>
+              </form>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#fbfbfa]">
-              <MessageSquare size={56} className="text-gray-300 mb-3" />
-              <h3 className="text-base font-bold text-[#111111]">Select a Sponsor Company</h3>
-              <p className="text-xs text-[#666666] max-w-sm mt-1">
-                Choose a sponsor from the list on the left to start or view sponsorship messages.
+            /* Empty Placeholder State when Chat is Closed / Deselected */
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#fbfbfa] my-auto">
+              <div className="w-16 h-16 rounded-2xl bg-[#eaf1ec] text-[#00382D] flex items-center justify-center mb-4 border border-[#c4e3d7]">
+                <MessageSquare size={32} />
+              </div>
+              <h3 className="text-base font-bold text-[#111111]">No Conversation Selected</h3>
+              <p className="text-xs text-[#666666] max-w-sm mt-1 leading-relaxed">
+                Click on any sponsor from the left sidebar to open the chat window, or click <span className="font-bold text-[#00382D]">Close Chat</span> to leave the active view.
               </p>
             </div>
           )}
