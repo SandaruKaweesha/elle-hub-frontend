@@ -1,11 +1,21 @@
 
-const getVerifyUrl = (certId) => {
+const getVerifyUrl = (certId, details = {}) => {
   if (!certId) return "";
   const isLocalHost = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
   const baseHost = isLocalHost
     ? "https://sandarukaweesha.github.io/elle-hub-frontend"
     : `${window.location.origin}${window.location.pathname.replace(/\/$/, "")}`;
-  return `${baseHost}/#/verify-certificate/${certId}`;
+
+  const params = new URLSearchParams();
+  if (details.recipient) params.append("recipient", details.recipient);
+  if (details.tournament) params.append("tournament", details.tournament);
+  if (details.certType || details.cert_type) params.append("award", details.certType || details.cert_type);
+  if (details.date || details.issue_date) params.append("date", details.date || details.issue_date);
+  if (details.sponsor) params.append("sponsor", details.sponsor);
+  if (details.location) params.append("location", details.location || "Sri Lanka");
+
+  const q = params.toString();
+  return `${baseHost}/#/verify-certificate/${certId}${q ? "?" + q : ""}`;
 };
 import React, { useState, useEffect } from 'react';
 import { QrCode, Download, CheckCircle2, Trophy, User, Award, FileText, Loader2, Zap } from 'lucide-react';
@@ -483,7 +493,7 @@ export default function CertificateQR() {
                      >
                        <QRCodeCanvas 
                           id="certificate-qr-code" 
-                          value={generatedLink || getVerifyUrl(generatedId)} 
+                          value={generatedLink || getVerifyUrl(generatedId, { recipient, tournament, certType, date: tournamentDate, sponsor: sponsorName })} 
                           size={192} 
                           level="M" 
                           includeMargin={false}
@@ -532,7 +542,7 @@ export default function CertificateQR() {
             {qrHistory.map(item => (
               <div key={item.id} className="bg-[#f8f7f4] border border-[#e5e5e5] rounded-xl p-4 flex gap-4 items-center shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:border-[#00382D]/30 transition-colors">
                 <div className="w-16 h-16 bg-white p-1 rounded-lg border border-[#e5e5e5] shrink-0">
-                  <QRCodeCanvas id={`qr-canvas-${item.id}`} value={getVerifyUrl(item.id)} size={54} level="H" includeMargin={false} />
+                  <QRCodeCanvas id={`qr-canvas-${item.id}`} value={getVerifyUrl(item.id, { recipient: item.recipient, tournament: item.tournament, cert_type: item.cert_type, date: item.created_at || item.issue_date, sponsor: item.sponsor_name })} size={54} level="H" includeMargin={false} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-[#111111] truncate">{item.recipient}</p>
