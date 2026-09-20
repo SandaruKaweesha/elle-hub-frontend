@@ -1,8 +1,15 @@
 import axios from 'axios';
 
+const getBaseURL = () => {
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://localhost/elle-hub-backend';
+  }
+  return import.meta.env.VITE_API_URL || 'https://quick-ways-shop.loca.lt/elle-hub-backend';
+};
+
 // Create an Axios instance for XAMPP / PHP backend
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost/elle-hub-backend',
+  baseURL: getBaseURL(),
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
