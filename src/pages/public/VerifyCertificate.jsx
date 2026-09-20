@@ -149,7 +149,7 @@ export default function VerifyCertificate() {
                       ? 'bg-slate-100 text-slate-800 border-2 border-slate-300'
                       : 'bg-emerald-100 text-emerald-900 border-2 border-emerald-300'
                   }`}>
-                    🏆 {verificationResult.data.certificate_type} AWARD
+                    ðŸ† {verificationResult.data.certificate_type} AWARD
                   </span>
                 </div>
               </div>
@@ -161,7 +161,7 @@ export default function VerifyCertificate() {
                     <CheckCircle2 size={16} className="text-emerald-600" /> Verification Status
                   </span>
                   <span className="font-black text-emerald-900 bg-emerald-100 px-3 py-0.5 rounded-full border border-emerald-300 text-[11px]">
-                    ✓ OFFICIAL VERIFIED CERTIFICATE
+                    âœ“ OFFICIAL VERIFIED CERTIFICATE
                   </span>
                 </div>
 
@@ -273,7 +273,7 @@ export default function VerifyCertificate() {
 
       {/* Footer */}
       <footer className="max-w-5xl mx-auto w-full text-center py-6 text-xs text-gray-400 font-medium border-t border-gray-200 mt-8">
-        © 2026 Elle Hub National Sports Platform. All Cryptographic E-Certificate Tokens Protected.
+        Â© 2026 Elle Hub National Sports Platform. All Cryptographic E-Certificate Tokens Protected.
       </footer>
 
     </div>

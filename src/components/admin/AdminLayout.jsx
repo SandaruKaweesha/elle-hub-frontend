@@ -220,7 +220,7 @@ function AdminLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         {/* Top Header */}
-        <header className="h-[72px] bg-white flex items-center justify-between px-4 lg:px-8 relative z-[9999] shrink-0 border-b border-[#e5e7eb]">
+        <header className="h-[72px] bg-[#f8f7f4] flex items-center justify-between px-4 lg:px-8 relative z-20 shrink-0 border-b border-[#e5e7eb]">
           
           <div className="flex items-center gap-4 flex-1">
             <button 
@@ -350,7 +350,7 @@ function AdminLayout() {
             {/* Read-Only Notice */}
             <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-center">
               <p className="text-[11px] text-amber-800 font-semibold">
-                🔒 Admin Profile details are read-only and strictly for display.
+                Ã°Å¸â€â€™ Admin Profile details are read-only and strictly for display.
               </p>
             </div>
 

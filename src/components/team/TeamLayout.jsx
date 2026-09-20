@@ -222,7 +222,7 @@ export default function TeamLayout() {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         {/* Top Header */}
-        <header className="h-16 lg:h-20 bg-white border-b border-[#e5e5e5] flex items-center justify-between px-4 lg:px-8 relative z-[9999] shrink-0">
+        <header className="h-16 lg:h-20 bg-[#f8f7f4] border-b border-[#e5e5e5] flex items-center justify-between px-4 lg:px-8 relative z-20 shrink-0">
           
           <div className="flex items-center gap-3 flex-1">
             <button 
@@ -271,7 +271,7 @@ export default function TeamLayout() {
                 <span className="text-sm font-semibold text-[#111111]">{userName}</span>
                 <span className="text-xs text-[#666666] capitalize">{userRole.toLowerCase()}</span>
               </div>
-              <div className="w-10 h-10 rounded-full bg-white overflow-hidden border-2 border-[#111111] group-hover:border-[#333333] shadow-sm flex items-center justify-center shrink-0 transition-colors relative">
+              <div className="w-10 h-10 rounded-full bg-[#f8f7f4] overflow-hidden border-2 border-[#111111] group-hover:border-[#333333] shadow-sm flex items-center justify-center shrink-0 transition-colors relative">
                  <img src={displayUser.profilePicture || displayUser.profile_picture || displayUser.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}&backgroundColor=eaf1ec`} alt="Avatar" className="w-full h-full object-cover" />
                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                    <User size={16} className="text-white" />
