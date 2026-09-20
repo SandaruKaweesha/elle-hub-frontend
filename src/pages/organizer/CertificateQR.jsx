@@ -13,6 +13,7 @@ const getVerifyUrl = (certId, details = {}) => {
   if (details.date || details.issue_date) params.append("date", details.date || details.issue_date);
   if (details.sponsor) params.append("sponsor", details.sponsor);
   if (details.location) params.append("location", details.location || "Sri Lanka");
+  if (details.organizer) params.append("organizer", details.organizer);
 
   const q = params.toString();
   return `${baseHost}/#/verify-certificate/${certId}${q ? "?" + q : ""}`;
