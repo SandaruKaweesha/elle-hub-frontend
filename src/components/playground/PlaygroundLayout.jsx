@@ -34,7 +34,39 @@ export default function PlaygroundLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [dbUser, setDbUser] = useState(null);
+    const [dbUser, setDbUser] = useState(null);
+  const [pgReqCount, setPgReqCount] = useState(0);
+  const [hasSeenPgReqs, setHasSeenPgReqs] = useState(() => sessionStorage.getItem('seen_playground_requests') === 'true');
+
+
+
+  const fetchPlaygroundRequestsCount = async () => {
+    const targetUserId = displayUser?.userId || displayUser?.user_id || displayUser?.id || localUser?.userId || localUser?.user_id || localUser?.id;
+    if (!targetUserId) return;
+    try {
+      const res = await api.get(`/playground/${targetUserId}/requests`);
+      const list = res.data?.data || res.data || [];
+      const pending = list.filter(r => (r.status || r.invitation_status || '').toUpperCase() === 'PENDING');
+      setPgReqCount(pending.length > 0 ? pending.length : list.length);
+    } catch (err) {
+      console.error("Error fetching playground requests count:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchPlaygroundRequestsCount();
+    const timer = setInterval(fetchPlaygroundRequestsCount, 8000);
+    return () => clearInterval(timer);
+  }, [displayUser?.id, displayUser?.userId, displayUser?.user_id]);
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/playground/requests')) {
+      setHasSeenPgReqs(true);
+      sessionStorage.setItem('seen_playground_requests', 'true');
+    }
+  }, [location.pathname]);
+
+  const showPgReqBadge = pgReqCount > 0 && !hasSeenPgReqs && !location.pathname.startsWith('/playground/requests');
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -126,20 +158,33 @@ export default function PlaygroundLayout() {
                              (link.path !== "/playground" && location.pathname.startsWith(link.path));
             const Icon = link.icon;
             return (
-              <Link
+                            <Link
                 key={link.id}
                 to={link.path}
-                onClick={() => setIsSidebarOpen(false)}
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  if (link.id === 'requests') {
+                    setHasSeenPgReqs(true);
+                    sessionStorage.setItem('seen_playground_requests', 'true');
+                  }
+                }}
                 className={`
-                  flex items-center gap-3 px-4 py-3 rounded-l-lg rounded-r-none text-sm font-medium transition-colors
+                  flex items-center justify-between px-4 py-3 rounded-l-lg rounded-r-none text-sm font-medium transition-colors
                   ${isActive 
                     ? "bg-[#eaeaeb] text-[#111111] border-r-[4px] border-[#00382D]" 
                     : "text-[#666666] border-transparent border-r-[4px] hover:bg-[#eaeaeb]/50 hover:text-[#111111]"
                   }
                 `}
               >
-                <Icon size={18} className={isActive ? "text-[#00382D]" : "text-[#888888]"} />
-                {link.label}
+                <div className="flex items-center gap-3">
+                  <Icon size={18} className={isActive ? "text-[#00382D]" : "text-[#888888]"} />
+                  {link.label}
+                </div>
+                {link.id === 'requests' && showPgReqBadge && (
+                  <span className="px-2 py-0.5 text-[10px] font-extrabold bg-[#08733e] text-white rounded-full border border-white animate-in zoom-in duration-200">
+                    {pgReqCount}
+                  </span>
+                )}
               </Link>
             );
           })}

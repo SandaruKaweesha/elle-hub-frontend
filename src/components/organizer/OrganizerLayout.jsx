@@ -47,7 +47,45 @@ function OrganizerLayout() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadCount, setUnreadCount] = useState(0);
+  const [organizerReqCount, setOrganizerReqCount] = useState(0);
+  const [hasSeenOrganizerReqs, setHasSeenOrganizerReqs] = useState(() => sessionStorage.getItem('seen_organizer_requests') === 'true');
+
+  const fetchOrganizerRequestsCount = async () => {
+    if (!targetId) return;
+    try {
+      const [teamRes, refRes, spRes, pgRes] = await Promise.all([
+        api.get(`/organizer/${targetId}/team-requests`).catch(() => null),
+        api.get(`/organizer/${targetId}/referee-requests`).catch(() => null),
+        api.get(`/organizer/${targetId}/sponsor-requests`).catch(() => null),
+        api.get(`/organizer/${targetId}/playground-requests`).catch(() => null)
+      ]);
+      const teams = teamRes?.data?.data || teamRes?.data || [];
+      const refs = refRes?.data?.data || refRes?.data || [];
+      const sps = spRes?.data?.data || spRes?.data || [];
+      const pgs = pgRes?.data?.data || pgRes?.data || [];
+      const allList = [...teams, ...refs, ...sps, ...pgs];
+      const pending = allList.filter(r => (r.status || r.request_status || r.invitation_status || '').toUpperCase() === 'PENDING');
+      setOrganizerReqCount(pending.length > 0 ? pending.length : (allList.length > 0 ? allList.length : 0));
+    } catch (err) {
+      console.error("Error fetching organizer requests count:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrganizerRequestsCount();
+    const timer = setInterval(fetchOrganizerRequestsCount, 8000);
+    return () => clearInterval(timer);
+  }, [targetId]);
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/organizer/requests')) {
+      setHasSeenOrganizerReqs(true);
+      sessionStorage.setItem('seen_organizer_requests', 'true');
+    }
+  }, [location.pathname]);
+
+  const showOrganizerReqBadge = organizerReqCount > 0 && !hasSeenOrganizerReqs && !location.pathname.startsWith('/organizer/requests');
 
   const userString = localStorage.getItem('user');
   let localUser = null;
@@ -184,10 +222,16 @@ function OrganizerLayout() {
             const isActive = location.pathname === link.path || (link.path === '/organizer' && location.pathname === '/organizer/dashboard');
             const Icon = link.icon;
             return (
-              <Link
+                            <Link
                 key={link.id}
                 to={link.path}
-                onClick={() => setIsSidebarOpen(false)}
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  if (link.id === 'requests') {
+                    setHasSeenOrganizerReqs(true);
+                    sessionStorage.setItem('seen_organizer_requests', 'true');
+                  }
+                }}
                 className={`
                   flex items-center justify-between px-4 py-3 rounded-l-lg rounded-r-none text-sm font-medium transition-colors
                   ${isActive 
@@ -200,6 +244,11 @@ function OrganizerLayout() {
                   <Icon size={18} className={isActive ? "text-[#111111]" : "text-[#888888]"} />
                   {link.label}
                 </div>
+                {link.id === 'requests' && showOrganizerReqBadge && (
+                  <span className="px-2 py-0.5 text-[10px] font-extrabold bg-[#08733e] text-white rounded-full border border-white animate-in zoom-in duration-200">
+                    {organizerReqCount}
+                  </span>
+                )}
                 {link.id === 'messages' && unreadCount > 0 && (
                   <span className="px-2 py-0.5 text-[10px] font-extrabold bg-[#08733e] text-white rounded-full">
                     {unreadCount}

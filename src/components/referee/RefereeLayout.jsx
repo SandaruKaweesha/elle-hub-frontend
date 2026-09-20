@@ -36,7 +36,36 @@ export default function RefereeLayout() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [dbUser, setDbUser] = useState(null);
-  const [notifications, setNotifications] = useState([]);
+    const [notifications, setNotifications] = useState([]);
+  const [requestsCount, setRequestsCount] = useState(0);
+  const [hasSeenRequests, setHasSeenRequests] = useState(() => sessionStorage.getItem('seen_referee_requests') === 'true');
+
+  const fetchRefereeRequests = async () => {
+    if (!targetId) return;
+    try {
+      const res = await api.get(`/referee/${targetId}/requests`);
+      const list = res.data?.data || res.data || [];
+      const pending = list.filter(r => (r.status || r.invitation_status || '').toUpperCase() === 'PENDING');
+      setRequestsCount(pending.length > 0 ? pending.length : list.length);
+    } catch (err) {
+      console.error("Error fetching referee requests count:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchRefereeRequests();
+    const timer = setInterval(fetchRefereeRequests, 8000);
+    return () => clearInterval(timer);
+  }, [targetId]);
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/referee/requests')) {
+      setHasSeenRequests(true);
+      sessionStorage.setItem('seen_referee_requests', 'true');
+    }
+  }, [location.pathname]);
+
+  const showReqBadge = requestsCount > 0 && !hasSeenRequests && !location.pathname.startsWith('/referee/requests');
 
   const userString = localStorage.getItem('user');
   let localUser = null;
@@ -166,21 +195,34 @@ export default function RefereeLayout() {
             const isActive = location.pathname === link.path || 
                              (link.path !== "/referee" && location.pathname.startsWith(link.path));
             const Icon = link.icon;
-            return (
+                        return (
               <Link
                 key={link.id}
                 to={link.path}
-                onClick={() => setIsSidebarOpen(false)}
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  if (link.id === 'requests') {
+                    setHasSeenRequests(true);
+                    sessionStorage.setItem('seen_referee_requests', 'true');
+                  }
+                }}
                 className={`
-                  flex items-center gap-3 px-4 py-3 rounded-l-lg rounded-r-none text-sm font-medium transition-colors
+                  flex items-center justify-between px-4 py-3 rounded-l-lg rounded-r-none text-sm font-medium transition-colors
                   ${isActive 
                     ? "bg-[#eaeaeb] text-[#111111] border-r-[4px] border-[#00382D]" 
                     : "text-[#666666] border-transparent border-r-[4px] hover:bg-[#eaeaeb]/50 hover:text-[#111111]"
                   }
                 `}
               >
-                <Icon size={18} className={isActive ? "text-[#00382D]" : "text-[#888888]"} />
-                {link.label}
+                <div className="flex items-center gap-3">
+                  <Icon size={18} className={isActive ? "text-[#00382D]" : "text-[#888888]"} />
+                  {link.label}
+                </div>
+                {link.id === 'requests' && showReqBadge && (
+                  <span className="px-2 py-0.5 text-[10px] font-extrabold bg-[#08733e] text-white rounded-full border border-white animate-in zoom-in duration-200">
+                    {requestsCount}
+                  </span>
+                )}
               </Link>
             );
           })}
