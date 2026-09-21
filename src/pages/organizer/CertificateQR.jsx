@@ -49,7 +49,8 @@ export default function CertificateQR() {
   // Auto-fill and participating teams state
   const [tournamentAwards, setTournamentAwards] = useState([]);
   const [participatingTeams, setParticipatingTeams] = useState([]);
-  const [sponsorName, setSponsorName] = useState('Dialog');
+  const [sponsorName, setSponsorName] = useState('Official Tournament Sponsors');
+  const [tournamentLocation, setTournamentLocation] = useState('Sri Lanka');
   const [tournamentDate, setTournamentDate] = useState('');
   const [tournamentWinners, setTournamentWinners] = useState({ champion: '', runnerUp: '' });
 
@@ -91,11 +92,20 @@ export default function CertificateQR() {
     if (selectedTournamentId) {
       const fetchTournamentDetails = async () => {
         try {
-          const [awardsRes, teamsRes, drawRes] = await Promise.all([
+          const [awardsRes, teamsRes, drawRes, sponsorRes] = await Promise.all([
             tournamentResultsAPI.getResults(selectedTournamentId).catch(() => null),
             api.get(`/tournament/${selectedTournamentId}/team-requests`).catch(() => null),
-            api.get(`/tournament/${selectedTournamentId}/draw`).catch(() => null)
+            api.get(`/tournament/${selectedTournamentId}/draw`).catch(() => null),
+            api.get(`/tournament/${selectedTournamentId}/sponsor-requests`).catch(() => null)
           ]);
+
+          if (sponsorRes && sponsorRes.data && sponsorRes.data.data) {
+            const list = sponsorRes.data.data || [];
+            const approvedSponsor = list.find(s => (s.status||'').toUpperCase() === 'ACCEPTED' || (s.status||'').toUpperCase() === 'APPROVED');
+            if (approvedSponsor) {
+              setSponsorName(approvedSponsor.sponsor_name || approvedSponsor.company_name || approvedSponsor.name || 'Official Tournament Sponsors');
+            }
+          }
 
           if (awardsRes && awardsRes.data && awardsRes.data.success !== false) {
             setTournamentAwards(awardsRes.data.data || []);
@@ -319,7 +329,18 @@ export default function CertificateQR() {
                     const tId = e.target.value;
                     setSelectedTournamentId(tId);
                     const found = tournaments.find(t => String(t.tournament_id || t.id) === String(tId));
-                    setTournament(found ? found.title : '');
+                    if (found) {
+                      setTournament(found.title || '');
+                      const tDate = found.tournament_held_date || found.start_date || found.created_at?.split('T')[0] || '';
+                      setTournamentDate(tDate);
+                      setTournamentLocation(found.location || 'Sri Lanka');
+                      setSponsorName(found.sponsor_name || found.sponsor || 'Official Tournament Sponsors');
+                    } else {
+                      setTournament('');
+                      setTournamentDate('');
+                      setTournamentLocation('Sri Lanka');
+                      setSponsorName('Official Tournament Sponsors');
+                    }
                     setCertType('');
                     setRecipient('');
                     setIsGenerated(false);
@@ -468,12 +489,12 @@ export default function CertificateQR() {
                 </div>
                 <div className="flex justify-between border-b border-[#bbf7d0]/50 pb-2">
                   <span className="text-[#166534]/70 font-semibold">Tournament Date</span>
-                  <span className="font-bold text-[#166534] text-right">{tournamentDate || '2026-09-05'}</span>
+                  <span className="font-bold text-[#166534] text-right">{tournamentDate || 'Select tournament'}</span>
                 </div>
                 <div className="flex justify-between border-b border-[#bbf7d0]/50 pb-2">
                   <span className="text-[#166534]/70 font-semibold">Official Sponsor</span>
                   <span className="font-bold text-[#166534] text-right flex items-center gap-1">
-                    🏆 {sponsorName || 'Dialog'}
+                    🏆 {sponsorName || 'Official Tournament Sponsors'}
                   </span>
                 </div>
                 <div className="flex justify-between border-b border-[#bbf7d0]/50 pb-2">
