@@ -47,7 +47,9 @@ function OrganizerLayout() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-    const [unreadCount, setUnreadCount] = useState(0);
+
+
+  const [unreadCount, setUnreadCount] = useState(0);
   const [organizerReqCount, setOrganizerReqCount] = useState(0);
   const [hasSeenOrganizerReqs, setHasSeenOrganizerReqs] = useState(() => sessionStorage.getItem('seen_organizer_requests') === 'true');
 
