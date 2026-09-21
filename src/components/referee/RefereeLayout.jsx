@@ -40,6 +40,15 @@ export default function RefereeLayout() {
   const [requestsCount, setRequestsCount] = useState(0);
   const [hasSeenRequests, setHasSeenRequests] = useState(() => sessionStorage.getItem('seen_referee_requests') === 'true');
 
+  const userString = localStorage.getItem('user');
+  let localUser = null;
+  try {
+    localUser = userString && userString !== 'undefined' ? JSON.parse(userString) : null;
+  } catch (e) {
+    localUser = null;
+  }
+  const targetId = localUser?.userId || localUser?.user_id || localUser?.id;
+
   const fetchRefereeRequests = async () => {
     if (!targetId) return;
     try {
@@ -67,14 +76,7 @@ export default function RefereeLayout() {
 
   const showReqBadge = requestsCount > 0 && !hasSeenRequests && !location.pathname.startsWith('/referee/requests');
 
-  const userString = localStorage.getItem('user');
-  let localUser = null;
-  try {
-    localUser = userString && userString !== 'undefined' ? JSON.parse(userString) : null;
-  } catch (e) {
-    localUser = null;
-  }
-  const targetId = localUser?.userId || localUser?.user_id || localUser?.id;
+
 
   const fetchNotifications = async () => {
     if (!targetId) return;
@@ -143,7 +145,7 @@ export default function RefereeLayout() {
       return;
     }
 
-    const targetId = localUser.userId || localUser.user_id || localUser.id;
+    const authTargetId = localUser.userId || localUser.user_id || localUser.id;
     if (targetId) {
       api.get(`/user/${targetId}`)
         .then(res => {
