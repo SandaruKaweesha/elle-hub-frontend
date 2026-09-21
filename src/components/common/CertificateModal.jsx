@@ -9,17 +9,31 @@ export default function CertificateModal({ certificate, onClose }) {
 
   if (!certificate) return null;
 
-  const token = certificate.verification_token || certificate.qr_code || 'CERT-ELE-2026';
-  const issueDate = certificate.issue_date || new Date().toISOString().split('T')[0];
-  const recipient = certificate.recipient_name || 'Participating Team';
-  const certType = certificate.certificate_type || 'PARTICIPATION';
-  const tournamentTitle = certificate.tournament_title || 'ELLE HUB TOURNAMENT';
+  const token = certificate.verification_token || certificate.verificationToken || certificate.qr_code || certificate.id || 'CERT-ELE-2026';
+  const issueDate = certificate.issue_date || certificate.issueDate || certificate.created_at?.split('T')[0] || new Date().toISOString().split('T')[0];
+  const recipient = certificate.recipient_name || certificate.recipientName || certificate.recipient || 'Participating Team';
+  const certType = certificate.certificate_type || certificate.certificateType || certificate.cert_type || 'PARTICIPATION';
+  const tournamentTitle = certificate.tournament_title || certificate.tournamentTitle || certificate.tournament || 'ELLE HUB TOURNAMENT';
+  const sponsorName = certificate.sponsor_name || certificate.sponsorName || certificate.sponsor || 'Official Tournament Sponsors';
+  const locationName = certificate.tournament_location || certificate.tournamentLocation || certificate.location || 'Sri Lanka';
+  const organizerName = certificate.organizer_name || certificate.organizerName || certificate.organizer || 'Official Organizer';
 
-  // Rich formatted text payload so ANY phone camera displays details directly on screen when scanned
   const isLocalHost = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-  const publicVerifyUrl = isLocalHost
-    ? `https://sandarukaweesha.github.io/elle-hub-frontend/#/verify-certificate/${token}`
-    : `${window.location.origin}${window.location.pathname.replace(/\/$/, "")}/#/verify-certificate/${token}`;
+  const baseHost = isLocalHost
+    ? "https://sandarukaweesha.github.io/elle-hub-frontend"
+    : `${window.location.origin}${window.location.pathname.replace(/\/$/, "")}`;
+
+  const params = new URLSearchParams();
+  if (recipient) params.append("recipient", recipient);
+  if (tournamentTitle) params.append("tournament", tournamentTitle);
+  if (certType) params.append("award", certType);
+  if (issueDate) params.append("date", issueDate);
+  if (sponsorName) params.append("sponsor", sponsorName);
+  if (locationName) params.append("location", locationName);
+  if (organizerName) params.append("organizer", organizerName);
+
+  const queryString = params.toString();
+  const publicVerifyUrl = `${baseHost}/#/verify-certificate/${token}${queryString ? "?" + queryString : ""}`;
 
   const qrTextPayload = `🏆 OFFICIAL ELLE HUB E-CERTIFICATE
 ================================
