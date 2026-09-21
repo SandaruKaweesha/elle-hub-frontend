@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Share2, Mail } from "lucide-react";
 
 function Footer() {
@@ -31,9 +32,7 @@ function Footer() {
             Terms of Service
           </a>
 
-          <a href="#" className="hover:text-white transition-colors">
-            Contact Us
-          </a>
+          <Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link>
 
           <a href="#" className="hover:text-white transition-colors">
             Sitemap

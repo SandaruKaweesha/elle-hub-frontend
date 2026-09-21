@@ -289,9 +289,9 @@ function Login() {
               </div>
 
               <div className="text-[13px]">
-                <a href="#" className="font-bold text-[#00783f] hover:text-[#005a2f]">
+                <Link to="/contact" className="font-bold text-[#00783f] hover:text-[#005a2f]">
                   Forgot password?
-                </a>
+                </Link>
               </div>
             </div>
 

@@ -1,3 +1,4 @@
+import Contact from "./pages/Contact";
 import SponsorMyTournaments from "./pages/sponsor/SponsorMyTournaments";
 import PlaygroundNotifications from './pages/playground/PlaygroundNotifications';
 import { Routes, Route } from "react-router-dom";
@@ -90,6 +91,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Home/>}/>
       <Route path="/about" element={<About/>}/>
+      <Route path="/contact" element={<Contact/>}/>
       <Route path="/tournaments" element={<Tournaments/>}/>
       <Route path="/tournaments/:id" element={<TournamentDetails/>}/>
       <Route path="/matches" element={<Matches/>}/>
@@ -233,3 +235,4 @@ function App() {
 }
 
 export default App;
+

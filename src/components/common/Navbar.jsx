@@ -22,6 +22,7 @@ function Navbar() {
           <Link to="/tournaments" className="relative py-2 hover:text-[#08733e] transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-[2px] after:bg-[#C9A227] after:transition-all after:duration-300 hover:after:w-full">Tournaments</Link>
           <Link to="/rankings" className="relative py-2 hover:text-[#08733e] transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-[2px] after:bg-[#C9A227] after:transition-all after:duration-300 hover:after:w-full">Rankings</Link>
           <Link to="/about" className="relative py-2 hover:text-[#08733e] transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-[2px] after:bg-[#C9A227] after:transition-all after:duration-300 hover:after:w-full">About</Link>
+          <Link to="/contact" className="relative py-2 hover:text-[#08733e] transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-[2px] after:bg-[#C9A227] after:transition-all after:duration-300 hover:after:w-full">Contact</Link>
         </div>
 
         {/* Right Side Buttons (Desktop) */}
@@ -47,6 +48,7 @@ function Navbar() {
           <Link to="/tournaments" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-medium text-[#252525] hover:text-[#08733e] w-full text-center py-2">Tournaments</Link>
           <Link to="/rankings" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-medium text-[#252525] hover:text-[#08733e] w-full text-center py-2">Rankings</Link>
           <Link to="/about" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-medium text-[#252525] hover:text-[#08733e] w-full text-center py-2">About</Link>
+          <Link to="/contact" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-medium text-[#252525] hover:text-[#08733e] w-full text-center py-2">Contact</Link>
           
           <div className="flex flex-col gap-4 mt-4 w-full px-8">
             <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="w-full text-center bg-[#003326] text-[#8eb7a7] px-6 py-3 rounded-lg text-lg cursor-pointer hover:bg-[#08733e] hover:text-white">Login</Link>

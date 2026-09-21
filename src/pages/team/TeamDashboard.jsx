@@ -175,9 +175,7 @@ function TeamDashboard() {
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[#111111] tracking-tight">Team Dashboard</h1>
-          <p className="text-[#666666] mt-1 text-sm md:text-base">
-            Performance overview for <span className="font-bold text-[#00382D]">{teamName}</span>
-          </p>
+          
         </div>
         
         {/* Quick Header Rating Pill */}
@@ -224,8 +222,8 @@ function TeamDashboard() {
               return (
               <div key={tournament.tournament_id || index} className="relative rounded-2xl overflow-hidden bg-[#002c21] text-white p-6 md:p-10 flex flex-col justify-end min-h-[340px] shadow-sm w-full shrink-0 snap-center">
                 <div className="absolute inset-0 z-0">
-                  <img src={tournament.image_url || defaultImage} alt={tournament.title} className="w-full h-full object-cover opacity-20 mix-blend-overlay pointer-events-none" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#002c21] via-[#002c21]/80 to-transparent"></div>
+                  <img src={tournament.image_url || defaultImage} alt={tournament.title} className="w-full h-full object-cover pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/15"></div>
                 </div>
                 
                 <div className="relative z-10">
