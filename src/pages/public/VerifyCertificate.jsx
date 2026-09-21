@@ -46,13 +46,13 @@ export default function VerifyCertificate() {
       data: {
         certificate_id: certToken,
         verification_token: certToken,
-        recipient_name: urlRecipient || 'Team-3',
-        tournament_title: urlTournament || 'Danthure hatana',
-        tournament_location: urlLocation || 'Senkadagala',
+        recipient_name: urlRecipient || 'Official Recipient / Winner',
+        tournament_title: urlTournament || 'Elle Hub Tournament Championship',
+        tournament_location: urlLocation || 'Sri Lanka Sports Ground',
         certificate_type: (urlAward || 'WINNER').toUpperCase(),
         issue_date: urlDate || new Date().toISOString().split('T')[0],
         organizer_name: urlOrganizer || 'Minuka Foundation (Official Organizer)',
-        sponsor_name: urlSponsor || 'Dialog',
+        sponsor_name: urlSponsor || 'Official Tournament Sponsors',
         created_at: new Date().toISOString()
       }
     };

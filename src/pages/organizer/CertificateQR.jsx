@@ -159,6 +159,12 @@ export default function CertificateQR() {
     setTournament(title);
     if (t) {
       setSelectedTournamentId(t.tournament_id || t.id);
+      const tDate = t.tournament_held_date || t.start_date || t.created_at || '';
+      setTournamentDate(tDate);
+      if (t.sponsor_name || t.sponsor) setSponsorName(t.sponsor_name || t.sponsor);
+    } else {
+      setSelectedTournamentId('');
+      setTournamentDate('');
     }
     setIsGenerated(false);
     // Reset selections
@@ -200,11 +206,18 @@ export default function CertificateQR() {
 
         if (response.data && response.data.success) {
           setIsGenerated(true);
-          const rawLink = response.data.data.verify_link || `/verify-certificate/${response.data.data.id}`;
-          const certId = response.data.data.id || response.data.data.token;
-          const verifyUrl = getVerifyUrl(certId);
+          const certId = response.data.data.id || response.data.data.token || response.data.data.verification_token;
+          const issueDate = response.data.data.issue_date || tournamentDate || new Date().toISOString().split('T')[0];
+          const verifyUrl = getVerifyUrl(certId, {
+            recipient,
+            tournament,
+            certType,
+            date: issueDate,
+            sponsor: sponsorName,
+            location: 'Sri Lanka'
+          });
           setGeneratedLink(verifyUrl);
-          setGeneratedId(response.data.data.id || response.data.data.token);
+          setGeneratedId(certId);
           fetchHistory();
         }
       } catch (error) {
