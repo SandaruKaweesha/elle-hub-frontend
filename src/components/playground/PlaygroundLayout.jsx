@@ -40,11 +40,20 @@ export default function PlaygroundLayout() {
 
 
 
+  const userString = localStorage.getItem('user');
+  let localUser = null;
+  try {
+    localUser = userString && userString !== 'undefined' ? JSON.parse(userString) : null;
+  } catch (e) {
+    localUser = null;
+  }
+  const displayUser = dbUser || localUser || {};
+  const targetId = displayUser?.userId || displayUser?.user_id || displayUser?.id || localUser?.userId || localUser?.user_id || localUser?.id;
+
   const fetchPlaygroundRequestsCount = async () => {
-    const targetUserId = displayUser?.userId || displayUser?.user_id || displayUser?.id || localUser?.userId || localUser?.user_id || localUser?.id;
-    if (!targetUserId) return;
+    if (!targetId) return;
     try {
-      const res = await api.get(`/playground/${targetUserId}/requests`);
+      const res = await api.get(`/playground/${targetId}/requests`);
       const list = res.data?.data || res.data || [];
       const pending = list.filter(r => (r.status || r.invitation_status || '').toUpperCase() === 'PENDING');
       setPgReqCount(pending.length > 0 ? pending.length : list.length);
@@ -57,7 +66,7 @@ export default function PlaygroundLayout() {
     fetchPlaygroundRequestsCount();
     const timer = setInterval(fetchPlaygroundRequestsCount, 8000);
     return () => clearInterval(timer);
-  }, [displayUser?.id, displayUser?.userId, displayUser?.user_id]);
+  }, [targetId]);
 
   useEffect(() => {
     if (location.pathname.startsWith('/playground/requests')) {
@@ -113,14 +122,6 @@ export default function PlaygroundLayout() {
     }
   }, [navigate]);
 
-  const userString = localStorage.getItem('user');
-  let localUser = null;
-  try {
-    localUser = userString && userString !== 'undefined' ? JSON.parse(userString) : null;
-  } catch (e) {
-    localUser = null;
-  }
-  const displayUser = dbUser || localUser || {};
 
   const playgroundName = displayUser.playground_name || displayUser.playgroundName || displayUser.display_name || 'Badulla Ground';
   const district = displayUser.located_district || displayUser.locatedDistrict || 'Badulla';
