@@ -23,17 +23,29 @@ export default function CertificateModal({ certificate, onClose }) {
     ? "https://sandarukaweesha.github.io/elle-hub-frontend"
     : `${window.location.origin}${window.location.pathname.replace(/\/$/, "")}`;
 
-  const params = new URLSearchParams();
-  if (recipient) params.append("recipient", recipient);
-  if (tournamentTitle) params.append("tournament", tournamentTitle);
-  if (certType) params.append("award", certType);
-  if (issueDate) params.append("date", issueDate);
-  if (sponsorName) params.append("sponsor", sponsorName);
-  if (locationName) params.append("location", locationName);
-  if (organizerName) params.append("organizer", organizerName);
+  const encodePayload = (details = {}) => {
+    try {
+      if (!details || Object.keys(details).length === 0) return '';
+      const jsonStr = JSON.stringify(details);
+      const utf8Bytes = encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (_, p1) => String.fromCharCode('0x' + p1));
+      const b64 = btoa(utf8Bytes);
+      return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    } catch (e) {
+      return '';
+    }
+  };
 
-  const queryString = params.toString();
-  const publicVerifyUrl = `${baseHost}/#/verify-certificate/${token}${queryString ? "?" + queryString : ""}`;
+  const payloadObj = {
+    recipient,
+    tournament: tournamentTitle,
+    award: certType,
+    date: issueDate,
+    sponsor: sponsorName,
+    location: locationName,
+    organizer: organizerName
+  };
+  const payloadB64 = encodePayload(payloadObj);
+  const publicVerifyUrl = `${baseHost}/#/verify-certificate/${token}${payloadB64 ? "?d=" + encodeURIComponent(payloadB64) : ""}`;
 
   const qrTextPayload = `🏆 OFFICIAL ELLE HUB E-CERTIFICATE
 ================================

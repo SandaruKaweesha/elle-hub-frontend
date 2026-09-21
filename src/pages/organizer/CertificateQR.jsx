@@ -1,21 +1,31 @@
 
-const getVerifyUrl = (certId, details = {}) => {
+const encodePayload = (details = {}) => {
+  try {
+    if (!details || Object.keys(details).length === 0) return '';
+    const jsonStr = JSON.stringify(details);
+    const utf8Bytes = encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (_, p1) => String.fromCharCode('0x' + p1));
+    const b64 = btoa(utf8Bytes);
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  } catch (e) {
+    return '';
+  }
+};
+
+const getVerifyUrl = (certId, details = null) => {
   if (!certId) return "";
   const isLocalHost = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
   const baseHost = isLocalHost
     ? "https://sandarukaweesha.github.io/elle-hub-frontend"
     : `${window.location.origin}${window.location.pathname.replace(/\/$/, "")}`;
 
-  const params = new URLSearchParams();
-  if (details.recipient) params.append("recipient", details.recipient);
-  if (details.tournament) params.append("tournament", details.tournament);
-  if (details.certType || details.cert_type) params.append("award", details.certType || details.cert_type);
-  if (details.date || details.issue_date) params.append("date", details.date || details.issue_date);
-  if (details.sponsor) params.append("sponsor", details.sponsor);
-  if (details.location) params.append("location", details.location || "Sri Lanka");
-  if (details.organizer) params.append("organizer", details.organizer);
+  let q = "";
+  if (details && typeof details === 'object' && Object.keys(details).length > 0) {
+    const payload = encodePayload(details);
+    if (payload) {
+      q = `d=${encodeURIComponent(payload)}`;
+    }
+  }
 
-  const q = params.toString();
   return `${baseHost}/#/verify-certificate/${certId}${q ? "?" + q : ""}`;
 };
 import React, { useState, useEffect } from 'react';

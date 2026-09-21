@@ -17,13 +17,29 @@ export default function VerifyCertificate() {
   const [verificationResult, setVerificationResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  const urlRecipient = searchParams.get('recipient');
-  const urlTournament = searchParams.get('tournament');
-  const urlAward = searchParams.get('award');
-  const urlDate = searchParams.get('date');
-  const urlSponsor = searchParams.get('sponsor');
-  const urlLocation = searchParams.get('location');
-  const urlOrganizer = searchParams.get('organizer');
+  const decodePayload = (str) => {
+    try {
+      if (!str) return null;
+      let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+      while (b64.length % 4) b64 += '=';
+      const utf8Bytes = atob(b64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('');
+      const jsonStr = decodeURIComponent(utf8Bytes);
+      return JSON.parse(jsonStr);
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const payloadParam = searchParams.get('d') || searchParams.get('payload');
+  const decodedData = decodePayload(payloadParam) || {};
+
+  const urlRecipient = decodedData.recipient || decodedData.recipient_name || searchParams.get('recipient');
+  const urlTournament = decodedData.tournament || decodedData.tournament_title || searchParams.get('tournament');
+  const urlAward = decodedData.award || decodedData.certType || decodedData.cert_type || searchParams.get('award');
+  const urlDate = decodedData.date || decodedData.issue_date || searchParams.get('date');
+  const urlSponsor = decodedData.sponsor || decodedData.sponsor_name || searchParams.get('sponsor');
+  const urlLocation = decodedData.location || decodedData.tournament_location || searchParams.get('location');
+  const urlOrganizer = decodedData.organizer || decodedData.organizer_name || searchParams.get('organizer');
 
   const hasUrlPayload = Boolean(urlRecipient || urlTournament || urlAward);
 
