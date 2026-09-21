@@ -47,6 +47,17 @@ function OrganizerLayout() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
+  const userString = localStorage.getItem('user');
+  let localUser = null;
+  try {
+    localUser = userString && userString !== 'undefined' ? JSON.parse(userString) : null;
+  } catch (e) {
+    localUser = null;
+  }
+  const targetId = localUser?.userId || localUser?.user_id || localUser?.id;
+
+
+
 
 
   const [unreadCount, setUnreadCount] = useState(0);
@@ -88,15 +99,6 @@ function OrganizerLayout() {
   }, [location.pathname]);
 
   const showOrganizerReqBadge = organizerReqCount > 0 && !hasSeenOrganizerReqs && !location.pathname.startsWith('/organizer/requests');
-
-  const userString = localStorage.getItem('user');
-  let localUser = null;
-  try {
-    localUser = userString && userString !== 'undefined' ? JSON.parse(userString) : null;
-  } catch (e) {
-    localUser = null;
-  }
-  const targetId = localUser?.userId || localUser?.user_id || localUser?.id;
 
   useEffect(() => {
     if (!userString || userString === 'undefined' || !localUser) {
